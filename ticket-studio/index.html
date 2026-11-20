@@ -6,6 +6,7 @@
   <title>摸彩券工作室</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <style>
     :root {
       --bg: #f3f4f6; --panel: #ffffff; --text: #1f2937; --muted: #6b7280; --line: #e5e7eb;
@@ -76,19 +77,77 @@
     .pager input { width: 64px; padding: 4px 6px; }
     .page-wrap { display: flex; justify-content: center; background: #cbd5e1; border-radius: 8px; padding: 16px; }
     #pageCanvas { background: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.18); max-width: 100%; }
+
+    /* 分頁 */
+    .tabs { display: flex; gap: 4px; background: rgba(255,255,255,.08); padding: 3px; border-radius: 8px; }
+    .tabs button { background: transparent; color: #cbd5e1; border: none; padding: 6px 14px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    .tabs button.on { background: #fff; color: var(--head); font-weight: 600; }
+    header .left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+    /* 抽獎紀錄 */
+    .prize-row { display: grid; grid-template-columns: 1fr 64px auto; gap: 6px; margin-bottom: 6px; align-items: center; }
+    .prize-row .ops { display: flex; gap: 3px; }
+    .prize-row .ops button { padding: 4px 7px; }
+    .show {
+      background: radial-gradient(circle at 50% 30%, #312e81, #0f172a 70%); color: #fff; border-radius: 12px;
+      padding: 28px 20px; text-align: center; min-height: 300px; display: flex; flex-direction: column; justify-content: center; gap: 10px;
+    }
+    .show .prize { font-size: clamp(20px, 3vw, 34px); color: #fde68a; font-weight: 700; }
+    .show .prog { font-size: 15px; color: #c7d2fe; }
+    .show .big { font-size: clamp(56px, 11vw, 140px); font-weight: 800; letter-spacing: .04em; font-variant-numeric: tabular-nums; line-height: 1.1; min-height: 1.1em; }
+    .show .big.rolling { color: #a5b4fc; }
+    .show .big.pop { animation: pop .6s ease; }
+    @keyframes pop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+    .show .code { font-size: 18px; color: #c7d2fe; min-height: 1.4em; }
+    .show .list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .show .list span { background: rgba(255,255,255,.12); padding: 4px 12px; border-radius: 999px; font-size: 16px; font-variant-numeric: tabular-nums; }
+    .show:fullscreen { border-radius: 0; justify-content: center; }
+    .show:fullscreen .prize { font-size: 5vw; }
+    .show:fullscreen .prog { font-size: 2vw; }
+    .show:fullscreen .big { font-size: 18vw; }
+    .show:fullscreen .code { font-size: 2.4vw; }
+    .show:fullscreen .list span { font-size: 2vw; }
+    .entry { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 14px; }
+    .entry.with-code { grid-template-columns: 1fr 130px auto; }
+    .entry input { font-size: 20px; padding: 10px 12px; }
+    .entry .btn { margin: 0; width: auto; }
+    .msg { margin-top: 10px; padding: 10px 12px; border-radius: 8px; font-size: 14.5px; font-weight: 500; display: none; }
+    .msg.ok { display: block; background: #d1fae5; color: #065f46; }
+    .msg.err { display: block; background: #fee2e2; color: #991b1b; }
+    .tool-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    table.win { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    table.win th, table.win td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+    table.win th { background: #f9fafb; font-weight: 600; color: #374151; }
+    table.win td.n { font-variant-numeric: tabular-nums; font-weight: 600; }
+    table.win tr.absent td { color: #9ca3af; text-decoration: line-through; }
+    table.win tr.absent td:last-child, table.win tr.absent td:nth-last-child(2) { text-decoration: none; }
+    .tbl-wrap { overflow-x: auto; }
+    .badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; }
+    .badge.ok { background: #d1fae5; color: #065f46; } .badge.ab { background: #f3f4f6; color: #6b7280; }
+    .cam { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 50; }
+    .cam video { max-width: 92vw; max-height: 70vh; border-radius: 10px; }
+    .cam p { color: #fff; margin: 0; }
   </style>
 </head>
 <body>
   <header>
-    <h1>摸彩券工作室<span class="sub">編號產生 · 拼版 · PDF 輸出｜全部在本機運算，不上傳圖片</span></h1>
+    <div class="left">
+      <h1>摸彩券工作室<span class="sub">全部在本機運算，不上傳任何資料</span></h1>
+      <nav class="tabs">
+        <button data-view="design" class="on">印券設計</button>
+        <button data-view="draw">抽獎紀錄</button>
+      </nav>
+    </div>
     <div class="actions">
+      <button id="btnUndo" title="復原（Ctrl+Z）">↶ 復原</button>
+      <button id="btnRedo" title="重做（Ctrl+Shift+Z）">↷ 重做</button>
       <button id="btnExportTpl" title="把目前所有設定（含底圖）存成檔案，下次直接載入">匯出範本</button>
       <label title="載入先前匯出的範本檔">匯入範本<input type="file" id="tplInput" accept=".json,application/json" hidden /></label>
       <button id="btnReset">恢復預設</button>
     </div>
   </header>
 
-  <div class="container">
+  <div class="container" id="viewDesign">
     <aside class="panel">
       <h2>1. 底圖與券尺寸</h2>
       <div class="fg">
@@ -112,36 +171,48 @@
         <div><label class="l">排除編號</label><input type="text" placeholder="例：13, 100-105" data-bind="num.exList" /></div>
       </div>
       <div class="hint" style="margin-top:-4px; margin-bottom:8px;">「排除含有的數字」只比對編號本身，不包含補上的 0。</div>
+      <div class="row2 fg">
+        <div><label class="l">防偽驗證碼長度</label><input type="number" min="3" max="8" data-bind="num.codeLen" /></div>
+        <div style="display:flex; align-items:flex-end; gap:6px;"><button class="btn-sm" id="btnCodeCsv" style="width:100%;">匯出驗證碼對照表</button></div>
+      </div>
+      <div class="hint" style="margin-top:-4px;">在欄位內容寫 <b>{code}</b> 就會印出每張券專屬的驗證碼（例：{n}-{code}）。驗證碼由範本內的金鑰算出，<b>範本檔請勿外流</b>。
+        <button class="btn-sm" id="btnNewSeed" style="margin-top:4px;">重新產生全部驗證碼</button></div>
 
       <h2>3. 文字欄位</h2>
       <div class="chips" id="fieldChips"></div>
       <div class="field-form" id="fieldForm">
         <div class="row2 fg">
           <div><label class="l">欄位名稱</label><input type="text" data-f="name" /></div>
-          <div><label class="l">內容（{n} = 編號）</label><input type="text" data-f="tpl" /></div>
+          <div><label class="l">類型</label>
+            <select data-f="type"><option value="text">文字</option><option value="qr">QR Code</option></select>
+          </div>
         </div>
+        <div class="fg"><label class="l">內容（{n} = 編號，{code} = 驗證碼）</label><input type="text" data-f="tpl" /></div>
         <div class="row3 fg">
           <div><label class="l">X（mm）</label><input type="number" step="0.1" data-f="xmm" /></div>
           <div><label class="l">Y（mm）</label><input type="number" step="0.1" data-f="ymm" /></div>
-          <div><label class="l">字級（pt）</label><input type="number" step="0.5" min="2" data-f="size" /></div>
+          <div class="only-text"><label class="l">字級（pt）</label><input type="number" step="0.5" min="2" data-f="size" /></div>
+          <div class="only-qr"><label class="l">QR 邊長（mm）</label><input type="number" step="0.5" min="5" data-f="qrSize" /></div>
         </div>
-        <div class="row2 fg">
+        <div class="row2 fg only-text">
           <div><label class="l">字型</label><select data-f="font" id="fontSelect"></select></div>
           <div><label class="l">對齊（以 X 為基準）</label>
             <select data-f="align"><option value="center">置中</option><option value="left">靠左</option><option value="right">靠右</option></select>
           </div>
         </div>
         <div class="row3 fg">
-          <div><label class="l">文字顏色</label><input type="color" data-f="color" /></div>
-          <div><label class="l">描邊（pt）</label><input type="number" step="0.1" min="0" data-f="stroke" /></div>
-          <div><label class="l">描邊顏色</label><input type="color" data-f="strokeColor" /></div>
+          <div><label class="l only-text">文字顏色</label><label class="l only-qr">QR 顏色</label><input type="color" data-f="color" /></div>
+          <div class="only-text"><label class="l">描邊（pt）</label><input type="number" step="0.1" min="0" data-f="stroke" /></div>
+          <div class="only-text"><label class="l">描邊顏色</label><input type="color" data-f="strokeColor" /></div>
+          <div class="only-qr" style="grid-column: span 2; display:flex; align-items:flex-end;"><label class="check"><input type="checkbox" data-f="qrQuiet" /> 白底留邊（較好掃）</label></div>
         </div>
         <div class="row2 fg">
           <div><label class="l">旋轉（度）</label><input type="number" step="1" data-f="rotate" /></div>
-          <div style="display:flex; align-items:flex-end;"><label class="check"><input type="checkbox" data-f="bold" /> 粗體</label></div>
+          <div style="display:flex; align-items:flex-end;" class="only-text"><label class="check"><input type="checkbox" data-f="bold" /> 粗體</label></div>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <button class="btn-sm" id="btnAddField">＋ 新增欄位</button>
+          <button class="btn-sm" id="btnAddField">＋ 文字欄位</button>
+          <button class="btn-sm" id="btnAddQr">＋ QR Code</button>
           <button class="btn-sm" id="btnDupField">複製此欄位</button>
           <button class="btn-sm btn-danger" id="btnDelField">刪除此欄位</button>
         </div>
@@ -208,6 +279,75 @@
     </main>
   </div>
 
+  <div class="container" id="viewDraw" hidden>
+    <aside class="panel">
+      <h2>1. 獎項（依抽獎順序排列）</h2>
+      <div id="prizeList"></div>
+      <button class="btn-sm" id="btnAddPrize">＋ 新增獎項</button>
+      <div class="hint">登記時會自動填入第一個還沒抽滿的獎項，也可以在右邊手動切換。</div>
+
+      <h2>2. 不參加抽獎的編號</h2>
+      <div class="fg">
+        <input type="text" id="voidList" placeholder="未發出／作廢，例：201-250, 77" />
+        <div class="hint">發出範圍沿用「印券設計」的編號設定，這裡再扣掉沒發出去或作廢的券。</div>
+      </div>
+
+      <h2>3. 防偽</h2>
+      <label class="check"><input type="checkbox" id="verifyCode" /> 登記時核對券上的驗證碼</label>
+      <div class="hint">需在印券時加上 {code} 欄位。驗證碼不符的券會被擋下。</div>
+
+      <h2>4. 統計與匯出</h2>
+      <div class="info" id="poolInfo"></div>
+      <div class="tool-row">
+        <button class="btn-sm" id="btnWinCsv">匯出得獎名單 CSV</button>
+        <button class="btn-sm" id="btnWinPrint">列印得獎名單</button>
+        <button class="btn-sm btn-danger" id="btnWinReset">清除全部紀錄</button>
+      </div>
+    </aside>
+
+    <main>
+      <section class="card">
+        <div class="card-head">
+          <strong>現場登記</strong>
+          <div class="pager">
+            目前獎項
+            <select id="curPrize" style="width:auto; min-width:160px;"></select>
+          </div>
+        </div>
+        <div class="show" id="show">
+          <div class="prize" id="showPrize">—</div>
+          <div class="prog" id="showProg"></div>
+          <div class="big" id="showNum">&nbsp;</div>
+          <div class="code" id="showCode"></div>
+          <div class="list" id="showList"></div>
+        </div>
+        <form class="entry" id="entryForm" autocomplete="off">
+          <input type="text" id="entryNum" inputmode="numeric" placeholder="輸入或掃描抽出的券號，按 Enter 登記" />
+          <input type="text" id="entryCode" placeholder="驗證碼" style="text-transform:uppercase;" hidden />
+          <button class="btn btn-primary" type="submit">登記</button>
+        </form>
+        <div class="msg" id="entryMsg"></div>
+        <div class="tool-row">
+          <button class="btn-sm" id="btnAbsentLast">上一位未到場（作廢後再抽一張）</button>
+          <button class="btn-sm" id="btnCam" hidden>📷 用相機掃描 QR</button>
+          <button class="btn-sm" id="btnRandom">🎲 改用電腦隨機抽</button>
+          <button class="btn-sm" id="btnFull">⛶ 全螢幕投影</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><strong>抽獎紀錄</strong><span class="meta" id="winMeta"></span></div>
+        <div class="tbl-wrap"><table class="win" id="winTable"></table></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="cam" id="camBox" hidden>
+    <p>把券上的 QR Code 對準鏡頭</p>
+    <video id="camVideo" playsinline muted></video>
+    <button class="btn-sm" id="camClose">關閉</button>
+  </div>
+
   <script>
   (() => {
     "use strict";
@@ -229,10 +369,15 @@
       id: "f" + Math.random().toString(36).slice(2, 8), name: "欄位", tpl: "{n}",
       x: 0.5, y: 0.5, size: 16, font: FONTS[0].v, bold: true, color: "#1f2937",
       stroke: 0, strokeColor: "#ffffff", align: "center", rotate: 0,
+      type: "text", qrSize: 15, qrQuiet: true,
     }, o);
+    const newSeed = () => {
+      const a = new Uint8Array(16); crypto.getRandomValues(a);
+      return [...a].map((b) => b.toString(16).padStart(2, "0")).join("");
+    };
     const defaultState = () => ({
       ticket: { w: 215.9, h: 69.5 },
-      num: { start: 1, end: 250, digits: 6, exDigits: "", exList: "" },
+      num: { start: 1, end: 250, digits: 6, exDigits: "", exList: "", codeLen: 4, seed: newSeed() },
       fields: [
         defaultField({ id: "f1", name: "左編號", x: 0.28, y: 0.81, color: "#1f2937" }),
         defaultField({ id: "f2", name: "右編號", x: 0.92, y: 0.88, color: "#ffffff" }),
@@ -259,10 +404,27 @@
       if (Array.isArray(src.fields)) d.fields = src.fields.map((f) => defaultField(f));
       return d;
     }
+    // 復原／重做：每次設定穩定下來（300ms 沒再變動）就記一個快照
+    let history = [], hIndex = -1;
+    function pushHistory() {
+      const snap = JSON.stringify(S);
+      if (snap === history[hIndex]) return;
+      history = history.slice(0, hIndex + 1); history.push(snap);
+      if (history.length > 100) history.shift();
+      hIndex = history.length - 1; updateUndoBtns();
+    }
+    function updateUndoBtns() { $("btnUndo").disabled = hIndex <= 0; $("btnRedo").disabled = hIndex >= history.length - 1; }
+    function restoreHistory(i) {
+      if (i < 0 || i >= history.length) return;
+      hIndex = i; S = mergeState(JSON.parse(history[i]));
+      if (!S.fields.some((f) => f.id === selId)) selId = S.fields[0]?.id ?? null;
+      syncBindings(); refreshAll(); updateUndoBtns();
+    }
     let saveTimer = null;
     function save() {
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
+        pushHistory();
         try { localStorage.setItem(LS_STATE, JSON.stringify(S)); } catch (e) {}
         try { bgDataURL ? localStorage.setItem(LS_BG, bgDataURL) : localStorage.removeItem(LS_BG); } catch (e) { /* 圖太大就不存 */ }
       }, 300);
@@ -300,7 +462,51 @@
       }
       return { nums, skipped: e - s + 1 - nums.length };
     }
-    const fieldText = (f, n) => String(f.tpl ?? "{n}").split("{n}").join(n);
+    // ---------- 防偽驗證碼：由金鑰 + 編號（不含補零）算出，同一份範本永遠算出同一組 ----------
+    const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 去掉易混淆的 I O 0 1
+    function hash32(str) {
+      let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677);
+      }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      return (h1 ^ h2) >>> 0;
+    }
+    const codeCache = new Map();
+    function codeFor(numStr) {
+      const n = String(parseInt(numStr, 10));
+      const len = clamp(Math.floor(num(S.num.codeLen, 4)), 3, 8);
+      const key = `${S.num.seed}|${len}|${n}`;
+      let c = codeCache.get(key);
+      if (!c) {
+        c = "";
+        for (let i = 0; i < len; i++) c += CODE_CHARS[hash32(`${S.num.seed}:${n}:${i}`) & 31];
+        if (codeCache.size > 200000) codeCache.clear();
+        codeCache.set(key, c);
+      }
+      return c;
+    }
+    const usesCode = () => S.fields.some((f) => String(f.tpl || "").includes("{code}"));
+    const fieldText = (f, n) => {
+      let t = String(f.tpl ?? "{n}").split("{n}").join(n);
+      if (t.includes("{code}")) t = t.split("{code}").join(codeFor(n));
+      return t;
+    };
+
+    // ---------- QR Code ----------
+    if (window.qrcode && qrcode.stringToBytesFuncs && qrcode.stringToBytesFuncs["UTF-8"]) qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
+    const qrCache = new Map();
+    function makeQR(text) {
+      if (!window.qrcode || !text) return null;
+      if (qrCache.has(text)) return qrCache.get(text);
+      let q = null;
+      try { q = qrcode(0, "M"); q.addData(text); q.make(); } catch (e) { q = null; }
+      if (qrCache.size > 2000) qrCache.clear();
+      qrCache.set(text, q);
+      return q;
+    }
 
     // ---------- 拼版幾何 ----------
     function computeLayout(over) {
@@ -342,12 +548,36 @@
     // ---------- 單一欄位繪製（編輯器、預覽、PDF、ZIP 共用） ----------
     // ppm：每「券毫米」對應的像素數。回傳 canvas 與相對錨點的偏移（像素）。
     function renderField(f, text, ppm) {
-      const fontPx = Math.max(1, num(f.size, 12) * PT_MM * ppm);
-      const strokePx = Math.max(0, num(f.stroke, 0) * PT_MM * ppm);
-      const font = `${f.bold ? 700 : 400} ${fontPx}px ${f.font}`;
-      measureCtx.font = font;
-      const w = measureCtx.measureText(text).width;
-      const h = fontPx * 1.3, pad = strokePx + 2;
+      let w, h, pad, draw;
+      const isQR = f.type === "qr";
+      if (isQR) {
+        const qr = makeQR(text);
+        const q = f.qrQuiet ? 2 : 0, m = qr ? qr.getModuleCount() : 21;
+        let cell = Math.max(0.5, num(f.qrSize, 15) * ppm) / (m + 2 * q);
+        if (cell >= 3) cell = Math.floor(cell); // 高解析度時對齊整數像素，掃描更穩
+        w = h = cell * (m + 2 * q); pad = 1;
+        const ov = cell >= 3 ? 0.4 : 0; // 稍微重疊避免模組之間出現細縫
+        draw = (ctx, x0) => {
+          const y0 = -h / 2;
+          if (f.qrQuiet) { ctx.fillStyle = "#fff"; ctx.fillRect(x0, y0, w, h); }
+          ctx.fillStyle = f.color;
+          if (!qr) { ctx.lineWidth = Math.max(1, w / 30); ctx.strokeStyle = "#ef4444"; ctx.strokeRect(x0, y0, w, h); return; }
+          for (let r = 0; r < m; r++) for (let c = 0; c < m; c++)
+            if (qr.isDark(r, c)) ctx.fillRect(x0 + (c + q) * cell, y0 + (r + q) * cell, cell + ov, cell + ov);
+        };
+      } else {
+        const fontPx = Math.max(1, num(f.size, 12) * PT_MM * ppm);
+        const strokePx = Math.max(0, num(f.stroke, 0) * PT_MM * ppm);
+        const font = `${f.bold ? 700 : 400} ${fontPx}px ${f.font}`;
+        measureCtx.font = font;
+        w = measureCtx.measureText(text).width;
+        h = fontPx * 1.3; pad = strokePx + 2;
+        draw = (ctx) => {
+          ctx.font = font; ctx.textAlign = f.align || "center"; ctx.textBaseline = "middle";
+          if (strokePx > 0) { ctx.lineJoin = "round"; ctx.lineWidth = strokePx * 2; ctx.strokeStyle = f.strokeColor; ctx.strokeText(text, 0, 0); }
+          ctx.fillStyle = f.color; ctx.fillText(text, 0, 0);
+        };
+      }
       const x0 = f.align === "left" ? 0 : f.align === "right" ? -w : -w / 2;
       const a = (num(f.rotate, 0) * Math.PI) / 180, cos = Math.cos(a), sin = Math.sin(a);
       const pts = [[x0 - pad, -h / 2 - pad], [x0 + w + pad, -h / 2 - pad], [x0 + w + pad, h / 2 + pad], [x0 - pad, h / 2 + pad]]
@@ -358,9 +588,7 @@
       c.width = Math.max(1, maxX - minX); c.height = Math.max(1, maxY - minY);
       const ctx = c.getContext("2d");
       ctx.translate(-minX, -minY); ctx.rotate(a);
-      ctx.font = font; ctx.textAlign = f.align || "center"; ctx.textBaseline = "middle";
-      if (strokePx > 0) { ctx.lineJoin = "round"; ctx.lineWidth = strokePx * 2; ctx.strokeStyle = f.strokeColor; ctx.strokeText(text, 0, 0); }
-      ctx.fillStyle = f.color; ctx.fillText(text, 0, 0);
+      draw(ctx, x0);
       return { canvas: c, ox: minX, oy: minY };
     }
 
@@ -489,6 +717,9 @@
         if (inp.type === "checkbox") inp.checked = !!v; else inp.value = v ?? "";
       });
       $("btnDelField").disabled = $("btnDupField").disabled = !f;
+      const qr = f?.type === "qr";
+      $("fieldForm").querySelectorAll(".only-text").forEach((el) => (el.hidden = qr));
+      $("fieldForm").querySelectorAll(".only-qr").forEach((el) => (el.hidden = !qr));
     }
     $("fieldForm").querySelectorAll("[data-f]").forEach((inp) => {
       inp.addEventListener("input", () => {
@@ -500,11 +731,16 @@
         else if (inp.type === "number") f[k] = num(inp.value, f[k]);
         else f[k] = inp.value;
         if (k === "name") renderChips();
+        if (k === "type") fillFieldForm();
         renderEditor(); schedulePreview(); save();
       });
     });
     $("btnAddField").onclick = () => {
       const f = defaultField({ name: "欄位 " + (S.fields.length + 1) });
+      S.fields.push(f); selId = f.id; refreshAll();
+    };
+    $("btnAddQr").onclick = () => {
+      const f = defaultField({ name: "QR Code", type: "qr", tpl: "{n}", x: 0.85, y: 0.35, color: "#000000" });
       S.fields.push(f); selId = f.id; refreshAll();
     };
     $("btnDupField").onclick = () => {
@@ -751,7 +987,8 @@
 
     // ---------- 範本匯出／匯入 ----------
     $("btnExportTpl").onclick = () => {
-      const data = { app: "ticket-studio", version: 2, savedAt: new Date().toISOString(), state: S, background: bgDataURL };
+      const data = { app: "ticket-studio", version: 2, savedAt: new Date().toISOString(), state: S, background: bgDataURL,
+                     draw: { prizes: D.prizes, voidList: D.voidList, verify: D.verify } };
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
       a.download = "摸彩券範本.json"; a.click();
@@ -767,6 +1004,11 @@
         selId = S.fields[0]?.id ?? null;
         bgImg = null; bgDataURL = null;
         if (typeof data.background === "string" && data.background.startsWith("data:image/")) await setBackground(data.background);
+        if (data.draw && Array.isArray(data.draw.prizes)) {
+          D.prizes = data.draw.prizes.map((p) => ({ id: p.id || uid(), name: String(p.name || "獎項"), qty: Math.max(1, Math.floor(num(p.qty, 1))) }));
+          D.voidList = String(data.draw.voidList || ""); D.verify = !!data.draw.verify;
+          saveDraw(); renderDraw();
+        }
         syncBindings(); refreshAll();
         $("statusText").textContent = "已載入範本。";
       } catch (err) { alert("範本載入失敗：" + err.message); }
@@ -788,11 +1030,328 @@
       reader.readAsDataURL(file);
     });
 
+    // ---------- 驗證碼對照表 ----------
+    function downloadCSV(rows, filename) {
+      const esc = (v) => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+      const body = "﻿" + rows.map((r) => r.map(esc).join(",")).join("\r\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([body], { type: "text/csv;charset=utf-8" }));
+      a.download = filename; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    }
+    $("btnCodeCsv").onclick = () => {
+      const { nums, err } = buildNumbers();
+      if (err) { alert(err); return; }
+      // 用 ="000001" 格式避免 Excel 吃掉開頭的 0
+      downloadCSV([["編號", "驗證碼"], ...nums.map((n) => [`="${n}"`, codeFor(n)])], `驗證碼對照表_${fileRange(nums)}.csv`);
+    };
+    $("btnNewSeed").onclick = () => {
+      if (!confirm("重新產生後，所有編號的驗證碼都會改變。\n已經印好的券就無法再核對，確定嗎？")) return;
+      S.num.seed = newSeed(); refreshAll();
+    };
+
+    // ---------- 分頁切換 ----------
+    function showView(v) {
+      document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.view === v));
+      $("viewDesign").hidden = v !== "design"; $("viewDraw").hidden = v !== "draw";
+      $("btnUndo").hidden = $("btnRedo").hidden = v !== "design";
+      try { localStorage.setItem("ticketStudio.view", v); } catch (e) {}
+      if (v === "draw") { renderDraw(); $("entryNum").focus(); } else schedulePreview();
+    }
+    document.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => showView(b.dataset.view)));
+
+    $("btnUndo").onclick = () => restoreHistory(hIndex - 1);
+    $("btnRedo").onclick = () => restoreHistory(hIndex + 1);
+    document.addEventListener("keydown", (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || $("viewDesign").hidden) return;
+      if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName || "") && document.activeElement.type === "text") return; // 文字框內用瀏覽器原生復原
+      e.preventDefault();
+      restoreHistory(e.shiftKey ? hIndex + 1 : hIndex - 1);
+    });
+
+    // =====================================================================
+    // 抽獎紀錄：現場實體抽出 → 輸入／掃描券號 → 檢查 → 登記
+    // =====================================================================
+    const LS_DRAW = "ticketStudio.draw.v1";
+    const uid = () => "p" + Math.random().toString(36).slice(2, 9);
+    const defaultDraw = () => ({
+      prizes: [
+        { id: uid(), name: "參加獎", qty: 10 },
+        { id: uid(), name: "三獎", qty: 5 },
+        { id: uid(), name: "二獎", qty: 3 },
+        { id: uid(), name: "頭獎", qty: 1 },
+      ],
+      voidList: "", verify: false, winners: [], cur: null,
+    });
+    let D = defaultDraw();
+    try {
+      const raw = localStorage.getItem(LS_DRAW);
+      if (raw) { const d = JSON.parse(raw); D = Object.assign(defaultDraw(), d); if (!Array.isArray(D.winners)) D.winners = []; }
+    } catch (e) {}
+    function saveDraw() { try { localStorage.setItem(LS_DRAW, JSON.stringify(D)); } catch (e) { msg("err", "無法存到瀏覽器（儲存空間已滿？），請立刻匯出 CSV 備份。"); } }
+
+    const okCount = (pid) => D.winners.filter((w) => w.prizeId === pid && w.status === "ok").length;
+    const prizeName = (w) => D.prizes.find((p) => p.id === w.prizeId)?.name ?? w.prizeName;
+    function currentPrize() {
+      const sel = D.prizes.find((p) => p.id === D.cur);
+      if (sel && okCount(sel.id) < sel.qty) return sel;
+      return D.prizes.find((p) => okCount(p.id) < p.qty) || sel || null;
+    }
+    function pool() {
+      const { nums } = buildNumbers();
+      const voids = parseRanges(D.voidList);
+      const used = new Set(D.winners.map((w) => w.num));
+      const issued = nums.filter((n) => { const v = +n; return !voids.some(([a, b]) => v >= a && v <= b); });
+      return { all: nums, issued, avail: issued.filter((n) => !used.has(n)) };
+    }
+    function msg(type, text) { const m = $("entryMsg"); m.className = "msg " + type; m.textContent = text; }
+    const fmtTime = (t) => new Date(t).toLocaleTimeString("zh-TW", { hour12: false });
+
+    function showWinner(w, animate) {
+      const el = $("showNum");
+      el.textContent = w ? w.num : " ";
+      el.classList.remove("rolling", "pop");
+      if (w && animate) { void el.offsetWidth; el.classList.add("pop"); }
+      $("showCode").textContent = w && (D.verify || usesCode()) ? `驗證碼 ${w.code}` : "";
+    }
+
+    function renderDraw() {
+      // 獎項清單
+      const list = $("prizeList"); list.innerHTML = "";
+      D.prizes.forEach((p, i) => {
+        const row = document.createElement("div"); row.className = "prize-row";
+        const name = document.createElement("input"); name.type = "text"; name.value = p.name;
+        name.oninput = () => { p.name = name.value; saveDraw(); renderDrawStatus(); };
+        const qty = document.createElement("input"); qty.type = "number"; qty.min = 1; qty.value = p.qty; qty.title = "名額";
+        qty.oninput = () => { const v = Math.floor(num(qty.value, 0)); if (v >= 1) { p.qty = v; saveDraw(); renderDrawStatus(); } };
+        const ops = document.createElement("div"); ops.className = "ops";
+        const mk = (t, title, fn, cls) => { const b = document.createElement("button"); b.className = "btn-sm" + (cls ? " " + cls : ""); b.textContent = t; b.title = title; b.onclick = fn; ops.appendChild(b); };
+        mk("↑", "往前", () => { if (i > 0) { [D.prizes[i - 1], D.prizes[i]] = [D.prizes[i], D.prizes[i - 1]]; saveDraw(); renderDraw(); } });
+        mk("↓", "往後", () => { if (i < D.prizes.length - 1) { [D.prizes[i + 1], D.prizes[i]] = [D.prizes[i], D.prizes[i + 1]]; saveDraw(); renderDraw(); } });
+        mk("✕", "刪除", () => {
+          if (D.winners.some((w) => w.prizeId === p.id) && !confirm(`「${p.name}」已有得獎紀錄，刪除獎項後紀錄仍會保留，確定刪除？`)) return;
+          D.prizes.splice(i, 1); saveDraw(); renderDraw();
+        }, "btn-danger");
+        row.append(name, qty, ops); list.appendChild(row);
+      });
+      $("voidList").value = D.voidList;
+      $("verifyCode").checked = !!D.verify;
+      $("entryCode").hidden = !D.verify;
+      $("entryForm").classList.toggle("with-code", !!D.verify);
+      renderDrawStatus();
+    }
+
+    function renderDrawStatus() {
+      // 目前獎項下拉
+      const cur = currentPrize();
+      const sel = $("curPrize"); sel.innerHTML = "";
+      D.prizes.forEach((p) => {
+        const o = document.createElement("option"); o.value = p.id;
+        o.textContent = `${p.name}（${okCount(p.id)}/${p.qty}）${okCount(p.id) >= p.qty ? " ✓" : ""}`;
+        sel.appendChild(o);
+      });
+      if (cur) sel.value = cur.id;
+
+      // 投影區
+      $("showPrize").textContent = cur ? cur.name : D.prizes.length ? "所有獎項都抽完了 🎉" : "請先設定獎項";
+      const got = cur ? D.winners.filter((w) => w.prizeId === cur.id && w.status === "ok") : [];
+      $("showProg").textContent = cur ? `已抽 ${got.length} / ${cur.qty} 名` : "";
+      const sl = $("showList"); sl.innerHTML = "";
+      got.forEach((w) => { const s = document.createElement("span"); s.textContent = w.num; sl.appendChild(s); });
+
+      // 統計
+      const P = pool();
+      const valid = D.winners.filter((w) => w.status === "ok").length, absent = D.winners.length - valid;
+      const totalQty = D.prizes.reduce((s, p) => s + p.qty, 0);
+      const info = $("poolInfo"); info.innerHTML = "";
+      [`發出 ${P.issued.length} 張（編號共 ${P.all.length}，扣除不參加 ${P.all.length - P.issued.length}）`,
+       `已得獎 ${valid} / ${totalQty} 名${absent ? `，未到場 ${absent}` : ""}`,
+       `箱中剩餘 ${P.avail.length} 張`].forEach((t, i) => { const d = document.createElement("div"); if (!i) d.style.fontWeight = "600"; d.textContent = t; info.appendChild(d); });
+      if (D.verify && !usesCode()) {
+        const d = document.createElement("div"); d.style.color = "#b45309";
+        d.textContent = "⚠ 券面設計還沒有 {code} 欄位，現場的券上不會有驗證碼。"; info.appendChild(d);
+      }
+
+      // 紀錄表
+      const tbl = $("winTable"); tbl.innerHTML = "";
+      const showCode = D.verify || usesCode();
+      const head = tbl.insertRow();
+      ["#", "獎項", "編號", ...(showCode ? ["驗證碼"] : []), "時間", "方式", "狀態", ""].forEach((t) => { const th = document.createElement("th"); th.textContent = t; head.appendChild(th); });
+      [...D.winners].map((w, i) => [w, i]).reverse().forEach(([w, i]) => {
+        const tr = tbl.insertRow(); if (w.status !== "ok") tr.className = "absent";
+        const td = (t, cls) => { const c = tr.insertCell(); c.textContent = t; if (cls) c.className = cls; return c; };
+        td(i + 1); td(prizeName(w)); td(w.num, "n"); if (showCode) td(w.code);
+        td(fmtTime(w.t)); td(w.src === "random" ? "電腦抽" : "實體抽");
+        const st = tr.insertCell(); const b = document.createElement("span");
+        b.className = "badge " + (w.status === "ok" ? "ok" : "ab"); b.textContent = w.status === "ok" ? "有效" : "未到場"; st.appendChild(b);
+        const op = tr.insertCell();
+        const tb = document.createElement("button"); tb.className = "btn-sm";
+        tb.textContent = w.status === "ok" ? "標記未到場" : "改回有效";
+        tb.onclick = () => {
+          if (w.status !== "ok") {
+            const p = D.prizes.find((x) => x.id === w.prizeId);
+            if (p && okCount(p.id) >= p.qty && !confirm(`「${p.name}」名額已滿，仍要改回有效嗎？`)) return;
+          }
+          w.status = w.status === "ok" ? "absent" : "ok"; saveDraw(); renderDrawStatus();
+        };
+        const db = document.createElement("button"); db.className = "btn-sm btn-danger"; db.textContent = "刪除"; db.style.marginLeft = "4px";
+        db.title = "登記錯誤時使用（這張券會回到可抽狀態）";
+        db.onclick = () => { if (confirm(`刪除 ${w.num} 這筆紀錄？（只在登記錯誤時使用）`)) { D.winners.splice(i, 1); saveDraw(); renderDrawStatus(); } };
+        op.append(tb, db);
+      });
+      $("winMeta").textContent = D.winners.length ? `共 ${D.winners.length} 筆，最新的在最上面` : "尚無紀錄";
+      if (!D.winners.length) { const tr = tbl.insertRow(); const c = tr.insertCell(); c.colSpan = 9; c.textContent = "還沒有任何登記。"; c.style.color = "#9ca3af"; }
+    }
+
+    // 解析輸入：接受「123」、「000123」、「000123-AB7K」、「000123 AB7K」
+    function parseEntry(str) {
+      const toks = String(str || "").trim().toUpperCase().split(/[^0-9A-Z]+/).filter(Boolean);
+      return { numTok: toks[0] || "", codeTok: toks[1] || "" };
+    }
+    function register(rawNum, rawCode, src) {
+      const { numTok, codeTok } = parseEntry(rawNum);
+      const code = String(rawCode || codeTok || "").trim().toUpperCase();
+      if (!/^\d+$/.test(numTok)) return msg("err", "請輸入券上的編號（數字）。"), false;
+      const d = clamp(Math.floor(num(S.num.digits, 1)), 1, 12);
+      const n = String(parseInt(numTok, 10)).padStart(d, "0");
+      const P = pool();
+      if (!P.all.includes(n)) return msg("err", `✗ ${n} 不在這次印製的編號範圍內，請確認是不是本活動的券。`), false;
+      if (!P.issued.includes(n)) return msg("err", `✗ ${n} 已登記為「未發出／作廢」，不能得獎。`), false;
+      const prev = D.winners.find((w) => w.num === n);
+      if (prev) return msg("err", `✗ ${n} 已經登記過（${prizeName(prev)}${prev.status === "ok" ? "" : "，未到場"}，${fmtTime(prev.t)}），請放回並重抽。`), false;
+      const prize = currentPrize();
+      if (!prize) return msg("err", "所有獎項都已經抽滿了。"), false;
+      if (okCount(prize.id) >= prize.qty) return msg("err", `「${prize.name}」名額已滿，請切換獎項。`), false;
+      if (D.verify && src !== "random") {
+        if (!code) return msg("err", "請輸入券上的驗證碼。"), false;
+        if (code !== codeFor(n)) return msg("err", `✗ ${n} 的驗證碼不符（輸入 ${code}）。可能是輸入錯誤，或是偽造的券，請人工確認。`), false;
+      }
+      const w = { id: uid(), prizeId: prize.id, prizeName: prize.name, num: n, code: codeFor(n), status: "ok", t: Date.now(), src };
+      D.winners.push(w); D.cur = prize.id; saveDraw();
+      showWinner(w, true);
+      const left = prize.qty - okCount(prize.id);
+      msg("ok", `✓ ${prize.name}：${n}${left > 0 ? `（還剩 ${left} 名）` : `，「${prize.name}」已抽滿`}`);
+      renderDrawStatus();
+      return true;
+    }
+
+    $("entryForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (register($("entryNum").value, $("entryCode").value, "manual")) { $("entryNum").value = ""; $("entryCode").value = ""; }
+      $("entryNum").focus(); $("entryNum").select();
+    });
+    $("curPrize").onchange = () => { D.cur = $("curPrize").value; saveDraw(); renderDrawStatus(); };
+    $("voidList").oninput = () => { D.voidList = $("voidList").value; saveDraw(); renderDrawStatus(); };
+    $("verifyCode").onchange = () => { D.verify = $("verifyCode").checked; saveDraw(); renderDraw(); };
+    $("btnAddPrize").onclick = () => { D.prizes.push({ id: uid(), name: "新獎項", qty: 1 }); saveDraw(); renderDraw(); };
+
+    $("btnAbsentLast").onclick = () => {
+      const w = [...D.winners].reverse().find((x) => x.status === "ok");
+      if (!w) return msg("err", "沒有可標記的得獎者。");
+      if (!confirm(`${prizeName(w)}：${w.num} 未到場？\n這張券作廢，名額會空出來，請再抽一張。`)) return;
+      w.status = "absent"; D.cur = w.prizeId; saveDraw();
+      showWinner(null); msg("ok", `${w.num} 已標記未到場，請再抽一張「${prizeName(w)}」。`);
+      renderDrawStatus(); $("entryNum").focus();
+    };
+
+    let rolling = false;
+    $("btnRandom").onclick = async () => {
+      if (rolling) return;
+      const prize = currentPrize();
+      if (!prize) return msg("err", "所有獎項都已經抽滿了。");
+      const avail = pool().avail;
+      if (!avail.length) return msg("err", "已經沒有可抽的券了。");
+      rolling = true; $("btnRandom").disabled = true;
+      const el = $("showNum"); el.classList.add("rolling"); $("showCode").textContent = "";
+      const rnd = (k) => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % k; };
+      const end = performance.now() + 2200;
+      let delay = 40;
+      while (performance.now() < end) {
+        el.textContent = avail[rnd(avail.length)];
+        await new Promise((r) => setTimeout(r, delay)); delay = Math.min(220, delay * 1.08);
+      }
+      register(avail[rnd(avail.length)], "", "random");
+      rolling = false; $("btnRandom").disabled = false;
+    };
+
+    $("btnFull").onclick = () => {
+      const el = $("show");
+      if (document.fullscreenElement) document.exitFullscreen();
+      else el.requestFullscreen?.().catch(() => alert("這個瀏覽器不支援全螢幕。"));
+    };
+
+    // 相機掃描（支援 BarcodeDetector 的瀏覽器才顯示，例如 Android Chrome、Mac Chrome）
+    let camStream = null, camTimer = null;
+    if ("BarcodeDetector" in window) $("btnCam").hidden = false;
+    function stopCam() {
+      clearInterval(camTimer); camTimer = null;
+      camStream?.getTracks().forEach((t) => t.stop()); camStream = null;
+      $("camBox").hidden = true;
+    }
+    $("camClose").onclick = stopCam;
+    $("btnCam").onclick = async () => {
+      try {
+        const det = new BarcodeDetector({ formats: ["qr_code", "code_128", "code_39", "ean_13"] });
+        camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const v = $("camVideo"); v.srcObject = camStream; await v.play();
+        $("camBox").hidden = false;
+        camTimer = setInterval(async () => {
+          try {
+            const r = await det.detect(v);
+            if (r.length) { const val = r[0].rawValue; stopCam(); $("entryNum").value = val; $("entryForm").requestSubmit(); }
+          } catch (e) {}
+        }, 250);
+      } catch (e) { stopCam(); alert("無法開啟相機：" + e.message); }
+    };
+
+    // 匯出／列印
+    function winnerRows() {
+      return D.winners.map((w, i) => [i + 1, prizeName(w), `="${w.num}"`, w.code, new Date(w.t).toLocaleString("zh-TW", { hour12: false }),
+        w.src === "random" ? "電腦抽" : "實體抽", w.status === "ok" ? "有效" : "未到場"]);
+    }
+    $("btnWinCsv").onclick = () => {
+      if (!D.winners.length) return alert("還沒有紀錄。");
+      downloadCSV([["順序", "獎項", "編號", "驗證碼", "時間", "方式", "狀態"], ...winnerRows()], `得獎名單_${new Date().toISOString().slice(0, 10)}.csv`);
+    };
+    $("btnWinPrint").onclick = () => {
+      const ok = D.winners.filter((w) => w.status === "ok");
+      if (!ok.length) return alert("還沒有有效的得獎紀錄。");
+      const win = window.open("", "_blank"); if (!win) return alert("請允許彈出視窗。");
+      const doc = win.document;
+      doc.title = "得獎名單";
+      const st = doc.createElement("style");
+      st.textContent = "body{font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;padding:24px}h1{font-size:22px}h2{font-size:17px;margin:18px 0 6px;border-bottom:1px solid #999}span{display:inline-block;min-width:90px;margin:3px 10px 3px 0;font-size:16px;font-variant-numeric:tabular-nums}";
+      doc.head.appendChild(st);
+      const h = doc.createElement("h1"); h.textContent = `得獎名單（${new Date().toLocaleDateString("zh-TW")}）`; doc.body.appendChild(h);
+      const order = [...D.prizes].reverse(); // 頭獎在最上面
+      const ids = new Set(order.map((p) => p.id));
+      const groups = order.map((p) => [p.name, ok.filter((w) => w.prizeId === p.id)]);
+      const orphan = ok.filter((w) => !ids.has(w.prizeId));
+      if (orphan.length) groups.push(["其他", orphan]);
+      groups.forEach(([name, ws]) => {
+        if (!ws.length) return;
+        const h2 = doc.createElement("h2"); h2.textContent = `${name}（${ws.length} 名）`; doc.body.appendChild(h2);
+        const d = doc.createElement("div");
+        ws.forEach((w) => { const s = doc.createElement("span"); s.textContent = w.num; d.appendChild(s); });
+        doc.body.appendChild(d);
+      });
+      setTimeout(() => win.print(), 300);
+    };
+    $("btnWinReset").onclick = () => {
+      if (!D.winners.length) return;
+      if (!confirm("確定清除全部抽獎紀錄？建議先匯出 CSV。")) return;
+      if (!confirm("再確認一次：清除後無法復原。")) return;
+      D.winners = []; D.cur = null; saveDraw(); showWinner(null); msg("ok", "已清除全部紀錄。"); renderDrawStatus();
+    };
+
     // ---------- 啟動 ----------
     loadSaved();
     selId = S.fields[0]?.id ?? null;
     syncBindings();
     refreshAll();
+    let startView = "design";
+    try { startView = localStorage.getItem("ticketStudio.view") || "design"; } catch (e) {}
+    showView(startView === "draw" ? "draw" : "design");
   })();
   </script>
 </body>
