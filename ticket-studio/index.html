@@ -69,6 +69,7 @@
       border: 1px solid #cbd5e1; overflow: hidden; user-select: none; touch-action: none;
     }
     .stage .placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 14px; pointer-events: none; text-align: center; padding: 10px; }
+    .stage .safe { position: absolute; border: 1px dashed rgba(14,165,233,.9); pointer-events: none; }
     .stage canvas.fld { position: absolute; cursor: grab; touch-action: none; outline: 1.5px dashed rgba(239,68,68,.8); outline-offset: 1px; }
     .stage canvas.fld.on { outline: 2px solid var(--sel); }
     .stage canvas.fld:active { cursor: grabbing; }
@@ -158,6 +159,16 @@
         <div><label class="l">券寬（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.w" /></div>
         <div><label class="l">券高（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.h" /></div>
       </div>
+      <div class="row2 fg">
+        <div><label class="l">出血（mm）</label><input type="number" step="0.5" min="0" max="10" data-bind="ticket.bleed" /></div>
+        <div><label class="l">底圖的出血</label>
+          <select data-bind="ticket.bgMode">
+            <option value="extend">底圖不含出血，自動延伸邊緣</option>
+            <option value="included">底圖已含出血（成品＋出血）</option>
+          </select>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:-4px; margin-bottom:8px;">滿版設計送印刷廠時通常需要 3 mm 出血，自己用印表機印可以設 0。上方券寬／券高一律填<b>成品（裁切後）尺寸</b>。</div>
       <div id="aspectWarn" class="warn" hidden></div>
 
       <h2>2. 編號</h2>
@@ -261,7 +272,7 @@
           <strong>單張編輯（拖曳欄位對齊位置）</strong>
           <span class="meta">預覽編號：<span id="sampleNum"></span></span>
         </div>
-        <div class="stage" id="stage"><div class="placeholder" id="stagePh">尚未載入底圖，可先調整欄位位置</div></div>
+        <div class="stage" id="stage"><div class="placeholder" id="stagePh">尚未載入底圖，可先調整欄位位置</div><div class="safe" id="safeGuide" hidden title="安全範圍：重要文字請放在虛線內"></div></div>
       </section>
 
       <section class="card">
@@ -376,7 +387,7 @@
       return [...a].map((b) => b.toString(16).padStart(2, "0")).join("");
     };
     const defaultState = () => ({
-      ticket: { w: 215.9, h: 69.5 },
+      ticket: { w: 215.9, h: 69.5, bleed: 0, bgMode: "extend" },
       num: { start: 1, end: 250, digits: 6, exDigits: "", exList: "", codeLen: 4, seed: newSeed() },
       fields: [
         defaultField({ id: "f1", name: "左編號", x: 0.28, y: 0.81, color: "#1f2937" }),
@@ -516,15 +527,52 @@
       if (lay.orient === "landscape") [pw, ph] = [ph, pw];
       const cols = clamp(Math.floor(num(lay.cols, 1)), 1, 20), rows = clamp(Math.floor(num(lay.rows, 1)), 1, 40);
       const margin = Math.max(0, num(lay.margin, 0)), gap = Math.max(0, num(lay.gap, 0));
+      const bleed = bleedMm();
       const gridW = cols * tw + (cols - 1) * gap, gridH = rows * th + (rows - 1) * gap;
-      const scale = Math.max(0.01, Math.min(1, (pw - 2 * margin) / gridW, (ph - 2 * margin) / gridH));
+      // 外圍要留出血的空間
+      const scale = Math.max(0.01, Math.min(1, (pw - 2 * margin) / (gridW + 2 * bleed), (ph - 2 * margin) / (gridH + 2 * bleed)));
       const sw = tw * scale, sh = th * scale, sg = gap * scale;
       const ox = (pw - gridW * scale) / 2, oy = (ph - gridH * scale) / 2;
       const slots = [];
+      const inner = Math.min(bleed, gap / 2); // 券與券之間能分到的出血（間距不足時會被壓縮）
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
-        slots.push({ x: ox + c * (sw + sg), y: oy + r * (sh + sg) });
-      return { pw, ph, tw, th, cols, rows, scale, sw, sh, slots, perPage: cols * rows,
+        slots.push({ x: ox + c * (sw + sg), y: oy + r * (sh + sg),
+          // 這張券四邊各要畫多少出血（券毫米）
+          ext: { l: c === 0 ? bleed : inner, r: c === cols - 1 ? bleed : inner, t: r === 0 ? bleed : inner, b: r === rows - 1 ? bleed : inner } });
+      return { pw, ph, tw, th, cols, rows, scale, sw, sh, slots, perPage: cols * rows, bleed, gap,
+               bleedShort: bleed > 0 && (cols > 1 || rows > 1) && gap < 2 * bleed - 1e-9,
                gridL: ox, gridT: oy, gridR: ox + gridW * scale, gridB: oy + gridH * scale };
+    }
+    const bleedMm = () => clamp(num(S.ticket.bleed, 0), 0, 10);
+
+    // 產生「成品＋四邊出血」的完整底圖（ppm = 每券毫米的像素數）
+    function makeBgFull(ppm) {
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50), b = bleedMm();
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round((tw + 2 * b) * ppm)); c.height = Math.max(1, Math.round((th + 2 * b) * ppm));
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+      if (!bgImg) return c;
+      const iw = bgImg.naturalWidth, ih = bgImg.naturalHeight;
+      if (b === 0 || S.ticket.bgMode === "included") { ctx.drawImage(bgImg, 0, 0, c.width, c.height); return c; }
+      // 不含出血：圖放在成品區，邊緣 1px 往外拉伸補滿出血
+      const bp = b * ppm, w = tw * ppm, h = th * ppm;
+      ctx.drawImage(bgImg, bp, bp, w, h);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(bgImg, 0, 0, iw, 1, bp, 0, w, bp);            // 上
+      ctx.drawImage(bgImg, 0, ih - 1, iw, 1, bp, bp + h, w, bp);  // 下
+      ctx.drawImage(bgImg, 0, 0, 1, ih, 0, bp, bp, h);            // 左
+      ctx.drawImage(bgImg, iw - 1, 0, 1, ih, bp + w, bp, bp, h);  // 右
+      ctx.drawImage(bgImg, 0, 0, 1, 1, 0, 0, bp, bp);             // 四角
+      ctx.drawImage(bgImg, iw - 1, 0, 1, 1, bp + w, 0, bp, bp);
+      ctx.drawImage(bgImg, 0, ih - 1, 1, 1, 0, bp + h, bp, bp);
+      ctx.drawImage(bgImg, iw - 1, ih - 1, 1, 1, bp + w, bp + h, bp, bp);
+      return c;
+    }
+    // 從完整底圖裁出某張券要用的範圍（成品＋該券的出血），回傳來源矩形（像素）
+    function bgCrop(full, ext, ppm) {
+      const b = bleedMm(), tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50);
+      return [(b - ext.l) * ppm, (b - ext.t) * ppm, (tw + ext.l + ext.r) * ppm, (th + ext.t + ext.b) * ppm];
     }
     function ticketIndex(L, p, s, pages) {
       return S.layout.stackCut ? s * pages + p : p * L.perPage + s;
@@ -533,7 +581,7 @@
       const xs = new Set(), ys = new Set();
       L.slots.forEach((s) => { xs.add(+s.x.toFixed(3)); xs.add(+(s.x + L.sw).toFixed(3)); ys.add(+s.y.toFixed(3)); ys.add(+(s.y + L.sh).toFixed(3)); });
       const marks = [], lines = [];
-      const off = 1, len = 4;
+      const off = L.bleed * L.scale + 1, len = 4; // 裁切標記要畫在出血範圍外
       xs.forEach((x) => {
         marks.push([x, L.gridT - off - len, x, L.gridT - off], [x, L.gridB + off, x, L.gridB + off + len]);
         lines.push([x, L.gridT, x, L.gridB]);
@@ -604,13 +652,15 @@
     function updateAspectWarn() {
       const box = $("aspectWarn");
       if (!bgImg) { box.hidden = true; return; }
-      const ia = bgImg.naturalWidth / bgImg.naturalHeight, ta = num(S.ticket.w, 1) / num(S.ticket.h, 1);
+      const inc = S.ticket.bgMode === "included" ? 2 * bleedMm() : 0;
+      const tw = num(S.ticket.w, 1), th = num(S.ticket.h, 1);
+      const ia = bgImg.naturalWidth / bgImg.naturalHeight, ta = (tw + inc) / (th + inc);
       if (Math.abs(ia - ta) / ta < 0.015) { box.hidden = true; return; }
       box.hidden = false;
-      box.textContent = `底圖比例（${ia.toFixed(3)}）和券尺寸比例（${ta.toFixed(3)}）不同，底圖會被拉伸。`;
+      box.textContent = `底圖比例（${ia.toFixed(3)}）和${inc ? "「成品＋出血」" : "券尺寸"}比例（${ta.toFixed(3)}）不同，底圖會被拉伸。`;
       const b = document.createElement("button");
       b.className = "btn-sm"; b.textContent = "依底圖比例調整券高";
-      b.onclick = () => { S.ticket.h = +(num(S.ticket.w, 1) / ia).toFixed(2); syncBindings(); refreshAll(); };
+      b.onclick = () => { S.ticket.h = +((tw + inc) / ia - inc).toFixed(2); syncBindings(); refreshAll(); };
       box.appendChild(document.createElement("br")); box.appendChild(b);
     }
 
@@ -624,6 +674,13 @@
       const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50);
       stage.style.aspectRatio = `${tw} / ${th}`;
       stage.style.backgroundImage = bgDataURL ? `url("${bgDataURL}")` : "none";
+      // 底圖含出血時，編輯器只顯示成品範圍
+      const b = bleedMm();
+      stage.style.backgroundSize = S.ticket.bgMode === "included" && b > 0
+        ? `${((tw + 2 * b) / tw) * 100}% ${((th + 2 * b) / th) * 100}%` : "100% 100%";
+      stage.style.backgroundPosition = "center";
+      $("safeGuide").hidden = b <= 0;
+      Object.assign($("safeGuide").style, { left: (b / tw) * 100 + "%", right: (b / tw) * 100 + "%", top: (b / th) * 100 + "%", bottom: (b / th) * 100 + "%" });
       $("stagePh").hidden = !!bgDataURL;
       fieldEls.forEach((el) => el.remove()); fieldEls.clear();
       const W = stage.clientWidth; if (!W) return;
@@ -800,6 +857,8 @@
       const m = num(S.layout.margin, 0);
       ctx.strokeRect(m * k, m * k, (L.pw - 2 * m) * k, (L.ph - 2 * m) * k); ctx.setLineDash([]);
 
+      const tppm = k * L.scale; // px / 券毫米
+      const full = bgImg && !S.out.noBg ? makeBgFull(tppm) : null;
       L.slots.forEach((slot, s) => {
         const idx = ticketIndex(L, page, s, pages);
         const x = slot.x * k, y = slot.y * k, w = L.sw * k, h = L.sh * k;
@@ -807,7 +866,8 @@
           ctx.strokeStyle = "#d1d5db"; ctx.setLineDash([3 * dpr, 3 * dpr]); ctx.strokeRect(x, y, w, h); ctx.setLineDash([]);
           return;
         }
-        if (bgImg && !S.out.noBg) ctx.drawImage(bgImg, x, y, w, h);
+        const e = slot.ext;
+        if (full) ctx.drawImage(full, ...bgCrop(full, e, tppm), x - e.l * tppm, y - e.t * tppm, w + (e.l + e.r) * tppm, h + (e.t + e.b) * tppm);
         else { ctx.fillStyle = S.out.noBg ? "#fff" : "#e5e7eb"; ctx.fillRect(x, y, w, h); ctx.strokeStyle = "#e5e7eb"; ctx.strokeRect(x, y, w, h); }
         S.fields.forEach((f) => {
           const r = renderField(f, fieldText(f, nums[idx]), k * L.scale);
@@ -849,6 +909,14 @@
       add(`紙張 ${L.pw}×${L.ph} mm，單張實際印出 ${(L.sw).toFixed(1)}×${(L.sh).toFixed(1)} mm`);
       if (L.scale < 0.999) add(`⚠ 放不下原尺寸，已縮放為 ${(L.scale * 100).toFixed(1)}%`, true);
       else add("✓ 原尺寸 100% 輸出");
+      if (L.bleed > 0) add(`出血 ${L.bleed} mm${L.bleedShort ? "（只有外圍）" : "（每張四邊）"}`);
+      if (L.bleedShort) {
+        add(`⚠ 券與券的間距小於 ${+(2 * L.bleed).toFixed(2)} mm，相鄰券之間沒有完整出血。滿版設計建議把間距設為 ${+(2 * L.bleed).toFixed(2)} mm。`, true);
+        const b = document.createElement("button"); b.className = "btn-sm"; b.style.marginTop = "4px";
+        b.textContent = `間距設為 ${+(2 * L.bleed).toFixed(2)} mm`;
+        b.onclick = () => { S.layout.gap = +(2 * L.bleed).toFixed(2); syncBindings(); refreshAll(); };
+        info.appendChild(b);
+      }
       $("btnPdf").textContent = `下載拼版 PDF（${pages} 頁）`;
       $("btnZip").textContent = `下載全部單張圖片 ZIP（${nums.length} 張）`;
     }
@@ -880,12 +948,10 @@
     }
     const setProgress = (r) => { $("progress").firstElementChild.style.width = (r * 100).toFixed(1) + "%"; };
 
-    function bgForOutput(pxW, pxH) {
+    function cropCanvas(src, sx, sy, sw, sh) {
       const c = document.createElement("canvas");
-      c.width = Math.round(pxW); c.height = Math.round(pxH);
-      const ctx = c.getContext("2d");
-      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
-      ctx.drawImage(bgImg, 0, 0, c.width, c.height);
+      c.width = Math.max(1, Math.round(sw)); c.height = Math.max(1, Math.round(sh));
+      c.getContext("2d").drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
       return c;
     }
     function preflight() {
@@ -909,14 +975,25 @@
         const orientation = L.pw > L.ph ? "landscape" : "portrait";
         const doc = new window.jspdf.jsPDF({ orientation, unit: "mm", format: [L.pw, L.ph], compress: true });
         const useBg = bgImg && !S.out.noBg;
-        const bgData = useBg ? bgForOutput(L.sw * pxmm, L.sh * pxmm).toDataURL("image/jpeg", 0.92) : null;
+        const tppm = pxmm * L.scale;
+        const full = useBg ? makeBgFull(tppm) : null;
+        // 依每張券的出血範圍（外圍／內側）裁出底圖，相同範圍只嵌入一次
+        const bgVariants = new Map();
+        const bgFor = (e) => {
+          const key = `${e.l}|${e.t}|${e.r}|${e.b}`;
+          if (!bgVariants.has(key)) bgVariants.set(key, { alias: "bg" + bgVariants.size, data: cropCanvas(full, ...bgCrop(full, e, tppm)).toDataURL("image/jpeg", 0.92) });
+          return bgVariants.get(key);
+        };
         const g = cutGeometry(L);
         for (let p = 0; p < pages; p++) {
           if (p > 0) doc.addPage([L.pw, L.ph], orientation);
           L.slots.forEach((slot, s) => {
             const idx = ticketIndex(L, p, s, pages);
             if (idx >= nums.length) return;
-            if (bgData) doc.addImage(bgData, "JPEG", slot.x, slot.y, L.sw, L.sh, "ticket-bg", "NONE");
+            if (full) {
+              const e = slot.ext, v = bgFor(e), sc = L.scale;
+              doc.addImage(v.data, "JPEG", slot.x - e.l * sc, slot.y - e.t * sc, L.sw + (e.l + e.r) * sc, L.sh + (e.t + e.b) * sc, v.alias, "NONE");
+            }
             S.fields.forEach((f) => {
               const text = fieldText(f, nums[idx]);
               if (!text) return;
@@ -955,7 +1032,9 @@
       try {
         await document.fonts?.ready;
         const zip = new JSZip();
-        const base = bgImg && !S.out.noBg ? bgForOutput(tw * pxmm, th * pxmm) : null;
+        // 單張圖片輸出成品尺寸（不含出血）
+        const fullBg = bgImg && !S.out.noBg ? makeBgFull(pxmm) : null;
+        const base = fullBg ? cropCanvas(fullBg, ...bgCrop(fullBg, { l: 0, t: 0, r: 0, b: 0 }, pxmm)) : null;
         const c = document.createElement("canvas");
         c.width = Math.round(tw * pxmm); c.height = Math.round(th * pxmm);
         const ctx = c.getContext("2d");
