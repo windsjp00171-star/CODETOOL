@@ -16,6 +16,28 @@
     * { box-sizing: border-box; font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif; }
     [hidden] { display: none !important; }
     body.simple .adv { display: none !important; }
+    .file-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .file-btn { cursor: pointer; background: var(--primary) !important; color: #fff !important; padding: 7px 12px !important; font-weight: 600 !important; }
+    .file-btn:hover { background: var(--primary-h) !important; }
+    .file-name { font-size: 12.5px; color: var(--muted); }
+    .stage-wrap { position: relative; }
+    .mini-bar { position: absolute; z-index: 5; display: flex; gap: 4px; align-items: center; background: #1e293b; padding: 4px; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,.25); transform: translate(-50%, -100%); white-space: nowrap; }
+    .mini-bar button { background: #334155; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 13px; cursor: pointer; }
+    .mini-bar button:hover { background: #475569; }
+    .mini-bar input[type="color"] { width: 30px; height: 26px; padding: 0; border: none; background: transparent; cursor: pointer; }
+    .move-tip { background: #fff7ed; border: 1px solid #fdba74; color: #7c2d12; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; line-height: 1.6; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+    .move-tip-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .print-dlg { border: none; border-radius: 14px; padding: 22px 24px; max-width: min(480px, calc(100vw - 32px)); box-shadow: 0 20px 60px rgba(0,0,0,.3); color: var(--text); }
+    .print-dlg::backdrop { background: rgba(15,23,42,.55); }
+    .print-dlg h3 { margin: 0 0 10px; color: var(--ok); font-size: 18px; }
+    .print-dlg .big-tip { font-size: 16px; line-height: 1.6; margin: 0 0 12px; }
+    .print-dlg ul { padding-left: 20px; font-size: 13.5px; line-height: 1.7; color: #374151; }
+    .mock { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #f9fafb; }
+    .mock-row { display: flex; gap: 8px; align-items: center; font-size: 14px; flex-wrap: wrap; }
+    .mock-opt { padding: 3px 10px; border-radius: 6px; border: 1px solid var(--input); background: #fff; }
+    .mock-opt.bad { color: #9ca3af; text-decoration: line-through; }
+    .mock-opt.good { border: 2px solid var(--ok); color: var(--ok); font-weight: 700; }
+    .mock-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
     body:not(.simple) .simple-only { display: none !important; }
     header .actions button.mode-on { background: #fff; color: var(--head); font-weight: 600; }
     .simple-note { font-size: 12px; color: var(--muted); background: #f9fafb; border: 1px dashed var(--input); border-radius: 8px; padding: 8px 10px; margin-top: 12px; line-height: 1.5; }
@@ -180,28 +202,26 @@
       <button id="btnMode" title="切換簡易／完整設定">⚙ 完整設定</button>
       <button id="btnUndo" title="復原（Ctrl+Z）">↶ 復原</button>
       <button id="btnRedo" title="重做（Ctrl+Shift+Z）">↷ 重做</button>
-      <button id="btnExportTpl" title="把目前所有設定（含底圖）存成檔案，下次直接載入">匯出範本</button>
-      <label title="載入先前匯出的範本檔">匯入範本<input type="file" id="tplInput" accept=".json,application/json" hidden /></label>
+      <button id="btnExportTpl" title="把所有設定、底圖、獎項存成一個檔案。換電腦或備份時使用">💾 存成檔案</button>
+      <label title="開啟之前「存成檔案」的檔案，設定會全部回來">📂 開啟檔案<input type="file" id="tplInput" accept=".json,application/json" hidden /></label>
       <button id="btnReset">恢復預設</button>
     </div>
   </header>
 
   <div class="container" id="viewDesign">
     <aside class="panel">
-      <h2>0. 用途範本</h2>
-      <div class="row2 fg" style="grid-template-columns: 1fr auto;">
-        <select id="presetSelect"></select>
-        <button class="btn-sm" id="btnPreset">套用</button>
-      </div>
-      <div class="hint" style="margin-top:-4px;">先選用途再載入底圖。套用會覆蓋目前的尺寸、欄位與拼版設定。</div>
+      <h2>你要做什麼？</h2>
+      <div class="fg"><select id="presetSelect"></select></div>
 
-      <h2>1. 底圖與尺寸</h2>
+      <h2>1. 券的圖片與大小</h2>
       <div class="fg">
-        <input type="file" id="bgInput" accept="image/*" />
-        <div class="hint">圖片像素大小不限，會依下面的「成品尺寸」放大縮小。不載入底圖也能輸出（印在白紙，或套印到已印好的券上）。</div>
+        <div class="file-row">
+          <label class="btn-sm file-btn">🖼 選擇券的圖片<input type="file" id="bgInput" accept="image/*" hidden /></label>
+          <span class="file-name" id="bgName">還沒選擇（也可以不用圖片，直接印在白紙上）</span>
+        </div>
       </div>
       <div class="fg">
-        <label class="l">成品尺寸（裁切後的實際大小）</label>
+        <label class="l">券的大小（裁好之後）</label>
         <select id="sizePreset"></select>
       </div>
       <div class="fg" style="display:grid; grid-template-columns: 1fr 1fr auto; gap:8px; align-items:end;">
@@ -247,7 +267,7 @@
       </details>
       <div id="aspectWarn" class="warn" hidden></div>
 
-      <h2>2. 資料來源</h2>
+      <h2>2. 要印哪些號碼</h2>
       <div class="fg">
         <select data-bind="data.mode">
           <option value="seq">連續編號（摸彩券、號碼牌、餐券…）</option>
@@ -280,7 +300,7 @@
       <div class="hint adv" style="margin-top:-4px;">在欄位內容寫 <b>{code}</b> 就會印出每張券專屬的驗證碼（例：{n}-{code}）。驗證碼由範本內的金鑰算出，<b>範本檔請勿外流</b>。
         <button class="btn-sm" id="btnNewSeed" style="margin-top:4px;">重新產生全部驗證碼</button></div>
 
-      <h2>3. 文字欄位</h2>
+      <h2>3. 券上的文字</h2>
       <div class="chips" id="fieldChips"></div>
       <div class="field-form" id="fieldForm">
         <div class="row2 fg adv">
@@ -321,7 +341,7 @@
         <div class="hint">直接用滑鼠拖曳右邊預覽上的文字來移動位置。<span class="adv">選取後可用方向鍵微調 0.5 mm（按住 Shift 為 5 mm）。</span></div>
       </div>
 
-      <h2>4. 拼版</h2>
+      <h2>4. 怎麼排到紙上</h2>
       <div class="row2 fg">
         <div><label class="l">紙張</label>
           <select data-bind="layout.paper"><option value="A4">A4（210×297）</option><option value="A3">A3（297×420）</option><option value="B4">B4（257×364）</option><option value="Letter">Letter（216×279）</option></select>
@@ -344,7 +364,7 @@
       <button class="btn-sm adv" id="btnAutoLayout" style="margin:4px 0 10px;">自動：原尺寸 100% 下放最多張</button>
       <div class="info" id="layoutInfo"></div>
 
-      <h2>5. 輸出</h2>
+      <h2>5. 下載</h2>
       <div class="row2 fg adv">
         <div><label class="l">解析度</label>
           <select data-bind="out.dpi"><option value="150">150 dpi（檔案小）</option><option value="200">200 dpi</option><option value="300">300 dpi（印刷用）</option></select>
@@ -361,14 +381,22 @@
     <main>
       <section class="card">
         <div class="card-head">
-          <strong>單張編輯（拖曳欄位對齊位置）</strong>
+          <strong>單張預覽（用滑鼠把號碼拖到想要的位置）</strong>
           <span class="meta">預覽編號：<span id="sampleNum"></span></span>
+        </div>
+        <div class="stage-wrap" id="stageWrap">
+        <div class="mini-bar" id="miniBar" hidden>
+          <button type="button" id="mbSmaller" title="字縮小">A－</button>
+          <button type="button" id="mbBigger" title="字放大">A＋</button>
+          <label title="顏色"><input type="color" id="mbColor" /></label>
+          <button type="button" id="mbMore" title="到左邊看這個文字的所有設定">更多 ⋯</button>
         </div>
         <div class="stage" id="stage">
           <canvas id="stageBg"></canvas>
           <div class="placeholder" id="stagePh">尚未載入底圖，可先調整欄位位置</div>
           <div class="trim" id="trimBox" hidden></div>
           <div class="safe" id="safeGuide" hidden></div>
+        </div>
         </div>
         <div class="legend" id="stageLegend" hidden>
           <span><i class="sw sw-bleed"></i>出血區（會被裁掉，背景要畫滿）</span>
@@ -379,7 +407,7 @@
 
       <section class="card">
         <div class="card-head">
-          <strong>拼版預覽</strong>
+          <strong>整頁預覽（印出來的樣子）</strong>
           <div class="pager">
             <button class="btn-sm" id="pgPrev">◀</button>
             第 <input type="number" id="pgInput" min="1" value="1" /> / <span id="pgTotal">1</span> 頁
@@ -422,6 +450,10 @@
     </aside>
 
     <main>
+      <div class="move-tip" id="moveTip">
+        <div><b>活動當天用的不是這台電腦嗎？</b>設定只存在這台電腦的瀏覽器裡。請先在這台按「💾 存成檔案」，把檔案帶到活動用的電腦，再按右上角「📂 開啟檔案」。</div>
+        <div class="move-tip-btns"><button class="btn-sm" id="btnMoveSave">💾 存成檔案</button><button class="btn-sm" id="btnMoveHide" title="我就用這台電腦">不用，就用這台</button></div>
+      </div>
       <section class="card">
         <div class="card-head">
           <strong>現場登記</strong>
@@ -460,6 +492,21 @@
       </section>
     </main>
   </div>
+
+  <dialog id="printDlg" class="print-dlg">
+    <h3 id="printDlgTitle">✓ PDF 已下載</h3>
+    <p class="big-tip">列印前最重要的一步：<br>在列印視窗把縮放選成 <b>「實際大小」</b> 或 <b>「100%」</b></p>
+    <div class="mock">
+      <div class="mock-row"><span>縮放</span><span class="mock-opt bad">符合頁面 ✗</span><span class="mock-opt good">實際大小 ✓</span></div>
+      <div class="mock-note">（不同電腦的字可能是「實際大小」、「100%」、「無」或「不縮放」）</div>
+    </div>
+    <ul>
+      <li>選錯的話，印出來會變小，跟設定的尺寸不一樣。</li>
+      <li>自己裁切時，沿著紙張四周的<b>黑色短線</b>對齊裁下。</li>
+      <li id="printDlgDraw">活動當天，到上方「<b>抽獎紀錄</b>」分頁登記中獎號碼。</li>
+    </ul>
+    <form method="dialog"><button class="btn btn-primary" style="margin:0;">知道了</button></form>
+  </dialog>
 
   <div class="cam" id="camBox" hidden>
     <p>把券上的 QR Code 對準鏡頭</p>
@@ -561,7 +608,7 @@
       ],
       layout: { paper: "A4", orient: "portrait", cols: 1, rows: 4, margin: 5, gap: 0, stackCut: true, cutMarks: true, cutLines: true },
       out: { dpi: 200, noBg: false },
-      meta: { name: "摸彩券" },
+      meta: { name: "摸彩券", preset: "lottery" },
       data: { mode: "seq", list: "" },
     });
 
@@ -611,7 +658,7 @@
     }
     function loadSaved() {
       try { const s = localStorage.getItem(LS_STATE); if (s) S = mergeState(JSON.parse(s)); } catch (e) {}
-      try { const b = localStorage.getItem(LS_BG); if (b) setBackground(b); } catch (e) {}
+      try { const b = localStorage.getItem(LS_BG); if (b) setBackground(b).then(() => setBgName(null)); } catch (e) {}
     }
 
     // ---------- 編號 ----------
@@ -877,9 +924,9 @@
       const ia = bgImg.naturalWidth / bgImg.naturalHeight, ta = (tw + inc) / (th + inc);
       if (Math.abs(ia - ta) / ta < 0.015) { box.hidden = true; return; }
       box.hidden = false;
-      box.textContent = `底圖比例（${ia.toFixed(3)}）和${inc ? "「成品＋出血」" : "券尺寸"}比例（${ta.toFixed(3)}）不同，底圖會被拉伸。`;
+      box.textContent = `這張圖片的長寬比例，跟設定的券大小不太一樣，直接用的話圖片會被${ia > ta ? "壓扁" : "拉長"}一點。建議按下面的按鈕，讓券的高度配合圖片。`;
       const b = document.createElement("button");
-      b.className = "btn-sm"; b.textContent = "依底圖比例調整券高";
+      b.className = "btn-sm"; b.textContent = "讓券的高度配合圖片（建議）";
       b.onclick = () => { S.ticket.h = +((tw + inc) / ia - inc).toFixed(2); syncBindings(); refreshAll(); };
       box.appendChild(document.createElement("br")); box.appendChild(b);
     }
@@ -901,7 +948,7 @@
       Object.assign($("safeGuide").style, { left: pctX(sm), right: pctX(sm), top: pctY(sm), bottom: pctY(sm) });
       $("stagePh").hidden = !!bgDataURL;
       fieldEls.forEach((el) => el.remove()); fieldEls.clear();
-      const W = stage.clientWidth; if (!W) return;
+      const W = stage.clientWidth; if (!W) { $("miniBar").hidden = true; return; }
       paintStageBg();
       const sample = sampleNumber();
       $("sampleNum").textContent = sample;
@@ -913,6 +960,7 @@
         paintFieldEl(f, el, sample);
         el.addEventListener("pointerdown", (e) => startDrag(e, f, el));
       });
+      placeMiniBar();
     }
     const SAFE_MM = 3;
     // 編輯器裡「成品範圍」的位置（相對 stage，px）
@@ -961,8 +1009,9 @@
       f.x = clamp((e.clientX - dx - r.left) / r.width, 0, 1);
       f.y = clamp((e.clientY - dy - r.top) / r.height, 0, 1);
       positionFieldEl(f, el); fillFieldForm(true);
+      $("miniBar").hidden = true;
     });
-    const endDrag = () => { if (drag) { drag = null; schedulePreview(); save(); } };
+    const endDrag = () => { if (drag) { drag = null; placeMiniBar(); schedulePreview(); save(); } };
     stage.addEventListener("pointerup", endDrag);
     stage.addEventListener("pointercancel", endDrag);
     new ResizeObserver(() => renderEditor()).observe(stage);
@@ -997,8 +1046,31 @@
     function selectField(id) {
       selId = id;
       fieldEls.forEach((el, fid) => el.classList.toggle("on", fid === id));
-      renderChips(); fillFieldForm();
+      renderChips(); fillFieldForm(); placeMiniBar();
     }
+    // 在選取的文字上方顯示「放大／縮小／顏色」
+    function placeMiniBar() {
+      const bar = $("miniBar"), f = S.fields.find((x) => x.id === selId), el = f && fieldEls.get(f.id);
+      if (!el || drag) { bar.hidden = true; return; }
+      bar.hidden = false;
+      $("mbColor").value = f.color;
+      $("mbSmaller").title = f.type === "qr" ? "QR 縮小" : "字縮小";
+      $("mbBigger").title = f.type === "qr" ? "QR 放大" : "字放大";
+      const top = el.offsetTop - 6, left = el.offsetLeft + el.offsetWidth / 2;
+      const bw = bar.offsetWidth, W = $("stageWrap").clientWidth;
+      bar.style.left = clamp(left, bw / 2, W - bw / 2) + "px";
+      bar.style.top = Math.max(bar.offsetHeight, top) + "px";
+    }
+    const bump = (dir) => {
+      const f = S.fields.find((x) => x.id === selId); if (!f) return;
+      if (f.type === "qr") f.qrSize = clamp(+(num(f.qrSize, 15) * (dir > 0 ? 1.1 : 1 / 1.1)).toFixed(1), 5, 200);
+      else f.size = clamp(+(num(f.size, 16) * (dir > 0 ? 1.12 : 1 / 1.12)).toFixed(1), 3, 400);
+      fillFieldForm(); renderEditor(); schedulePreview(); save();
+    };
+    $("mbBigger").onclick = () => bump(1);
+    $("mbSmaller").onclick = () => bump(-1);
+    $("mbColor").oninput = () => { const f = S.fields.find((x) => x.id === selId); if (!f) return; f.color = $("mbColor").value; fillFieldForm(); renderEditor(); schedulePreview(); save(); };
+    $("mbMore").onclick = () => { $("fieldForm").scrollIntoView({ behavior: "smooth", block: "center" }); };
     function fillFieldForm(posOnly) {
       const f = S.fields.find((x) => x.id === selId);
       $("fieldForm").querySelectorAll("[data-f]").forEach((inp) => {
@@ -1146,18 +1218,17 @@
       info.innerHTML = "";
       const add = (t, strong) => { const d = document.createElement("div"); if (strong) d.style.fontWeight = "600"; d.textContent = t; info.appendChild(d); };
       if (err) { add(err, true); return; }
-      add(`共 ${nums.length} 張${skipped ? `（已排除 ${skipped} 個）` : ""} · 每頁 ${L.perPage} 張 · 共 ${pages} 頁`, true);
-      add(`紙張 ${L.pw}×${L.ph} mm，單張實際印出 ${(L.sw).toFixed(1)}×${(L.sh).toFixed(1)} mm`);
+      add(`共 ${nums.length} 張${skipped ? `（已排除 ${skipped} 個）` : ""}，一頁 ${L.perPage} 張，要印 ${pages} 頁`, true);
       if (L.scale < 0.999) {
-        add(`⚠ 為了一頁放 ${L.perPage} 張，已縮小為 ${(L.scale * 100).toFixed(1)}%`, true);
         const best = bestLayout();
+        add(`為了一頁放 ${L.perPage} 張，券會稍微縮小（${(L.scale * 100).toFixed(0)}%），印出來每張 ${L.sw.toFixed(0)}×${L.sh.toFixed(0)} mm。`);
         if (best) {
           const b = document.createElement("button"); b.className = "btn-sm"; b.style.margin = "4px 0";
-          b.textContent = `改成原尺寸 100%（一頁 ${best.n} 張）`;
+          b.textContent = `改成原本大小（一頁 ${best.n} 張，共 ${Math.ceil(nums.length / best.n)} 頁）`;
           b.onclick = () => { autoLayout(); syncBindings(); refreshAll(); };
           info.appendChild(b);
-        }
-      } else add("✓ 原尺寸 100% 輸出");
+        } else add(`券比 ${S.layout.paper} 紙還大，只能縮小印。可以在上面改用 A3 紙。`);
+      } else add(`✓ 原本大小（${L.sw.toFixed(0)}×${L.sh.toFixed(0)} mm），不縮放`);
       if (L.bleed > 0) add(`出血 ${L.bleed} mm${L.bleedShort ? "（只有外圍）" : "（每張四邊）"}`);
       if (L.bleedShort) {
         add(`⚠ 券與券的間距小於 ${+(2 * L.bleed).toFixed(2)} mm，相鄰券之間沒有完整出血。滿版設計建議把間距設為 ${+(2 * L.bleed).toFixed(2)} mm。`, true);
@@ -1166,7 +1237,7 @@
         b.onclick = () => { S.layout.gap = +(2 * L.bleed).toFixed(2); syncBindings(); refreshAll(); };
         info.appendChild(b);
       }
-      $("btnPdf").textContent = `下載拼版 PDF（${pages} 頁）`;
+      $("btnPdf").textContent = `下載 PDF 去列印（${pages} 頁）`;
       $("btnZip").textContent = `下載全部單張圖片 ZIP（${nums.length} 張）`;
     }
 
@@ -1241,9 +1312,12 @@
       },
     };
     Object.entries(PRESETS).forEach(([k, p]) => { const o = document.createElement("option"); o.value = k; o.textContent = p.label; $("presetSelect").appendChild(o); });
-    $("btnPreset").onclick = () => {
-      const p = PRESETS[$("presetSelect").value]; if (!p) return;
-      if (!confirm(`套用「${p.name}」範本？\n目前的尺寸、文字欄位、拼版設定與底圖會被取代（建議先匯出範本備份）。`)) return;
+    $("presetSelect").onchange = () => {
+      const key = $("presetSelect").value, p = PRESETS[key]; if (!p) return;
+      // 已經放了圖或改過設定，才需要確認
+      const touched = !!bgImg || hIndex > 0;
+      if (touched && !confirm(`換成「${p.name}」？\n券的大小、文字位置和圖片會換成「${p.name}」的預設。`)) { $("presetSelect").value = S.meta.preset || "lottery"; return; }
+      S.meta.preset = key;
       Object.assign(S.ticket, p.ticket, { bleed: 0, bgMode: "extend", printMode: "home" });
       Object.assign(S.num, { start: 1, exDigits: "", exList: "" }, p.num);
       S.data.mode = p.data; if (p.list && !S.data.list.trim()) S.data.list = p.list;
@@ -1252,10 +1326,10 @@
       S.fields.forEach((f) => (f.id = "f" + Math.random().toString(36).slice(2, 8)));
       Object.assign(S.layout, { margin: 5, stackCut: true, cutMarks: true, cutLines: true }, p.layout);
       if (p.auto !== false) autoLayout();
-      bgImg = null; bgDataURL = null; $("bgInput").value = "";
+      bgImg = null; bgDataURL = null; $("bgInput").value = ""; setBgName(null);
       selId = S.fields[0].id; page = 0;
       syncBindings(); refreshAll();
-      $("statusText").textContent = `已套用「${p.name}」範本，接著可以載入底圖。`;
+      $("statusText").textContent = `已換成「${p.name}」，接著可以選擇券的圖片。`;
     };
 
     // ---------- 名單 UI ----------
@@ -1335,25 +1409,24 @@
       const i = SIZES.findIndex(([, w, h]) => Math.abs(w - tw) < 0.05 && Math.abs(h - th) < 0.05);
       $("sizePreset").value = i >= 0 ? String(i) : "";
 
+      $("presetSelect").value = S.meta.preset && PRESETS[S.meta.preset] ? S.meta.preset : "lottery";
       const box = $("sizeInfo"); box.innerHTML = "";
-      const add = (t, strong) => { const d = document.createElement("div"); if (strong) d.style.fontWeight = "600"; d.textContent = t; box.appendChild(d); };
+      const add = (t, strong, cls) => { const d = document.createElement("div"); if (strong) d.style.fontWeight = "600"; if (cls) d.className = cls; d.textContent = t; box.appendChild(d); };
       const L = computeLayout(), m = num(S.layout.margin, 0), paperName = S.layout.paper;
       const [pw0, ph0] = PAPERS[paperName] || PAPERS.A4;
       const maxW = +(Math.max(pw0, ph0) - 2 * m - 2 * b).toFixed(1), maxH = +(Math.min(pw0, ph0) - 2 * m - 2 * b).toFixed(1);
-      const best = bestLayout();
-      if (best) add(`原尺寸印在 ${paperName}：一頁最多 ${best.n} 張（${best.orient === "portrait" ? "直向" : "橫向"} ${best.cols}×${best.rows}）`, true);
-      else add(`比 ${paperName} 能印的範圍還大，會被縮小列印`, true);
-      add(`${paperName} 可印的最大成品：${maxH}×${maxW} mm（直式）或 ${maxW}×${maxH} mm（橫式）`);
+      add(`${paperName} 最大可以印 ${maxH}×${maxW} mm（直式）或 ${maxW}×${maxH} mm（橫式）的券`, false, "adv");
 
       // 底圖解析度
       const inc = S.ticket.bgMode === "included" ? 2 * b : 0;
       const needW = Math.round(((tw + inc) / 25.4) * 300), needH = Math.round(((th + inc) / 25.4) * 300);
       if (bgImg) {
         const real = Math.round(bgImg.naturalWidth / (((tw + inc) * L.scale) / 25.4));
-        const tag = real >= 250 ? "✓ 很清楚" : real >= 150 ? "可以接受" : "⚠ 偏低，印出來可能會模糊";
-        add(`底圖 ${bgImg.naturalWidth}×${bgImg.naturalHeight} px，印出約 ${real} dpi：${tag}`, real < 150);
-        if (real < 250) add(`想要印得清楚，底圖建議至少 ${needW}×${needH} px（300 dpi）`);
-      } else add(`底圖建議至少 ${needW}×${needH} px（300 dpi${inc ? "，含出血" : ""}）`);
+        if (real >= 250) add("圖片清晰度：✓ 很清楚", true);
+        else if (real >= 150) { add("圖片清晰度：✓ 可以", true); add("想印得更清楚：用 Canva 下載時，把「尺寸」調成 2 倍。"); }
+        else { add("圖片清晰度：⚠ 圖片太小，印出來會模糊", true); add("請重新下載大一點的圖（Canva：下載時「尺寸」選 2～3 倍）。"); }
+        add(`技術資訊：${bgImg.naturalWidth}×${bgImg.naturalHeight} px，約 ${real} dpi；300 dpi 需要 ${needW}×${needH} px`, false, "adv");
+      } else add(`圖片建議至少 ${needW}×${needH} 像素，印出來才清楚（Canva 下載時「尺寸」選 2 倍通常就夠）。`);
     }
 
     function refreshAll() {
@@ -1438,7 +1511,9 @@
           await tick();
         }
         doc.save(`${outName()}_${fileRange(nums)}.pdf`);
-        setBusy(false, `已下載 PDF：${pages} 頁、${nums.length} 張。列印時請選「實際大小 / 100%」，不要選「符合頁面」。`);
+        setBusy(false, `已下載 PDF：${pages} 頁、${nums.length} 張。列印時請選「實際大小 / 100%」。`);
+        $("printDlgTitle").textContent = `✓ PDF 已下載（${pages} 頁、${nums.length} 張）`;
+        try { $("printDlg").showModal(); } catch (e) {}
       } catch (e) {
         console.error(e); setBusy(false, "產生 PDF 時發生錯誤：" + e.message);
       }
@@ -1499,25 +1574,53 @@
       if (!file) return;
       try {
         const data = JSON.parse(await file.text());
-        if (!data || data.app !== "ticket-studio" || !data.state) throw new Error("不是摸彩券工作室的範本檔");
+        if (!data || data.app !== "ticket-studio" || !data.state) throw new Error("這不是票券工作室「存成檔案」產生的檔案");
         S = mergeState(data.state);
         selId = S.fields[0]?.id ?? null;
         bgImg = null; bgDataURL = null;
         if (typeof data.background === "string" && data.background.startsWith("data:image/")) await setBackground(data.background);
+        setBgName(bgImg ? "（從檔案載入的圖片）" : null);
         if (data.draw && Array.isArray(data.draw.prizes)) {
           D.prizes = data.draw.prizes.map((p) => ({ id: p.id || uid(), name: String(p.name || "獎項"), qty: Math.max(1, Math.floor(num(p.qty, 1))) }));
           D.voidList = String(data.draw.voidList || ""); D.verify = !!data.draw.verify;
           saveDraw(); renderDraw();
         }
         syncBindings(); refreshAll();
-        $("statusText").textContent = "已載入範本。";
-      } catch (err) { alert("範本載入失敗：" + err.message); }
+        $("statusText").textContent = "已開啟檔案，設定都回來了。";
+      } catch (err) { alert("開啟失敗：" + err.message); }
     });
     $("btnReset").onclick = () => {
-      if (!confirm("確定要恢復預設？目前的設定與底圖會被清除（建議先匯出範本）。")) return;
+      if (!confirm("確定要恢復預設？目前的設定與底圖會被清除（建議先按「💾 存成檔案」備份）。")) return;
       S = defaultState(); bgImg = null; bgDataURL = null; selId = S.fields[0].id; page = 0;
-      $("bgInput").value = ""; syncBindings(); refreshAll();
+      $("bgInput").value = ""; setBgName(null); syncBindings(); refreshAll();
     };
+
+    function setBgName(name) {
+      $("bgName").textContent = name ? `✓ ${name}` : bgImg ? "✓ 已載入（上次的圖片）" : "還沒選擇（也可以不用圖片，直接印在白紙上）";
+    }
+
+    // ---- 8. 依圖片深淺自動選黑字或白字 ----
+    function autoContrast() {
+      if (!bgImg) return false;
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50), b = bleedMm();
+      const ppm = 400 / (tw + 2 * b);
+      const full = makeBgFull(ppm), ctx = full.getContext("2d");
+      let changed = false;
+      S.fields.forEach((f) => {
+        if (f.type === "qr") return;
+        const cx = (b + f.x * tw) * ppm, cy = (b + f.y * th) * ppm;
+        const hw = Math.max(4, ((num(f.size, 16) * PT_MM * 3) / 2) * ppm), hh = Math.max(3, (num(f.size, 16) * PT_MM * 0.6) * ppm);
+        const x0 = clamp(Math.round(cx - hw), 0, full.width - 1), y0 = clamp(Math.round(cy - hh), 0, full.height - 1);
+        const w = clamp(Math.round(hw * 2), 1, full.width - x0), h = clamp(Math.round(hh * 2), 1, full.height - y0);
+        const d = ctx.getImageData(x0, y0, w, h).data;
+        let sum = 0; for (let i = 0; i < d.length; i += 4) sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+        const lum = sum / (d.length / 4);
+        const want = lum > 140 ? "#111827" : "#ffffff";
+        if (f.color !== want) { f.color = want; changed = true; }
+      });
+      if (changed) refreshAll();
+      return changed;
+    }
 
     $("bgInput").addEventListener("change", (e) => {
       const file = e.target.files[0]; if (!file) return;
@@ -1525,7 +1628,9 @@
       reader.onload = async (ev) => {
         const ok = await setBackground(ev.target.result);
         if (!ok) { alert("無法讀取這張圖片。"); return; }
-        $("statusText").textContent = `已載入底圖（${bgImg.naturalWidth}×${bgImg.naturalHeight} px）。`;
+        setBgName(file.name);
+        const changed = autoContrast();
+        $("statusText").textContent = `已載入圖片。${changed ? "已依圖片深淺自動調整文字顏色。" : ""}`;
       };
       reader.readAsDataURL(file);
     });
@@ -1872,6 +1977,11 @@
       if (!confirm("再確認一次：清除後無法復原。")) return;
       D.winners = []; D.cur = null; saveDraw(); showWinner(null); msg("ok", "已清除全部紀錄。"); renderDrawStatus();
     };
+
+    // ---------- 換電腦提醒 ----------
+    try { if (localStorage.getItem("ticketStudio.moveTipHidden") === "1") $("moveTip").hidden = true; } catch (e) {}
+    $("btnMoveSave").onclick = () => $("btnExportTpl").click();
+    $("btnMoveHide").onclick = () => { $("moveTip").hidden = true; try { localStorage.setItem("ticketStudio.moveTipHidden", "1"); } catch (e) {} };
 
     // ---------- 簡易／完整設定 ----------
     let simpleUI = true;
