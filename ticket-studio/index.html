@@ -1423,10 +1423,10 @@
       if (bgImg) {
         const real = Math.round(bgImg.naturalWidth / (((tw + inc) * L.scale) / 25.4));
         if (real >= 250) add("圖片清晰度：✓ 很清楚", true);
-        else if (real >= 150) { add("圖片清晰度：✓ 可以", true); add("想印得更清楚：用 Canva 下載時，把「尺寸」調成 2 倍。"); }
-        else { add("圖片清晰度：⚠ 圖片太小，印出來會模糊", true); add("請重新下載大一點的圖（Canva：下載時「尺寸」選 2～3 倍）。"); }
+        else if (real >= 150) { add("圖片清晰度：✓ 可以", true); add(`想印得更清楚：在 Canva 建立設計時，選「自訂尺寸」並用「像素」輸入 ${needW} × ${needH}。`); }
+        else { add("圖片清晰度：⚠ 圖片太小，印出來會模糊", true); add(`請重新做一張大一點的圖：在 Canva 建立設計時，選「自訂尺寸」並用「像素」輸入 ${needW} × ${needH}。`); }
         add(`技術資訊：${bgImg.naturalWidth}×${bgImg.naturalHeight} px，約 ${real} dpi；300 dpi 需要 ${needW}×${needH} px`, false, "adv");
-      } else add(`圖片建議至少 ${needW}×${needH} 像素，印出來才清楚（Canva 下載時「尺寸」選 2 倍通常就夠）。`);
+      } else add(`做圖時建議尺寸：${needW} × ${needH} 像素（在 Canva 選「自訂尺寸」、單位選「像素」，免費版就能用）。`);
     }
 
     function refreshAll() {
