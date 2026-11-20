@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>摸彩券工作室</title>
+  <title>票券工作室</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
@@ -100,6 +100,26 @@
     .show .big.pop { animation: pop .6s ease; }
     @keyframes pop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
     .show .code { font-size: 18px; color: #c7d2fe; min-height: 1.4em; }
+    .show .title { font-size: clamp(16px, 2vw, 22px); color: #e0e7ff; letter-spacing: .08em; min-height: 1.2em; }
+    .show .name { font-size: clamp(22px, 3.4vw, 40px); font-weight: 700; color: #fff; min-height: 1.2em; }
+    .show:fullscreen .title { font-size: 2.6vw; }
+    .show:fullscreen .name { font-size: 5vw; }
+
+    /* 獨立投影視窗 */
+    body.projector { background: #0f172a; overflow: hidden; }
+    body.projector > :not(#show):not(.cf):not(#projHint) { display: none !important; }
+    body.projector #show { position: fixed; inset: 0; border-radius: 0; min-height: 100vh; gap: 1.6vh; }
+    body.projector #show .title { font-size: 3vw; }
+    body.projector #show .prize { font-size: 5.5vw; }
+    body.projector #show .prog { font-size: 2vw; }
+    body.projector #show .big { font-size: 19vw; }
+    body.projector #show .name { font-size: 5vw; }
+    body.projector #show .code { font-size: 2.4vw; }
+    body.projector #show .list span { font-size: 2.2vw; }
+    body.projector.idle, body.projector.idle * { cursor: none; }
+    #projHint { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.15); color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 14px; transition: opacity .6s; z-index: 5; }
+    .cf { position: fixed; top: -20px; width: 10px; height: 16px; pointer-events: none; z-index: 10; animation: cf-fall linear forwards; }
+    @keyframes cf-fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); } }
     .show .list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
     .show .list span { background: rgba(255,255,255,.12); padding: 4px 12px; border-radius: 999px; font-size: 16px; font-variant-numeric: tabular-nums; }
     .show:fullscreen { border-radius: 0; justify-content: center; }
@@ -133,7 +153,7 @@
 <body>
   <header>
     <div class="left">
-      <h1>摸彩券工作室<span class="sub">全部在本機運算，不上傳任何資料</span></h1>
+      <h1>票券工作室<span class="sub">摸彩券・號碼牌・入場券・名牌｜全部在本機運算，不上傳任何資料</span></h1>
       <nav class="tabs">
         <button data-view="design" class="on">印券設計</button>
         <button data-view="draw">抽獎紀錄</button>
@@ -150,6 +170,13 @@
 
   <div class="container" id="viewDesign">
     <aside class="panel">
+      <h2>0. 用途範本</h2>
+      <div class="row2 fg" style="grid-template-columns: 1fr auto;">
+        <select id="presetSelect"></select>
+        <button class="btn-sm" id="btnPreset">套用</button>
+      </div>
+      <div class="hint" style="margin-top:-4px;">先選用途再載入底圖。套用會覆蓋目前的尺寸、欄位與拼版設定。</div>
+
       <h2>1. 底圖與券尺寸</h2>
       <div class="fg">
         <input type="file" id="bgInput" accept="image/*" />
@@ -171,17 +198,32 @@
       <div class="hint" style="margin-top:-4px; margin-bottom:8px;">滿版設計送印刷廠時通常需要 3 mm 出血，自己用印表機印可以設 0。上方券寬／券高一律填<b>成品（裁切後）尺寸</b>。</div>
       <div id="aspectWarn" class="warn" hidden></div>
 
-      <h2>2. 編號</h2>
+      <h2>2. 資料來源</h2>
+      <div class="fg">
+        <select data-bind="data.mode">
+          <option value="seq">連續編號（摸彩券、號碼牌、餐券…）</option>
+          <option value="list">匯入名單（名牌、座位卡…每列印一張）</option>
+        </select>
+      </div>
       <div class="row3 fg">
-        <div><label class="l">起始</label><input type="number" min="0" data-bind="num.start" /></div>
-        <div><label class="l">結束</label><input type="number" min="0" data-bind="num.end" /></div>
+        <div><label class="l">起始編號</label><input type="number" min="0" data-bind="num.start" /></div>
+        <div class="only-seq"><label class="l">結束編號</label><input type="number" min="0" data-bind="num.end" /></div>
         <div><label class="l">補零位數</label><input type="number" min="1" max="12" data-bind="num.digits" /></div>
       </div>
-      <div class="row2 fg">
+      <div class="row2 fg only-seq">
         <div><label class="l">排除含有的數字</label><input type="text" placeholder="例：4" data-bind="num.exDigits" /></div>
         <div><label class="l">排除編號</label><input type="text" placeholder="例：13, 100-105" data-bind="num.exList" /></div>
       </div>
-      <div class="hint" style="margin-top:-4px; margin-bottom:8px;">「排除含有的數字」只比對編號本身，不包含補上的 0。</div>
+      <div class="hint only-seq" style="margin-top:-4px; margin-bottom:8px;">「排除含有的數字」只比對編號本身，不包含補上的 0。</div>
+      <div class="only-list">
+        <div class="fg">
+          <label class="l">名單（從 Excel 直接複製貼上，第一列是欄位名稱）</label>
+          <textarea id="listText" rows="6" placeholder="姓名	單位&#10;王小明	業務部&#10;陳美玲	行政部" style="width:100%; font-size:13px; padding:6px 9px; border:1px solid var(--input); border-radius:6px; font-family:inherit;"></textarea>
+          <label class="btn-sm" style="display:inline-block; margin-top:4px;">或選擇 CSV 檔<input type="file" id="listFile" accept=".csv,.tsv,.txt,text/csv" hidden /></label>
+        </div>
+        <div class="hint" id="listInfo"></div>
+        <div class="chips" id="listCols" style="margin-top:6px;"></div>
+      </div>
       <div class="row2 fg">
         <div><label class="l">防偽驗證碼長度</label><input type="number" min="3" max="8" data-bind="num.codeLen" /></div>
         <div style="display:flex; align-items:flex-end; gap:6px;"><button class="btn-sm" id="btnCodeCsv" style="width:100%;">匯出驗證碼對照表</button></div>
@@ -292,6 +334,9 @@
 
   <div class="container" id="viewDraw" hidden>
     <aside class="panel">
+      <h2>投影畫面標題</h2>
+      <div class="fg"><input type="text" id="drawTitle" placeholder="例：2026 尾牙摸彩" /></div>
+
       <h2>1. 獎項（依抽獎順序排列）</h2>
       <div id="prizeList"></div>
       <button class="btn-sm" id="btnAddPrize">＋ 新增獎項</button>
@@ -326,9 +371,11 @@
           </div>
         </div>
         <div class="show" id="show">
+          <div class="title" id="showTitle"></div>
           <div class="prize" id="showPrize">—</div>
           <div class="prog" id="showProg"></div>
           <div class="big" id="showNum">&nbsp;</div>
+          <div class="name" id="showName"></div>
           <div class="code" id="showCode"></div>
           <div class="list" id="showList"></div>
         </div>
@@ -342,7 +389,8 @@
           <button class="btn-sm" id="btnAbsentLast">上一位未到場（作廢後再抽一張）</button>
           <button class="btn-sm" id="btnCam" hidden>📷 用相機掃描 QR</button>
           <button class="btn-sm" id="btnRandom">🎲 改用電腦隨機抽</button>
-          <button class="btn-sm" id="btnFull">⛶ 全螢幕投影</button>
+          <button class="btn-sm" id="btnProjector" title="另開一個只有得獎畫面的視窗，拖到投影機上；這邊登記，那邊同步顯示">🖥 開啟投影視窗</button>
+          <button class="btn-sm" id="btnFull">⛶ 本畫面全螢幕</button>
         </div>
       </section>
 
@@ -362,6 +410,64 @@
   <script>
   (() => {
     "use strict";
+    const SHOW_CH = "ticketStudio.show";
+
+    // =====================================================================
+    // 投影視窗（?view=projector）：只顯示得獎畫面，跟主視窗同步
+    // =====================================================================
+    if (new URLSearchParams(location.search).get("view") === "projector") { runProjector(); return; }
+    function runProjector() {
+      const g = (id) => document.getElementById(id);
+      document.title = "得獎投影";
+      document.body.classList.add("projector");
+      document.body.appendChild(g("show"));
+      const hint = document.createElement("div");
+      hint.id = "projHint"; hint.textContent = "把這個視窗拖到投影機上，雙擊切換全螢幕";
+      document.body.appendChild(hint);
+      setTimeout(() => (hint.style.opacity = "0"), 6000);
+      document.addEventListener("dblclick", () => {
+        if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.().catch(() => {});
+      });
+      let idleT = null;
+      const wake = () => { document.body.classList.remove("idle"); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add("idle"), 2000); };
+      document.addEventListener("mousemove", wake); wake();
+
+      function confetti() {
+        const colors = ["#fde68a", "#f472b6", "#60a5fa", "#34d399", "#f87171", "#a78bfa", "#fbbf24"];
+        for (let i = 0; i < 140; i++) {
+          const s = document.createElement("span"); s.className = "cf";
+          s.style.left = Math.random() * 100 + "vw";
+          s.style.background = colors[i % colors.length];
+          s.style.setProperty("--dx", (Math.random() * 30 - 15) + "vw");
+          s.style.setProperty("--rot", (Math.random() * 1440 - 720) + "deg");
+          s.style.animationDuration = 2.2 + Math.random() * 2 + "s";
+          s.style.animationDelay = Math.random() * 0.4 + "s";
+          document.body.appendChild(s);
+          setTimeout(() => s.remove(), 5000);
+        }
+      }
+      let lastId = null;
+      function render(m) {
+        if (!m || m.type === "hello" || m.id === lastId) return;
+        lastId = m.id;
+        g("showTitle").textContent = m.title || "";
+        g("showPrize").textContent = m.prize || "";
+        g("showProg").textContent = m.prog || "";
+        g("showName").textContent = m.name || "";
+        g("showCode").textContent = m.code || "";
+        const big = g("showNum");
+        big.textContent = m.num || " ";
+        big.classList.toggle("rolling", m.anim === "roll");
+        if (m.anim === "pop") { big.classList.remove("pop"); void big.offsetWidth; big.classList.add("pop"); confetti(); }
+        const list = g("showList"); list.innerHTML = "";
+        (m.list || []).forEach((t) => { const s = document.createElement("span"); s.textContent = t; list.appendChild(s); });
+      }
+      try { render(JSON.parse(localStorage.getItem(SHOW_CH))); } catch (e) {}
+      let bc = null;
+      if ("BroadcastChannel" in window) { bc = new BroadcastChannel(SHOW_CH); bc.onmessage = (e) => render(e.data); bc.postMessage({ type: "hello" }); }
+      window.addEventListener("storage", (e) => { if (e.key === SHOW_CH && e.newValue) { try { render(JSON.parse(e.newValue)); } catch (err) {} } });
+      try { localStorage.setItem("ticketStudio.hello", String(Date.now())); } catch (e) {}
+    }
     const PT_MM = 25.4 / 72;
     const PAPERS = { A4: [210, 297], A3: [297, 420], B4: [257, 364], Letter: [215.9, 279.4] };
     const FONTS = [
@@ -395,6 +501,8 @@
       ],
       layout: { paper: "A4", orient: "portrait", cols: 1, rows: 4, margin: 5, gap: 0, stackCut: true, cutMarks: true, cutLines: true },
       out: { dpi: 200, noBg: false },
+      meta: { name: "摸彩券" },
+      data: { mode: "seq", list: "" },
     });
 
     let S = defaultState();
@@ -411,7 +519,7 @@
     function mergeState(src) {
       const d = defaultState();
       if (!src || typeof src !== "object") return d;
-      for (const k of ["ticket", "num", "layout", "out"]) d[k] = Object.assign(d[k], src[k] || {});
+      for (const k of ["ticket", "num", "layout", "out", "meta", "data"]) d[k] = Object.assign(d[k], src[k] || {});
       if (Array.isArray(src.fields)) d.fields = src.fields.map((f) => defaultField(f));
       return d;
     }
@@ -456,7 +564,56 @@
       });
       return out;
     }
+    // ---------- 名單（從 Excel 貼上的 TSV 或 CSV） ----------
+    let listCache = { key: null, val: null };
+    function parseList(text) {
+      text = String(text || "").replace(/^﻿/, "").replace(/\r\n?/g, "\n");
+      if (listCache.key === text) return listCache.val;
+      const firstLine = text.split("\n", 1)[0] || "";
+      const sep = firstLine.includes("\t") ? "\t" : ",";
+      const rows = []; let row = [], cell = "", q = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (q) {
+          if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+          else cell += ch;
+        } else if (ch === '"' && cell === "") q = true;
+        else if (ch === sep) { row.push(cell); cell = ""; }
+        else if (ch === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; }
+        else cell += ch;
+      }
+      if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+      const clean = rows.filter((r) => r.some((c) => c.trim() !== ""));
+      const headers = (clean.shift() || []).map((h, i) => h.trim() || `欄${i + 1}`);
+      const records = clean.map((r) => Object.fromEntries(headers.map((h, i) => [h, (r[i] ?? "").trim()])));
+      const val = { headers, records };
+      listCache = { key: text, val };
+      return val;
+    }
+    let recCache = { key: null, map: null };
+    function recordMap() {
+      const d = clamp(Math.floor(num(S.num.digits, 1)), 1, 12), s = Math.floor(num(S.num.start, 1));
+      const key = `${S.data.list}|${d}|${s}`;
+      if (recCache.key !== key) {
+        const m = new Map();
+        parseList(S.data.list).records.forEach((r, i) => m.set(String(s + i).padStart(d, "0"), r));
+        recCache = { key, map: m };
+      }
+      return recCache.map;
+    }
+    const isList = () => S.data.mode === "list";
+    const recordFor = (n) => (isList() ? recordMap().get(n) : null);
+    // 名單模式下用來代表一個人的簡短文字（前兩欄）
+    const recordLabel = (n) => { const r = recordFor(n); return r ? Object.values(r).filter(Boolean).slice(0, 2).join("・") : ""; };
+    const outName = () => String(S.meta?.name || "票券").replace(/[\\/:*?"<>|]/g, "");
+
     function buildNumbers() {
+      if (isList()) {
+        const { records } = parseList(S.data.list);
+        if (!records.length) return { nums: [], err: "名單是空的：請貼上名單（第一列是欄位名稱）" };
+        if (records.length > 100000) return { nums: [], err: "名單過長（上限 100,000 列）" };
+        return { nums: [...recordMap().keys()], skipped: 0 };
+      }
       const s = Math.floor(num(S.num.start, NaN)), e = Math.floor(num(S.num.end, NaN));
       if (!Number.isFinite(s) || !Number.isFinite(e)) return { nums: [], err: "請輸入起始與結束編號" };
       if (e < s) return { nums: [], err: "結束編號需大於或等於起始編號" };
@@ -503,6 +660,8 @@
     const fieldText = (f, n) => {
       let t = String(f.tpl ?? "{n}").split("{n}").join(n);
       if (t.includes("{code}")) t = t.split("{code}").join(codeFor(n));
+      const rec = recordFor(n);
+      if (rec) t = t.replace(/\{([^{}]+)\}/g, (m, k) => (k in rec ? rec[k] : m));
       return t;
     };
 
@@ -868,7 +1027,7 @@
         }
         const e = slot.ext;
         if (full) ctx.drawImage(full, ...bgCrop(full, e, tppm), x - e.l * tppm, y - e.t * tppm, w + (e.l + e.r) * tppm, h + (e.t + e.b) * tppm);
-        else { ctx.fillStyle = S.out.noBg ? "#fff" : "#e5e7eb"; ctx.fillRect(x, y, w, h); ctx.strokeStyle = "#e5e7eb"; ctx.strokeRect(x, y, w, h); }
+        else { ctx.fillStyle = "#fff"; ctx.fillRect(x, y, w, h); ctx.strokeStyle = "#e5e7eb"; ctx.strokeRect(x, y, w, h); }
         S.fields.forEach((f) => {
           const r = renderField(f, fieldText(f, nums[idx]), k * L.scale);
           ctx.drawImage(r.canvas, x + f.x * w + r.ox, y + f.y * h + r.oy);
@@ -921,7 +1080,7 @@
       $("btnZip").textContent = `下載全部單張圖片 ZIP（${nums.length} 張）`;
     }
 
-    $("btnAutoLayout").onclick = () => {
+    function autoLayout() {
       let best = null;
       for (const orient of ["portrait", "landscape"])
         for (let cols = 1; cols <= 10; cols++)
@@ -930,13 +1089,112 @@
             if (L.scale < 0.999) continue;
             if (!best || L.perPage > best.n) best = { n: L.perPage, orient, cols, rows };
           }
-      if (!best) { alert("這張紙在目前邊界下放不下原尺寸的券，請改用較大紙張或縮小邊界。"); return; }
-      Object.assign(S.layout, { orient: best.orient, cols: best.cols, rows: best.rows });
+      if (best) Object.assign(S.layout, { orient: best.orient, cols: best.cols, rows: best.rows });
+      return !!best;
+    }
+    $("btnAutoLayout").onclick = () => {
+      if (!autoLayout()) { alert("這張紙在目前邊界下放不下原尺寸的券，請改用較大紙張或縮小邊界。"); return; }
       syncBindings(); refreshAll();
     };
 
+    // ---------- 用途範本 ----------
+    const F_IMPACT = FONTS[5].v, F_SANS = FONTS[0].v;
+    const PRESETS = {
+      lottery: {
+        label: "摸彩券（長條、左右各一個編號）", name: "摸彩券", ticket: { w: 215.9, h: 69.5 }, num: { digits: 6, end: 250 }, data: "seq",
+        layout: { paper: "A4", orient: "portrait", cols: 1, rows: 4, gap: 0 }, auto: false,
+        fields: [
+          { name: "左編號", x: 0.28, y: 0.81, color: "#1f2937" },
+          { name: "右編號", x: 0.92, y: 0.88, color: "#1f2937" },
+        ],
+      },
+      bib: {
+        label: "號碼牌（運動會、排隊叫號）", name: "號碼牌", ticket: { w: 148, h: 105 }, num: { digits: 3, end: 100 }, data: "seq",
+        layout: { paper: "A4", gap: 0 },
+        fields: [
+          { name: "號碼", x: 0.5, y: 0.55, size: 120, font: F_IMPACT, color: "#111827" },
+          { name: "標題", tpl: "2026 運動會", x: 0.5, y: 0.12, size: 16, color: "#374151" },
+        ],
+      },
+      admission: {
+        label: "入場券／門票（附 QR Code 與防偽碼）", name: "入場券", ticket: { w: 180, h: 65 }, num: { digits: 5, end: 300 }, data: "seq",
+        layout: { paper: "A4", gap: 0 },
+        fields: [
+          { name: "活動名稱", tpl: "2026 年度活動 入場券", x: 0.06, y: 0.25, size: 20, align: "left" },
+          { name: "編號", tpl: "No. {n}", x: 0.06, y: 0.72, size: 14, align: "left" },
+          { name: "QR Code", type: "qr", tpl: "{n}-{code}", x: 0.87, y: 0.45, qrSize: 26, color: "#000000" },
+          { name: "驗證碼", tpl: "驗證碼 {code}", x: 0.87, y: 0.9, size: 8, bold: false },
+        ],
+      },
+      voucher: {
+        label: "餐券／兌換券（小張、一頁很多張）", name: "餐券", ticket: { w: 90, h: 50 }, num: { digits: 4, end: 500 }, data: "seq",
+        layout: { paper: "A4", gap: 0 },
+        fields: [
+          { name: "標題", tpl: "餐券", x: 0.5, y: 0.32, size: 30 },
+          { name: "編號", tpl: "No. {n}", x: 0.5, y: 0.72, size: 12, bold: false },
+          { name: "驗證碼", tpl: "{code}", x: 0.94, y: 0.9, size: 7, bold: false, align: "right", color: "#6b7280" },
+        ],
+      },
+      badge: {
+        label: "名牌／座位卡（匯入名單，每人一張）", name: "名牌", ticket: { w: 90, h: 55 }, num: { digits: 3 }, data: "list",
+        list: "姓名\t單位\n王小明\t業務部\n陳美玲\t行政部\n林志豪\t資訊部\n黃雅婷\t財務部",
+        layout: { paper: "A4", gap: 0 },
+        fields: [
+          { name: "姓名", tpl: "{姓名}", x: 0.5, y: 0.45, size: 30 },
+          { name: "單位", tpl: "{單位}", x: 0.5, y: 0.76, size: 13, bold: false, color: "#4b5563" },
+        ],
+      },
+    };
+    Object.entries(PRESETS).forEach(([k, p]) => { const o = document.createElement("option"); o.value = k; o.textContent = p.label; $("presetSelect").appendChild(o); });
+    $("btnPreset").onclick = () => {
+      const p = PRESETS[$("presetSelect").value]; if (!p) return;
+      if (!confirm(`套用「${p.name}」範本？\n目前的尺寸、文字欄位、拼版設定與底圖會被取代（建議先匯出範本備份）。`)) return;
+      Object.assign(S.ticket, p.ticket, { bleed: 0, bgMode: "extend" });
+      Object.assign(S.num, { start: 1, exDigits: "", exList: "" }, p.num);
+      S.data.mode = p.data; if (p.list && !S.data.list.trim()) S.data.list = p.list;
+      S.meta.name = p.name;
+      S.fields = p.fields.map((f) => defaultField(Object.assign({}, f, { id: undefined })));
+      S.fields.forEach((f) => (f.id = "f" + Math.random().toString(36).slice(2, 8)));
+      Object.assign(S.layout, { margin: 5, stackCut: true, cutMarks: true, cutLines: true }, p.layout);
+      if (p.auto !== false) autoLayout();
+      bgImg = null; bgDataURL = null; $("bgInput").value = "";
+      selId = S.fields[0].id; page = 0;
+      syncBindings(); refreshAll();
+      $("statusText").textContent = `已套用「${p.name}」範本，接著可以載入底圖。`;
+    };
+
+    // ---------- 名單 UI ----------
+    $("listText").addEventListener("input", () => { S.data.list = $("listText").value; refreshAll(); });
+    $("listFile").addEventListener("change", async (e) => {
+      const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+      const buf = await file.arrayBuffer();
+      let text = new TextDecoder("utf-8").decode(buf);
+      if (text.includes("�")) { try { text = new TextDecoder("big5").decode(buf); } catch (err) {} } // Excel 存的 CSV 常是 Big5
+      S.data.list = text; $("listText").value = text; refreshAll();
+    });
+    function updateDataUI() {
+      const list = isList();
+      document.querySelectorAll(".only-seq").forEach((el) => (el.hidden = list));
+      document.querySelectorAll(".only-list").forEach((el) => (el.hidden = !list));
+      if (!list) return;
+      if (document.activeElement !== $("listText")) $("listText").value = S.data.list;
+      const { headers, records } = parseList(S.data.list);
+      $("listInfo").textContent = records.length
+        ? `共 ${records.length} 列，每列印一張，編號從 ${recordMap().keys().next().value} 開始。點下方欄位名稱可插入到目前選取的文字欄位：`
+        : "貼上名單後，第一列會當作欄位名稱。";
+      const box = $("listCols"); box.innerHTML = "";
+      headers.forEach((h) => {
+        const b = document.createElement("button"); b.className = "chip"; b.textContent = `{${h}}`;
+        b.onclick = () => {
+          const f = S.fields.find((x) => x.id === selId); if (!f) return;
+          f.tpl = (f.tpl || "") + `{${h}}`; refreshAll();
+        };
+        box.appendChild(b);
+      });
+    }
+
     function refreshAll() {
-      updateAspectWarn(); updateInfo(); renderChips(); fillFieldForm(); renderEditor(); schedulePreview(); save();
+      updateDataUI(); updateAspectWarn(); updateInfo(); renderChips(); fillFieldForm(); renderEditor(); schedulePreview(); save();
     }
 
     // ---------- 輸出 ----------
@@ -959,7 +1217,7 @@
       const { nums, err } = buildNumbers();
       if (err) { alert(err); return null; }
       if (!nums.length) { alert("沒有可輸出的編號。"); return null; }
-      if (!bgImg && !S.out.noBg && !confirm("尚未載入底圖，要只輸出編號嗎？")) return null;
+      if (!bgImg && !S.out.noBg && !confirm("尚未載入底圖，要直接印在白紙上嗎？")) return null;
       return nums;
     }
     const fileRange = (nums) => `${nums[0]}_${nums[nums.length - 1]}`;
@@ -1016,7 +1274,7 @@
           $("statusText").textContent = `正在產生 PDF… ${p + 1} / ${pages} 頁`;
           await tick();
         }
-        doc.save(`摸彩券_${fileRange(nums)}.pdf`);
+        doc.save(`${outName()}_${fileRange(nums)}.pdf`);
         setBusy(false, `已下載 PDF：${pages} 頁、${nums.length} 張。列印時請選「實際大小 / 100%」，不要選「符合頁面」。`);
       } catch (e) {
         console.error(e); setBusy(false, "產生 PDF 時發生錯誤：" + e.message);
@@ -1046,7 +1304,7 @@
             ctx.drawImage(r.canvas, f.x * c.width + r.ox, f.y * c.height + r.oy);
           });
           const blob = await new Promise((res) => c.toBlob(res, "image/jpeg", 0.92));
-          zip.file(`摸彩券_${nums[i]}.jpg`, blob);
+          zip.file(`${outName()}_${nums[i]}.jpg`, blob);
           if (i % 5 === 4 || i === nums.length - 1) {
             setProgress(((i + 1) / nums.length) * 0.8);
             $("statusText").textContent = `正在產生圖片… ${i + 1} / ${nums.length}`;
@@ -1056,7 +1314,7 @@
         $("statusText").textContent = "正在壓縮 ZIP…";
         const out = await zip.generateAsync({ type: "blob" }, (m) => setProgress(0.8 + (m.percent / 100) * 0.2));
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(out); a.download = `摸彩券_${fileRange(nums)}.zip`; a.click();
+        a.href = URL.createObjectURL(out); a.download = `${outName()}_${fileRange(nums)}.zip`; a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 10000);
         setBusy(false, `已下載 ${nums.length} 張圖片（${dpi} dpi）。`);
       } catch (e) {
@@ -1070,7 +1328,7 @@
                      draw: { prizes: D.prizes, voidList: D.voidList, verify: D.verify } };
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
-      a.download = "摸彩券範本.json"; a.click();
+      a.download = `${outName()}範本.json`; a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     };
     $("tplInput").addEventListener("change", async (e) => {
@@ -1160,7 +1418,7 @@
         { id: uid(), name: "二獎", qty: 3 },
         { id: uid(), name: "頭獎", qty: 1 },
       ],
-      voidList: "", verify: false, winners: [], cur: null,
+      voidList: "", verify: false, winners: [], cur: null, title: "",
     });
     let D = defaultDraw();
     try {
@@ -1192,7 +1450,31 @@
       el.classList.remove("rolling", "pop");
       if (w && animate) { void el.offsetWidth; el.classList.add("pop"); }
       $("showCode").textContent = w && (D.verify || usesCode()) ? `驗證碼 ${w.code}` : "";
+      $("showName").textContent = w ? recordLabel(w.num) : "";
+      pushShow(w && animate ? "pop" : "none");
     }
+
+    // 同步到投影視窗（BroadcastChannel，加上 localStorage 事件當備援）
+    const showBC = "BroadcastChannel" in window ? new BroadcastChannel(SHOW_CH) : null;
+    let showSeq = 0;
+    function pushShow(anim) {
+      const m = {
+        id: Date.now() + "-" + ++showSeq, anim,
+        title: $("showTitle").textContent, prize: $("showPrize").textContent, prog: $("showProg").textContent,
+        num: $("showNum").textContent.trim(), name: $("showName").textContent, code: $("showCode").textContent,
+        list: [...$("showList").children].map((x) => x.textContent),
+      };
+      try { showBC?.postMessage(m); } catch (e) {}
+      try { localStorage.setItem(SHOW_CH, JSON.stringify(m)); } catch (e) {}
+    }
+    if (showBC) showBC.onmessage = (e) => { if (e.data?.type === "hello") pushShow("none"); };
+    window.addEventListener("storage", (e) => { if (e.key === "ticketStudio.hello") pushShow("none"); });
+    $("btnProjector").onclick = () => {
+      const w = window.open(location.pathname + "?view=projector", "ticketProjector", "width=1280,height=720");
+      if (!w) alert("請允許這個網站開啟彈出視窗。");
+      setTimeout(() => pushShow("none"), 800);
+    };
+    $("drawTitle").oninput = () => { D.title = $("drawTitle").value; saveDraw(); renderDrawStatus(); };
 
     function renderDraw() {
       // 獎項清單
@@ -1214,6 +1496,7 @@
         row.append(name, qty, ops); list.appendChild(row);
       });
       $("voidList").value = D.voidList;
+      $("drawTitle").value = D.title || "";
       $("verifyCode").checked = !!D.verify;
       $("entryCode").hidden = !D.verify;
       $("entryForm").classList.toggle("with-code", !!D.verify);
@@ -1221,6 +1504,7 @@
     }
 
     function renderDrawStatus() {
+      $("showTitle").textContent = D.title || "";
       // 目前獎項下拉
       const cur = currentPrize();
       const sel = $("curPrize"); sel.innerHTML = "";
@@ -1255,11 +1539,11 @@
       const tbl = $("winTable"); tbl.innerHTML = "";
       const showCode = D.verify || usesCode();
       const head = tbl.insertRow();
-      ["#", "獎項", "編號", ...(showCode ? ["驗證碼"] : []), "時間", "方式", "狀態", ""].forEach((t) => { const th = document.createElement("th"); th.textContent = t; head.appendChild(th); });
+      ["#", "獎項", "編號", ...(isList() ? ["名單"] : []), ...(showCode ? ["驗證碼"] : []), "時間", "方式", "狀態", ""].forEach((t) => { const th = document.createElement("th"); th.textContent = t; head.appendChild(th); });
       [...D.winners].map((w, i) => [w, i]).reverse().forEach(([w, i]) => {
         const tr = tbl.insertRow(); if (w.status !== "ok") tr.className = "absent";
         const td = (t, cls) => { const c = tr.insertCell(); c.textContent = t; if (cls) c.className = cls; return c; };
-        td(i + 1); td(prizeName(w)); td(w.num, "n"); if (showCode) td(w.code);
+        td(i + 1); td(prizeName(w)); td(w.num, "n"); if (isList()) td(recordLabel(w.num)); if (showCode) td(w.code);
         td(fmtTime(w.t)); td(w.src === "random" ? "電腦抽" : "實體抽");
         const st = tr.insertCell(); const b = document.createElement("span");
         b.className = "badge " + (w.status === "ok" ? "ok" : "ab"); b.textContent = w.status === "ok" ? "有效" : "未到場"; st.appendChild(b);
@@ -1279,7 +1563,8 @@
         op.append(tb, db);
       });
       $("winMeta").textContent = D.winners.length ? `共 ${D.winners.length} 筆，最新的在最上面` : "尚無紀錄";
-      if (!D.winners.length) { const tr = tbl.insertRow(); const c = tr.insertCell(); c.colSpan = 9; c.textContent = "還沒有任何登記。"; c.style.color = "#9ca3af"; }
+      if (!D.winners.length) { const tr = tbl.insertRow(); const c = tr.insertCell(); c.colSpan = 10; c.textContent = "還沒有任何登記。"; c.style.color = "#9ca3af"; }
+      pushShow("none");
     }
 
     // 解析輸入：接受「123」、「000123」、「000123-AB7K」、「000123 AB7K」
@@ -1307,10 +1592,11 @@
       }
       const w = { id: uid(), prizeId: prize.id, prizeName: prize.name, num: n, code: codeFor(n), status: "ok", t: Date.now(), src };
       D.winners.push(w); D.cur = prize.id; saveDraw();
-      showWinner(w, true);
       const left = prize.qty - okCount(prize.id);
-      msg("ok", `✓ ${prize.name}：${n}${left > 0 ? `（還剩 ${left} 名）` : `，「${prize.name}」已抽滿`}`);
+      const who = recordLabel(n);
+      msg("ok", `✓ ${prize.name}：${n}${who ? `（${who}）` : ""}${left > 0 ? `，還剩 ${left} 名` : `，「${prize.name}」已抽滿`}`);
       renderDrawStatus();
+      showWinner(w, true); // 最後才送「得獎」動畫給投影視窗
       return true;
     }
 
@@ -1346,7 +1632,8 @@
       const end = performance.now() + 2200;
       let delay = 40;
       while (performance.now() < end) {
-        el.textContent = avail[rnd(avail.length)];
+        el.textContent = avail[rnd(avail.length)]; $("showName").textContent = "";
+        pushShow("roll");
         await new Promise((r) => setTimeout(r, delay)); delay = Math.min(220, delay * 1.08);
       }
       register(avail[rnd(avail.length)], "", "random");
@@ -1386,11 +1673,11 @@
     // 匯出／列印
     function winnerRows() {
       return D.winners.map((w, i) => [i + 1, prizeName(w), `="${w.num}"`, w.code, new Date(w.t).toLocaleString("zh-TW", { hour12: false }),
-        w.src === "random" ? "電腦抽" : "實體抽", w.status === "ok" ? "有效" : "未到場"]);
+        w.src === "random" ? "電腦抽" : "實體抽", w.status === "ok" ? "有效" : "未到場", recordLabel(w.num)]);
     }
     $("btnWinCsv").onclick = () => {
       if (!D.winners.length) return alert("還沒有紀錄。");
-      downloadCSV([["順序", "獎項", "編號", "驗證碼", "時間", "方式", "狀態"], ...winnerRows()], `得獎名單_${new Date().toISOString().slice(0, 10)}.csv`);
+      downloadCSV([["順序", "獎項", "編號", "驗證碼", "時間", "方式", "狀態", "名單資料"], ...winnerRows()], `得獎名單_${new Date().toISOString().slice(0, 10)}.csv`);
     };
     $("btnWinPrint").onclick = () => {
       const ok = D.winners.filter((w) => w.status === "ok");
@@ -1411,7 +1698,7 @@
         if (!ws.length) return;
         const h2 = doc.createElement("h2"); h2.textContent = `${name}（${ws.length} 名）`; doc.body.appendChild(h2);
         const d = doc.createElement("div");
-        ws.forEach((w) => { const s = doc.createElement("span"); s.textContent = w.num; d.appendChild(s); });
+        ws.forEach((w) => { const s = doc.createElement("span"); s.textContent = w.num + (recordLabel(w.num) ? " " + recordLabel(w.num) : ""); d.appendChild(s); });
         doc.body.appendChild(d);
       });
       setTimeout(() => win.print(), 300);
