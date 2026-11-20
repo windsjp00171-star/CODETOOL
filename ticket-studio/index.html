@@ -15,6 +15,10 @@
     }
     * { box-sizing: border-box; font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif; }
     [hidden] { display: none !important; }
+    body.simple .adv { display: none !important; }
+    body:not(.simple) .simple-only { display: none !important; }
+    header .actions button.mode-on { background: #fff; color: var(--head); font-weight: 600; }
+    .simple-note { font-size: 12px; color: var(--muted); background: #f9fafb; border: 1px dashed var(--input); border-radius: 8px; padding: 8px 10px; margin-top: 12px; line-height: 1.5; }
     body { margin: 0; background: var(--bg); color: var(--text); }
     header { background: var(--head); color: #fff; padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
     header h1 { margin: 0; font-size: 18px; font-weight: 600; }
@@ -173,6 +177,7 @@
       </nav>
     </div>
     <div class="actions">
+      <button id="btnMode" title="切換簡易／完整設定">⚙ 完整設定</button>
       <button id="btnUndo" title="復原（Ctrl+Z）">↶ 復原</button>
       <button id="btnRedo" title="重做（Ctrl+Shift+Z）">↷ 重做</button>
       <button id="btnExportTpl" title="把目前所有設定（含底圖）存成檔案，下次直接載入">匯出範本</button>
@@ -202,7 +207,7 @@
       <div class="fg" style="display:grid; grid-template-columns: 1fr 1fr auto; gap:8px; align-items:end;">
         <div><label class="l">寬（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.w" /></div>
         <div><label class="l">高（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.h" /></div>
-        <button class="btn-sm" id="btnSwapSize" title="寬高對調（直式 ↔ 橫式）" style="height:32px;">⇄</button>
+        <button class="btn-sm" id="btnSwapSize" title="寬高對調（直式 ↔ 橫式）" style="height:32px;">⇄ 直橫</button>
       </div>
       <div class="info" id="sizeInfo" style="margin-bottom:10px;"></div>
 
@@ -252,13 +257,13 @@
       <div class="row3 fg">
         <div><label class="l">起始編號</label><input type="number" min="0" data-bind="num.start" /></div>
         <div class="only-seq"><label class="l">結束編號</label><input type="number" min="0" data-bind="num.end" /></div>
-        <div><label class="l">補零位數</label><input type="number" min="1" max="12" data-bind="num.digits" /></div>
+        <div class="adv"><label class="l">補零位數</label><input type="number" min="1" max="12" data-bind="num.digits" /></div>
       </div>
-      <div class="row2 fg only-seq">
+      <div class="row2 fg only-seq adv">
         <div><label class="l">排除含有的數字</label><input type="text" placeholder="例：4" data-bind="num.exDigits" /></div>
         <div><label class="l">排除編號</label><input type="text" placeholder="例：13, 100-105" data-bind="num.exList" /></div>
       </div>
-      <div class="hint only-seq" style="margin-top:-4px; margin-bottom:8px;">「排除含有的數字」只比對編號本身，不包含補上的 0。</div>
+      <div class="hint only-seq adv" style="margin-top:-4px; margin-bottom:8px;">「排除含有的數字」只比對編號本身，不包含補上的 0。</div>
       <div class="only-list">
         <div class="fg">
           <label class="l">名單（從 Excel 直接複製貼上，第一列是欄位名稱）</label>
@@ -268,30 +273,30 @@
         <div class="hint" id="listInfo"></div>
         <div class="chips" id="listCols" style="margin-top:6px;"></div>
       </div>
-      <div class="row2 fg">
+      <div class="row2 fg adv">
         <div><label class="l">防偽驗證碼長度</label><input type="number" min="3" max="8" data-bind="num.codeLen" /></div>
         <div style="display:flex; align-items:flex-end; gap:6px;"><button class="btn-sm" id="btnCodeCsv" style="width:100%;">匯出驗證碼對照表</button></div>
       </div>
-      <div class="hint" style="margin-top:-4px;">在欄位內容寫 <b>{code}</b> 就會印出每張券專屬的驗證碼（例：{n}-{code}）。驗證碼由範本內的金鑰算出，<b>範本檔請勿外流</b>。
+      <div class="hint adv" style="margin-top:-4px;">在欄位內容寫 <b>{code}</b> 就會印出每張券專屬的驗證碼（例：{n}-{code}）。驗證碼由範本內的金鑰算出，<b>範本檔請勿外流</b>。
         <button class="btn-sm" id="btnNewSeed" style="margin-top:4px;">重新產生全部驗證碼</button></div>
 
       <h2>3. 文字欄位</h2>
       <div class="chips" id="fieldChips"></div>
       <div class="field-form" id="fieldForm">
-        <div class="row2 fg">
+        <div class="row2 fg adv">
           <div><label class="l">欄位名稱</label><input type="text" data-f="name" /></div>
           <div><label class="l">類型</label>
             <select data-f="type"><option value="text">文字</option><option value="qr">QR Code</option></select>
           </div>
         </div>
-        <div class="fg"><label class="l">內容（{n} = 編號，{code} = 驗證碼）</label><input type="text" data-f="tpl" /></div>
+        <div class="fg"><label class="l">內容（{n} 會換成編號<span class="adv">，{code} = 驗證碼</span>）</label><input type="text" data-f="tpl" /></div>
         <div class="row3 fg">
-          <div><label class="l">X（mm）</label><input type="number" step="0.1" data-f="xmm" /></div>
-          <div><label class="l">Y（mm）</label><input type="number" step="0.1" data-f="ymm" /></div>
+          <div class="adv"><label class="l">X（mm）</label><input type="number" step="0.1" data-f="xmm" /></div>
+          <div class="adv"><label class="l">Y（mm）</label><input type="number" step="0.1" data-f="ymm" /></div>
           <div class="only-text"><label class="l">字級（pt）</label><input type="number" step="0.5" min="2" data-f="size" /></div>
           <div class="only-qr"><label class="l">QR 邊長（mm）</label><input type="number" step="0.5" min="5" data-f="qrSize" /></div>
         </div>
-        <div class="row2 fg only-text">
+        <div class="row2 fg only-text adv">
           <div><label class="l">字型</label><select data-f="font" id="fontSelect"></select></div>
           <div><label class="l">對齊（以 X 為基準）</label>
             <select data-f="align"><option value="center">置中</option><option value="left">靠左</option><option value="right">靠右</option></select>
@@ -299,21 +304,21 @@
         </div>
         <div class="row3 fg">
           <div><label class="l only-text">文字顏色</label><label class="l only-qr">QR 顏色</label><input type="color" data-f="color" /></div>
-          <div class="only-text"><label class="l">描邊（pt）</label><input type="number" step="0.1" min="0" data-f="stroke" /></div>
-          <div class="only-text"><label class="l">描邊顏色</label><input type="color" data-f="strokeColor" /></div>
-          <div class="only-qr" style="grid-column: span 2; display:flex; align-items:flex-end;"><label class="check"><input type="checkbox" data-f="qrQuiet" /> 白底留邊（較好掃）</label></div>
+          <div class="only-text adv"><label class="l">描邊（pt）</label><input type="number" step="0.1" min="0" data-f="stroke" /></div>
+          <div class="only-text adv"><label class="l">描邊顏色</label><input type="color" data-f="strokeColor" /></div>
+          <div class="only-qr adv" style="grid-column: span 2; display:flex; align-items:flex-end;"><label class="check"><input type="checkbox" data-f="qrQuiet" /> 白底留邊（較好掃）</label></div>
         </div>
-        <div class="row2 fg">
+        <div class="row2 fg adv">
           <div><label class="l">旋轉（度）</label><input type="number" step="1" data-f="rotate" /></div>
           <div style="display:flex; align-items:flex-end;" class="only-text"><label class="check"><input type="checkbox" data-f="bold" /> 粗體</label></div>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
           <button class="btn-sm" id="btnAddField">＋ 文字欄位</button>
-          <button class="btn-sm" id="btnAddQr">＋ QR Code</button>
-          <button class="btn-sm" id="btnDupField">複製此欄位</button>
+          <button class="btn-sm adv" id="btnAddQr">＋ QR Code</button>
+          <button class="btn-sm adv" id="btnDupField">複製此欄位</button>
           <button class="btn-sm btn-danger" id="btnDelField">刪除此欄位</button>
         </div>
-        <div class="hint">可直接拖曳預覽上的欄位；選取後用方向鍵微調 0.5 mm（按住 Shift 為 5 mm）。</div>
+        <div class="hint">直接用滑鼠拖曳右邊預覽上的文字來移動位置。<span class="adv">選取後可用方向鍵微調 0.5 mm（按住 Shift 為 5 mm）。</span></div>
       </div>
 
       <h2>4. 拼版</h2>
@@ -321,34 +326,35 @@
         <div><label class="l">紙張</label>
           <select data-bind="layout.paper"><option value="A4">A4（210×297）</option><option value="A3">A3（297×420）</option><option value="B4">B4（257×364）</option><option value="Letter">Letter（216×279）</option></select>
         </div>
-        <div><label class="l">方向</label>
+        <div class="adv"><label class="l">方向</label>
           <select data-bind="layout.orient"><option value="portrait">直向</option><option value="landscape">橫向</option></select>
         </div>
       </div>
-      <div class="row2 fg">
+      <div class="row2 fg adv">
         <div><label class="l">每頁欄數</label><input type="number" min="1" max="20" data-bind="layout.cols" /></div>
         <div><label class="l">每頁列數</label><input type="number" min="1" max="40" data-bind="layout.rows" /></div>
       </div>
-      <div class="row2 fg">
+      <div class="row2 fg adv">
         <div><label class="l">頁面邊界（mm）</label><input type="number" min="0" step="0.5" data-bind="layout.margin" /></div>
         <div><label class="l">券與券間距（mm）</label><input type="number" min="0" step="0.5" data-bind="layout.gap" /></div>
       </div>
-      <label class="check"><input type="checkbox" data-bind="layout.stackCut" /> 疊切排序（整疊裁切後自動連號）</label>
-      <label class="check"><input type="checkbox" data-bind="layout.cutMarks" /> 頁緣裁切標記</label>
-      <label class="check"><input type="checkbox" data-bind="layout.cutLines" /> 券與券之間的虛線</label>
-      <button class="btn-sm" id="btnAutoLayout" style="margin:4px 0 10px;">自動：原尺寸 100% 下放最多張</button>
+      <label class="check adv"><input type="checkbox" data-bind="layout.stackCut" /> 疊切排序（整疊裁切後自動連號）</label>
+      <label class="check adv"><input type="checkbox" data-bind="layout.cutMarks" /> 頁緣裁切標記</label>
+      <label class="check adv"><input type="checkbox" data-bind="layout.cutLines" /> 券與券之間的虛線</label>
+      <button class="btn-sm adv" id="btnAutoLayout" style="margin:4px 0 10px;">自動：原尺寸 100% 下放最多張</button>
       <div class="info" id="layoutInfo"></div>
 
       <h2>5. 輸出</h2>
-      <div class="row2 fg">
+      <div class="row2 fg adv">
         <div><label class="l">解析度</label>
           <select data-bind="out.dpi"><option value="150">150 dpi（檔案小）</option><option value="200">200 dpi</option><option value="300">300 dpi（印刷用）</option></select>
         </div>
         <div style="display:flex; align-items:flex-end;"><label class="check"><input type="checkbox" data-bind="out.noBg" /> 只印編號（套印）</label></div>
       </div>
       <button class="btn btn-primary" id="btnPdf">下載拼版 PDF</button>
-      <button class="btn btn-success" id="btnZip">下載全部單張圖片（ZIP）</button>
+      <button class="btn btn-success adv" id="btnZip">下載全部單張圖片（ZIP）</button>
       <div class="progress" id="progress"><div></div></div>
+      <div class="simple-note simple-only">目前是<b>簡易模式</b>：字型、描邊、排版欄列、邊界、解析度、驗證碼等進階設定已收起來，排版會自動處理。需要時按右上角「⚙ 完整設定」。</div>
       <div class="status" id="statusText"></div>
     </aside>
 
@@ -1059,6 +1065,8 @@
         let v = el.type === "checkbox" ? el.checked : el.value;
         if (el.type === "number" || p === "out.dpi") { const n = parseFloat(v); if (!Number.isFinite(n)) return; v = n; }
         setPath(p, v);
+        // 簡易模式：換尺寸、紙張、出血時自動重新排版（原尺寸放最多張）
+        if (simpleUI && /^(ticket\.(w|h|bleed)|layout\.paper)$/.test(p)) autoLayout();
         refreshAll();
       });
     });
@@ -1140,8 +1148,16 @@
       if (err) { add(err, true); return; }
       add(`共 ${nums.length} 張${skipped ? `（已排除 ${skipped} 個）` : ""} · 每頁 ${L.perPage} 張 · 共 ${pages} 頁`, true);
       add(`紙張 ${L.pw}×${L.ph} mm，單張實際印出 ${(L.sw).toFixed(1)}×${(L.sh).toFixed(1)} mm`);
-      if (L.scale < 0.999) add(`⚠ 放不下原尺寸，已縮放為 ${(L.scale * 100).toFixed(1)}%`, true);
-      else add("✓ 原尺寸 100% 輸出");
+      if (L.scale < 0.999) {
+        add(`⚠ 為了一頁放 ${L.perPage} 張，已縮小為 ${(L.scale * 100).toFixed(1)}%`, true);
+        const best = bestLayout();
+        if (best) {
+          const b = document.createElement("button"); b.className = "btn-sm"; b.style.margin = "4px 0";
+          b.textContent = `改成原尺寸 100%（一頁 ${best.n} 張）`;
+          b.onclick = () => { autoLayout(); syncBindings(); refreshAll(); };
+          info.appendChild(b);
+        }
+      } else add("✓ 原尺寸 100% 輸出");
       if (L.bleed > 0) add(`出血 ${L.bleed} mm${L.bleedShort ? "（只有外圍）" : "（每張四邊）"}`);
       if (L.bleedShort) {
         add(`⚠ 券與券的間距小於 ${+(2 * L.bleed).toFixed(2)} mm，相鄰券之間沒有完整出血。滿版設計建議把間距設為 ${+(2 * L.bleed).toFixed(2)} mm。`, true);
@@ -1538,7 +1554,7 @@
     function showView(v) {
       document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.view === v));
       $("viewDesign").hidden = v !== "design"; $("viewDraw").hidden = v !== "draw";
-      $("btnUndo").hidden = $("btnRedo").hidden = v !== "design";
+      $("btnUndo").hidden = $("btnRedo").hidden = $("btnMode").hidden = v !== "design";
       try { localStorage.setItem("ticketStudio.view", v); } catch (e) {}
       if (v === "draw") { renderDraw(); $("entryNum").focus(); } else schedulePreview();
     }
@@ -1856,6 +1872,21 @@
       if (!confirm("再確認一次：清除後無法復原。")) return;
       D.winners = []; D.cur = null; saveDraw(); showWinner(null); msg("ok", "已清除全部紀錄。"); renderDrawStatus();
     };
+
+    // ---------- 簡易／完整設定 ----------
+    let simpleUI = true;
+    try { simpleUI = localStorage.getItem("ticketStudio.ui") !== "full"; } catch (e) {}
+    function applyUIMode() {
+      document.body.classList.toggle("simple", simpleUI);
+      $("btnMode").textContent = simpleUI ? "⚙ 完整設定" : "← 回簡易模式";
+      $("btnMode").classList.toggle("mode-on", !simpleUI);
+    }
+    $("btnMode").onclick = () => {
+      simpleUI = !simpleUI;
+      try { localStorage.setItem("ticketStudio.ui", simpleUI ? "simple" : "full"); } catch (e) {}
+      applyUIMode(); renderEditor(); schedulePreview();
+    };
+    applyUIMode();
 
     // ---------- 啟動 ----------
     loadSaved();
