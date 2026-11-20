@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>摸彩券工作室</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f3f4f6; --panel: #ffffff; --text: #1f2937; --muted: #6b7280; --line: #e5e7eb;
+      --input: #d1d5db; --primary: #4f46e5; --primary-h: #4338ca; --ok: #059669; --ok-h: #047857;
+      --warn-bg: #fef3c7; --warn: #92400e; --sel: #2563eb; --head: #1e293b;
+    }
+    * { box-sizing: border-box; font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    header { background: var(--head); color: #fff; padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+    header .sub { font-size: 12px; opacity: .8; margin-left: 8px; font-weight: 400; }
+    header .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    header .actions button, header .actions label { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 6px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
+    header .actions button:hover, header .actions label:hover { background: rgba(255,255,255,.22); }
+
+    .container { display: grid; grid-template-columns: 370px minmax(0, 1fr); gap: 18px; padding: 18px; max-width: 1500px; margin: 0 auto; }
+    @media (max-width: 960px) { .container { grid-template-columns: 1fr; padding: 12px 16px; } }
+    .panel, .card { background: var(--panel); border-radius: 12px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+    aside.panel { align-self: start; }
+    .panel h2 { font-size: 15px; margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+    .panel h2:first-child { margin-top: 0; }
+    .fg { margin-bottom: 10px; }
+    label.l { display: block; font-size: 12.5px; font-weight: 500; margin-bottom: 3px; color: #374151; }
+    input[type="number"], input[type="text"], select {
+      width: 100%; padding: 6px 9px; border: 1px solid var(--input); border-radius: 6px; font-size: 13px; background: #fff; color: var(--text);
+    }
+    input[type="color"] { width: 100%; height: 32px; border: 1px solid var(--input); border-radius: 6px; padding: 2px; background: #fff; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .check { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 6px; cursor: pointer; }
+    .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+    .warn { background: var(--warn-bg); color: var(--warn); font-size: 12.5px; border-radius: 6px; padding: 8px 10px; margin: 6px 0 10px; line-height: 1.5; }
+    .warn button { margin-top: 6px; }
+    .info { font-size: 13px; background: #eef2ff; color: #3730a3; border-radius: 6px; padding: 8px 10px; line-height: 1.6; }
+    .btn { width: 100%; padding: 10px 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: .15s; margin-bottom: 8px; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; } .btn-primary:hover:not(:disabled) { background: var(--primary-h); }
+    .btn-success { background: var(--ok); color: #fff; } .btn-success:hover:not(:disabled) { background: var(--ok-h); }
+    .btn-sm { width: auto; padding: 5px 10px; font-size: 12.5px; font-weight: 500; margin: 0; background: #e5e7eb; color: var(--text); border: none; border-radius: 6px; cursor: pointer; }
+    .btn-sm:hover { background: #d1d5db; }
+    .btn-danger { background: #fee2e2; color: #b91c1c; } .btn-danger:hover { background: #fecaca; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .chip { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--input); background: #fff; font-size: 12.5px; cursor: pointer; }
+    .chip.on { background: var(--sel); color: #fff; border-color: var(--sel); }
+    .field-form { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: #fafafa; }
+
+    .progress { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; margin: 4px 0 6px; display: none; }
+    .progress > div { height: 100%; width: 0; background: var(--primary); transition: width .1s; }
+    .status { font-size: 13px; color: var(--primary); font-weight: 500; min-height: 20px; }
+
+    main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+    .card-head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .card-head strong { font-size: 14px; }
+    .card-head .meta { font-size: 12px; color: var(--muted); }
+
+    .stage {
+      position: relative; width: 100%; background: #e2e8f0 center / 100% 100% no-repeat;
+      border: 1px solid #cbd5e1; overflow: hidden; user-select: none; touch-action: none;
+    }
+    .stage .placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 14px; pointer-events: none; text-align: center; padding: 10px; }
+    .stage canvas.fld { position: absolute; cursor: grab; touch-action: none; outline: 1.5px dashed rgba(239,68,68,.8); outline-offset: 1px; }
+    .stage canvas.fld.on { outline: 2px solid var(--sel); }
+    .stage canvas.fld:active { cursor: grabbing; }
+
+    .pager { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+    .pager input { width: 64px; padding: 4px 6px; }
+    .page-wrap { display: flex; justify-content: center; background: #cbd5e1; border-radius: 8px; padding: 16px; }
+    #pageCanvas { background: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.18); max-width: 100%; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>摸彩券工作室<span class="sub">編號產生 · 拼版 · PDF 輸出｜全部在本機運算，不上傳圖片</span></h1>
+    <div class="actions">
+      <button id="btnExportTpl" title="把目前所有設定（含底圖）存成檔案，下次直接載入">匯出範本</button>
+      <label title="載入先前匯出的範本檔">匯入範本<input type="file" id="tplInput" accept=".json,application/json" hidden /></label>
+      <button id="btnReset">恢復預設</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <aside class="panel">
+      <h2>1. 底圖與券尺寸</h2>
+      <div class="fg">
+        <input type="file" id="bgInput" accept="image/*" />
+        <div class="hint">選取設計好的摸彩券圖片（不載入底圖也能輸出，適合套印到已印好的券上）。</div>
+      </div>
+      <div class="row2 fg">
+        <div><label class="l">券寬（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.w" /></div>
+        <div><label class="l">券高（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.h" /></div>
+      </div>
+      <div id="aspectWarn" class="warn" hidden></div>
+
+      <h2>2. 編號</h2>
+      <div class="row3 fg">
+        <div><label class="l">起始</label><input type="number" min="0" data-bind="num.start" /></div>
+        <div><label class="l">結束</label><input type="number" min="0" data-bind="num.end" /></div>
+        <div><label class="l">補零位數</label><input type="number" min="1" max="12" data-bind="num.digits" /></div>
+      </div>
+      <div class="row2 fg">
+        <div><label class="l">排除含有的數字</label><input type="text" placeholder="例：4" data-bind="num.exDigits" /></div>
+        <div><label class="l">排除編號</label><input type="text" placeholder="例：13, 100-105" data-bind="num.exList" /></div>
+      </div>
+      <div class="hint" style="margin-top:-4px; margin-bottom:8px;">「排除含有的數字」只比對編號本身，不包含補上的 0。</div>
+
+      <h2>3. 文字欄位</h2>
+      <div class="chips" id="fieldChips"></div>
+      <div class="field-form" id="fieldForm">
+        <div class="row2 fg">
+          <div><label class="l">欄位名稱</label><input type="text" data-f="name" /></div>
+          <div><label class="l">內容（{n} = 編號）</label><input type="text" data-f="tpl" /></div>
+        </div>
+        <div class="row3 fg">
+          <div><label class="l">X（mm）</label><input type="number" step="0.1" data-f="xmm" /></div>
+          <div><label class="l">Y（mm）</label><input type="number" step="0.1" data-f="ymm" /></div>
+          <div><label class="l">字級（pt）</label><input type="number" step="0.5" min="2" data-f="size" /></div>
+        </div>
+        <div class="row2 fg">
+          <div><label class="l">字型</label><select data-f="font" id="fontSelect"></select></div>
+          <div><label class="l">對齊（以 X 為基準）</label>
+            <select data-f="align"><option value="center">置中</option><option value="left">靠左</option><option value="right">靠右</option></select>
+          </div>
+        </div>
+        <div class="row3 fg">
+          <div><label class="l">文字顏色</label><input type="color" data-f="color" /></div>
+          <div><label class="l">描邊（pt）</label><input type="number" step="0.1" min="0" data-f="stroke" /></div>
+          <div><label class="l">描邊顏色</label><input type="color" data-f="strokeColor" /></div>
+        </div>
+        <div class="row2 fg">
+          <div><label class="l">旋轉（度）</label><input type="number" step="1" data-f="rotate" /></div>
+          <div style="display:flex; align-items:flex-end;"><label class="check"><input type="checkbox" data-f="bold" /> 粗體</label></div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn-sm" id="btnAddField">＋ 新增欄位</button>
+          <button class="btn-sm" id="btnDupField">複製此欄位</button>
+          <button class="btn-sm btn-danger" id="btnDelField">刪除此欄位</button>
+        </div>
+        <div class="hint">可直接拖曳預覽上的欄位；選取後用方向鍵微調 0.5 mm（按住 Shift 為 5 mm）。</div>
+      </div>
+
+      <h2>4. 拼版</h2>
+      <div class="row2 fg">
+        <div><label class="l">紙張</label>
+          <select data-bind="layout.paper"><option value="A4">A4（210×297）</option><option value="A3">A3（297×420）</option><option value="B4">B4（257×364）</option><option value="Letter">Letter（216×279）</option></select>
+        </div>
+        <div><label class="l">方向</label>
+          <select data-bind="layout.orient"><option value="portrait">直向</option><option value="landscape">橫向</option></select>
+        </div>
+      </div>
+      <div class="row2 fg">
+        <div><label class="l">每頁欄數</label><input type="number" min="1" max="20" data-bind="layout.cols" /></div>
+        <div><label class="l">每頁列數</label><input type="number" min="1" max="40" data-bind="layout.rows" /></div>
+      </div>
+      <div class="row2 fg">
+        <div><label class="l">頁面邊界（mm）</label><input type="number" min="0" step="0.5" data-bind="layout.margin" /></div>
+        <div><label class="l">券與券間距（mm）</label><input type="number" min="0" step="0.5" data-bind="layout.gap" /></div>
+      </div>
+      <label class="check"><input type="checkbox" data-bind="layout.stackCut" /> 疊切排序（整疊裁切後自動連號）</label>
+      <label class="check"><input type="checkbox" data-bind="layout.cutMarks" /> 頁緣裁切標記</label>
+      <label class="check"><input type="checkbox" data-bind="layout.cutLines" /> 券與券之間的虛線</label>
+      <button class="btn-sm" id="btnAutoLayout" style="margin:4px 0 10px;">自動：原尺寸 100% 下放最多張</button>
+      <div class="info" id="layoutInfo"></div>
+
+      <h2>5. 輸出</h2>
+      <div class="row2 fg">
+        <div><label class="l">解析度</label>
+          <select data-bind="out.dpi"><option value="150">150 dpi（檔案小）</option><option value="200">200 dpi</option><option value="300">300 dpi（印刷用）</option></select>
+        </div>
+        <div style="display:flex; align-items:flex-end;"><label class="check"><input type="checkbox" data-bind="out.noBg" /> 只印編號（套印）</label></div>
+      </div>
+      <button class="btn btn-primary" id="btnPdf">下載拼版 PDF</button>
+      <button class="btn btn-success" id="btnZip">下載全部單張圖片（ZIP）</button>
+      <div class="progress" id="progress"><div></div></div>
+      <div class="status" id="statusText"></div>
+    </aside>
+
+    <main>
+      <section class="card">
+        <div class="card-head">
+          <strong>單張編輯（拖曳欄位對齊位置）</strong>
+          <span class="meta">預覽編號：<span id="sampleNum"></span></span>
+        </div>
+        <div class="stage" id="stage"><div class="placeholder" id="stagePh">尚未載入底圖，可先調整欄位位置</div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <strong>拼版預覽</strong>
+          <div class="pager">
+            <button class="btn-sm" id="pgPrev">◀</button>
+            第 <input type="number" id="pgInput" min="1" value="1" /> / <span id="pgTotal">1</span> 頁
+            <button class="btn-sm" id="pgNext">▶</button>
+          </div>
+        </div>
+        <div class="page-wrap" id="pageWrap"><canvas id="pageCanvas"></canvas></div>
+        <div class="hint" id="pageHint"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+  (() => {
+    "use strict";
+    const PT_MM = 25.4 / 72;
+    const PAPERS = { A4: [210, 297], A3: [297, 420], B4: [257, 364], Letter: [215.9, 279.4] };
+    const FONTS = [
+      { v: '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif', t: "黑體（系統預設）" },
+      { v: '"Noto Serif TC", "PMingLiU", "Songti TC", serif', t: "明體" },
+      { v: 'Arial, Helvetica, sans-serif', t: "Arial" },
+      { v: '"Courier New", Courier, monospace', t: "Courier（等寬）" },
+      { v: 'Consolas, "Roboto Mono", monospace', t: "Consolas（等寬）" },
+      { v: 'Impact, "Arial Black", sans-serif', t: "Impact（粗）" },
+      { v: 'Georgia, serif', t: "Georgia" },
+    ];
+    const LS_STATE = "ticketStudio.state.v2";
+    const LS_BG = "ticketStudio.bg.v2";
+
+    const defaultField = (o) => Object.assign({
+      id: "f" + Math.random().toString(36).slice(2, 8), name: "欄位", tpl: "{n}",
+      x: 0.5, y: 0.5, size: 16, font: FONTS[0].v, bold: true, color: "#1f2937",
+      stroke: 0, strokeColor: "#ffffff", align: "center", rotate: 0,
+    }, o);
+    const defaultState = () => ({
+      ticket: { w: 215.9, h: 69.5 },
+      num: { start: 1, end: 250, digits: 6, exDigits: "", exList: "" },
+      fields: [
+        defaultField({ id: "f1", name: "左編號", x: 0.28, y: 0.81, color: "#1f2937" }),
+        defaultField({ id: "f2", name: "右編號", x: 0.92, y: 0.88, color: "#ffffff" }),
+      ],
+      layout: { paper: "A4", orient: "portrait", cols: 1, rows: 4, margin: 5, gap: 0, stackCut: true, cutMarks: true, cutLines: true },
+      out: { dpi: 200, noBg: false },
+    });
+
+    let S = defaultState();
+    let bgDataURL = null, bgImg = null;
+    let selId = null, page = 0, busy = false;
+
+    const $ = (id) => document.getElementById(id);
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+    const num = (v, d) => { const n = parseFloat(v); return Number.isFinite(n) ? n : d; };
+    const measureCtx = document.createElement("canvas").getContext("2d");
+    const tick = () => new Promise((r) => setTimeout(r, 0));
+
+    // ---------- 狀態存取 ----------
+    function mergeState(src) {
+      const d = defaultState();
+      if (!src || typeof src !== "object") return d;
+      for (const k of ["ticket", "num", "layout", "out"]) d[k] = Object.assign(d[k], src[k] || {});
+      if (Array.isArray(src.fields)) d.fields = src.fields.map((f) => defaultField(f));
+      return d;
+    }
+    let saveTimer = null;
+    function save() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        try { localStorage.setItem(LS_STATE, JSON.stringify(S)); } catch (e) {}
+        try { bgDataURL ? localStorage.setItem(LS_BG, bgDataURL) : localStorage.removeItem(LS_BG); } catch (e) { /* 圖太大就不存 */ }
+      }, 300);
+    }
+    function loadSaved() {
+      try { const s = localStorage.getItem(LS_STATE); if (s) S = mergeState(JSON.parse(s)); } catch (e) {}
+      try { const b = localStorage.getItem(LS_BG); if (b) setBackground(b); } catch (e) {}
+    }
+
+    // ---------- 編號 ----------
+    function parseRanges(str) {
+      const out = [];
+      String(str || "").split(/[,，、;\s]+/).forEach((tok) => {
+        if (!tok) return;
+        const m = tok.match(/^(\d+)\s*[-~～]\s*(\d+)$/);
+        if (m) { const a = +m[1], b = +m[2]; out.push([Math.min(a, b), Math.max(a, b)]); }
+        else if (/^\d+$/.test(tok)) out.push([+tok, +tok]);
+      });
+      return out;
+    }
+    function buildNumbers() {
+      const s = Math.floor(num(S.num.start, NaN)), e = Math.floor(num(S.num.end, NaN));
+      if (!Number.isFinite(s) || !Number.isFinite(e)) return { nums: [], err: "請輸入起始與結束編號" };
+      if (e < s) return { nums: [], err: "結束編號需大於或等於起始編號" };
+      if (e - s > 100000) return { nums: [], err: "範圍過大（上限 100,000 張）" };
+      const d = clamp(Math.floor(num(S.num.digits, 1)), 1, 12);
+      const exD = [...new Set(String(S.num.exDigits || "").replace(/\D/g, ""))];
+      const ranges = parseRanges(S.num.exList);
+      const nums = [];
+      for (let n = s; n <= e; n++) {
+        const raw = String(n);
+        if (exD.some((c) => raw.includes(c))) continue;
+        if (ranges.some(([a, b]) => n >= a && n <= b)) continue;
+        nums.push(raw.padStart(d, "0"));
+      }
+      return { nums, skipped: e - s + 1 - nums.length };
+    }
+    const fieldText = (f, n) => String(f.tpl ?? "{n}").split("{n}").join(n);
+
+    // ---------- 拼版幾何 ----------
+    function computeLayout(over) {
+      const lay = Object.assign({}, S.layout, over || {});
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50);
+      let [pw, ph] = PAPERS[lay.paper] || PAPERS.A4;
+      if (lay.orient === "landscape") [pw, ph] = [ph, pw];
+      const cols = clamp(Math.floor(num(lay.cols, 1)), 1, 20), rows = clamp(Math.floor(num(lay.rows, 1)), 1, 40);
+      const margin = Math.max(0, num(lay.margin, 0)), gap = Math.max(0, num(lay.gap, 0));
+      const gridW = cols * tw + (cols - 1) * gap, gridH = rows * th + (rows - 1) * gap;
+      const scale = Math.max(0.01, Math.min(1, (pw - 2 * margin) / gridW, (ph - 2 * margin) / gridH));
+      const sw = tw * scale, sh = th * scale, sg = gap * scale;
+      const ox = (pw - gridW * scale) / 2, oy = (ph - gridH * scale) / 2;
+      const slots = [];
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+        slots.push({ x: ox + c * (sw + sg), y: oy + r * (sh + sg) });
+      return { pw, ph, tw, th, cols, rows, scale, sw, sh, slots, perPage: cols * rows,
+               gridL: ox, gridT: oy, gridR: ox + gridW * scale, gridB: oy + gridH * scale };
+    }
+    function ticketIndex(L, p, s, pages) {
+      return S.layout.stackCut ? s * pages + p : p * L.perPage + s;
+    }
+    function cutGeometry(L) {
+      const xs = new Set(), ys = new Set();
+      L.slots.forEach((s) => { xs.add(+s.x.toFixed(3)); xs.add(+(s.x + L.sw).toFixed(3)); ys.add(+s.y.toFixed(3)); ys.add(+(s.y + L.sh).toFixed(3)); });
+      const marks = [], lines = [];
+      const off = 1, len = 4;
+      xs.forEach((x) => {
+        marks.push([x, L.gridT - off - len, x, L.gridT - off], [x, L.gridB + off, x, L.gridB + off + len]);
+        lines.push([x, L.gridT, x, L.gridB]);
+      });
+      ys.forEach((y) => {
+        marks.push([L.gridL - off - len, y, L.gridL - off, y], [L.gridR + off, y, L.gridR + off + len, y]);
+        lines.push([L.gridL, y, L.gridR, y]);
+      });
+      return { marks, lines };
+    }
+
+    // ---------- 單一欄位繪製（編輯器、預覽、PDF、ZIP 共用） ----------
+    // ppm：每「券毫米」對應的像素數。回傳 canvas 與相對錨點的偏移（像素）。
+    function renderField(f, text, ppm) {
+      const fontPx = Math.max(1, num(f.size, 12) * PT_MM * ppm);
+      const strokePx = Math.max(0, num(f.stroke, 0) * PT_MM * ppm);
+      const font = `${f.bold ? 700 : 400} ${fontPx}px ${f.font}`;
+      measureCtx.font = font;
+      const w = measureCtx.measureText(text).width;
+      const h = fontPx * 1.3, pad = strokePx + 2;
+      const x0 = f.align === "left" ? 0 : f.align === "right" ? -w : -w / 2;
+      const a = (num(f.rotate, 0) * Math.PI) / 180, cos = Math.cos(a), sin = Math.sin(a);
+      const pts = [[x0 - pad, -h / 2 - pad], [x0 + w + pad, -h / 2 - pad], [x0 + w + pad, h / 2 + pad], [x0 - pad, h / 2 + pad]]
+        .map(([x, y]) => [x * cos - y * sin, x * sin + y * cos]);
+      const minX = Math.floor(Math.min(...pts.map((p) => p[0]))), maxX = Math.ceil(Math.max(...pts.map((p) => p[0])));
+      const minY = Math.floor(Math.min(...pts.map((p) => p[1]))), maxY = Math.ceil(Math.max(...pts.map((p) => p[1])));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, maxX - minX); c.height = Math.max(1, maxY - minY);
+      const ctx = c.getContext("2d");
+      ctx.translate(-minX, -minY); ctx.rotate(a);
+      ctx.font = font; ctx.textAlign = f.align || "center"; ctx.textBaseline = "middle";
+      if (strokePx > 0) { ctx.lineJoin = "round"; ctx.lineWidth = strokePx * 2; ctx.strokeStyle = f.strokeColor; ctx.strokeText(text, 0, 0); }
+      ctx.fillStyle = f.color; ctx.fillText(text, 0, 0);
+      return { canvas: c, ox: minX, oy: minY };
+    }
+
+    // ---------- 底圖 ----------
+    function setBackground(dataURL) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => { bgImg = img; bgDataURL = dataURL; refreshAll(); resolve(true); };
+        img.onerror = () => { resolve(false); };
+        img.src = dataURL;
+      });
+    }
+    function updateAspectWarn() {
+      const box = $("aspectWarn");
+      if (!bgImg) { box.hidden = true; return; }
+      const ia = bgImg.naturalWidth / bgImg.naturalHeight, ta = num(S.ticket.w, 1) / num(S.ticket.h, 1);
+      if (Math.abs(ia - ta) / ta < 0.015) { box.hidden = true; return; }
+      box.hidden = false;
+      box.textContent = `底圖比例（${ia.toFixed(3)}）和券尺寸比例（${ta.toFixed(3)}）不同，底圖會被拉伸。`;
+      const b = document.createElement("button");
+      b.className = "btn-sm"; b.textContent = "依底圖比例調整券高";
+      b.onclick = () => { S.ticket.h = +(num(S.ticket.w, 1) / ia).toFixed(2); syncBindings(); refreshAll(); };
+      box.appendChild(document.createElement("br")); box.appendChild(b);
+    }
+
+    // ---------- 單張編輯器 ----------
+    const stage = $("stage");
+    const fieldEls = new Map();
+    let drag = null;
+    function sampleNumber() { const { nums } = buildNumbers(); return nums[0] ?? String(num(S.num.start, 1)).padStart(num(S.num.digits, 1), "0"); }
+
+    function renderEditor() {
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50);
+      stage.style.aspectRatio = `${tw} / ${th}`;
+      stage.style.backgroundImage = bgDataURL ? `url("${bgDataURL}")` : "none";
+      $("stagePh").hidden = !!bgDataURL;
+      fieldEls.forEach((el) => el.remove()); fieldEls.clear();
+      const W = stage.clientWidth; if (!W) return;
+      const sample = sampleNumber();
+      $("sampleNum").textContent = sample;
+      S.fields.forEach((f) => {
+        const el = document.createElement("canvas");
+        el.className = "fld" + (f.id === selId ? " on" : "");
+        el.title = f.name;
+        stage.appendChild(el); fieldEls.set(f.id, el);
+        paintFieldEl(f, el, sample);
+        el.addEventListener("pointerdown", (e) => startDrag(e, f, el));
+      });
+    }
+    function paintFieldEl(f, el, sample) {
+      const W = stage.clientWidth, dpr = window.devicePixelRatio || 1;
+      const ppm = (W / num(S.ticket.w, 100)) * dpr;
+      const r = renderField(f, fieldText(f, sample ?? sampleNumber()), ppm);
+      el.width = r.canvas.width; el.height = r.canvas.height;
+      el.getContext("2d").drawImage(r.canvas, 0, 0);
+      el.style.width = r.canvas.width / dpr + "px"; el.style.height = r.canvas.height / dpr + "px";
+      el.dataset.ox = r.ox / dpr; el.dataset.oy = r.oy / dpr;
+      positionFieldEl(f, el);
+    }
+    function positionFieldEl(f, el) {
+      el.style.left = f.x * stage.clientWidth + +el.dataset.ox + "px";
+      el.style.top = f.y * stage.clientHeight + +el.dataset.oy + "px";
+    }
+    function startDrag(e, f, el) {
+      e.preventDefault();
+      selectField(f.id);
+      el.setPointerCapture(e.pointerId);
+      const r = stage.getBoundingClientRect();
+      drag = { f, el, r, dx: e.clientX - (r.left + f.x * r.width), dy: e.clientY - (r.top + f.y * r.height) };
+    }
+    stage.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const { f, el, r, dx, dy } = drag;
+      f.x = clamp((e.clientX - dx - r.left) / r.width, 0, 1);
+      f.y = clamp((e.clientY - dy - r.top) / r.height, 0, 1);
+      positionFieldEl(f, el); fillFieldForm(true);
+    });
+    const endDrag = () => { if (drag) { drag = null; schedulePreview(); save(); } };
+    stage.addEventListener("pointerup", endDrag);
+    stage.addEventListener("pointercancel", endDrag);
+    new ResizeObserver(() => renderEditor()).observe(stage);
+
+    document.addEventListener("keydown", (e) => {
+      if (!selId || /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
+      const step = e.shiftKey ? 5 : 0.5;
+      const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      const f = S.fields.find((x) => x.id === selId); if (!f) return;
+      f.x = clamp(f.x + d[0] / num(S.ticket.w, 100), 0, 1);
+      f.y = clamp(f.y + d[1] / num(S.ticket.h, 50), 0, 1);
+      const el = fieldEls.get(f.id); if (el) positionFieldEl(f, el);
+      fillFieldForm(true); schedulePreview(); save();
+    });
+
+    // ---------- 欄位面板 ----------
+    const fontSelect = $("fontSelect");
+    FONTS.forEach((f) => { const o = document.createElement("option"); o.value = f.v; o.textContent = f.t; fontSelect.appendChild(o); });
+
+    function renderChips() {
+      const box = $("fieldChips"); box.innerHTML = "";
+      S.fields.forEach((f) => {
+        const b = document.createElement("button");
+        b.className = "chip" + (f.id === selId ? " on" : "");
+        b.textContent = f.name || "（未命名）";
+        b.onclick = () => selectField(f.id);
+        box.appendChild(b);
+      });
+    }
+    function selectField(id) {
+      selId = id;
+      fieldEls.forEach((el, fid) => el.classList.toggle("on", fid === id));
+      renderChips(); fillFieldForm();
+    }
+    function fillFieldForm(posOnly) {
+      const f = S.fields.find((x) => x.id === selId);
+      $("fieldForm").querySelectorAll("[data-f]").forEach((inp) => {
+        inp.disabled = !f;
+        if (!f) return;
+        const k = inp.dataset.f;
+        if (posOnly && k !== "xmm" && k !== "ymm") return;
+        let v = k === "xmm" ? +(f.x * num(S.ticket.w, 0)).toFixed(1) : k === "ymm" ? +(f.y * num(S.ticket.h, 0)).toFixed(1) : f[k];
+        if (k === "font" && !FONTS.some((o) => o.v === v)) {
+          const o = document.createElement("option"); o.value = v; o.textContent = v; fontSelect.appendChild(o);
+        }
+        if (inp.type === "checkbox") inp.checked = !!v; else inp.value = v ?? "";
+      });
+      $("btnDelField").disabled = $("btnDupField").disabled = !f;
+    }
+    $("fieldForm").querySelectorAll("[data-f]").forEach((inp) => {
+      inp.addEventListener("input", () => {
+        const f = S.fields.find((x) => x.id === selId); if (!f) return;
+        const k = inp.dataset.f;
+        if (k === "xmm") f.x = clamp(num(inp.value, 0) / num(S.ticket.w, 1), 0, 1);
+        else if (k === "ymm") f.y = clamp(num(inp.value, 0) / num(S.ticket.h, 1), 0, 1);
+        else if (inp.type === "checkbox") f[k] = inp.checked;
+        else if (inp.type === "number") f[k] = num(inp.value, f[k]);
+        else f[k] = inp.value;
+        if (k === "name") renderChips();
+        renderEditor(); schedulePreview(); save();
+      });
+    });
+    $("btnAddField").onclick = () => {
+      const f = defaultField({ name: "欄位 " + (S.fields.length + 1) });
+      S.fields.push(f); selId = f.id; refreshAll();
+    };
+    $("btnDupField").onclick = () => {
+      const src = S.fields.find((x) => x.id === selId); if (!src) return;
+      const f = defaultField(Object.assign({}, src, { id: undefined, name: src.name + " 複本", x: clamp(src.x + 0.03, 0, 1), y: clamp(src.y + 0.05, 0, 1) }));
+      f.id = "f" + Math.random().toString(36).slice(2, 8);
+      S.fields.push(f); selId = f.id; refreshAll();
+    };
+    $("btnDelField").onclick = () => {
+      const i = S.fields.findIndex((x) => x.id === selId); if (i < 0) return;
+      S.fields.splice(i, 1); selId = S.fields[Math.max(0, i - 1)]?.id ?? null; refreshAll();
+    };
+
+    // ---------- 一般設定綁定 ----------
+    const getPath = (p) => p.split(".").reduce((o, k) => o?.[k], S);
+    const setPath = (p, v) => { const ks = p.split("."); const last = ks.pop(); ks.reduce((o, k) => o[k], S)[last] = v; };
+    function syncBindings() {
+      document.querySelectorAll("[data-bind]").forEach((el) => {
+        const v = getPath(el.dataset.bind);
+        if (el.type === "checkbox") el.checked = !!v; else el.value = v ?? "";
+      });
+    }
+    document.querySelectorAll("[data-bind]").forEach((el) => {
+      el.addEventListener("input", () => {
+        const p = el.dataset.bind;
+        let v = el.type === "checkbox" ? el.checked : el.value;
+        if (el.type === "number" || p === "out.dpi") { const n = parseFloat(v); if (!Number.isFinite(n)) return; v = n; }
+        setPath(p, v);
+        refreshAll();
+      });
+    });
+
+    // ---------- 拼版預覽 ----------
+    let previewQueued = false;
+    function schedulePreview() {
+      if (previewQueued) return; previewQueued = true;
+      requestAnimationFrame(() => { previewQueued = false; drawPreview(); });
+    }
+    function drawPreview() {
+      const { nums, err } = buildNumbers();
+      const L = computeLayout();
+      const pages = Math.max(1, Math.ceil(nums.length / L.perPage));
+      page = clamp(page, 0, pages - 1);
+      $("pgTotal").textContent = pages; $("pgInput").value = page + 1; $("pgInput").max = pages;
+
+      const cv = $("pageCanvas"), wrap = $("pageWrap");
+      const cssW = Math.min(wrap.clientWidth - 32, 640), cssH = cssW * (L.ph / L.pw);
+      const dpr = window.devicePixelRatio || 1;
+      cv.style.width = cssW + "px"; cv.style.height = cssH + "px";
+      cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+      const k = cv.width / L.pw; // px / 頁面 mm
+      const ctx = cv.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+
+      // 邊界參考線
+      ctx.setLineDash([4 * dpr, 4 * dpr]); ctx.strokeStyle = "rgba(79,70,229,.35)"; ctx.lineWidth = 1;
+      const m = num(S.layout.margin, 0);
+      ctx.strokeRect(m * k, m * k, (L.pw - 2 * m) * k, (L.ph - 2 * m) * k); ctx.setLineDash([]);
+
+      L.slots.forEach((slot, s) => {
+        const idx = ticketIndex(L, page, s, pages);
+        const x = slot.x * k, y = slot.y * k, w = L.sw * k, h = L.sh * k;
+        if (idx >= nums.length) {
+          ctx.strokeStyle = "#d1d5db"; ctx.setLineDash([3 * dpr, 3 * dpr]); ctx.strokeRect(x, y, w, h); ctx.setLineDash([]);
+          return;
+        }
+        if (bgImg && !S.out.noBg) ctx.drawImage(bgImg, x, y, w, h);
+        else { ctx.fillStyle = S.out.noBg ? "#fff" : "#e5e7eb"; ctx.fillRect(x, y, w, h); ctx.strokeStyle = "#e5e7eb"; ctx.strokeRect(x, y, w, h); }
+        S.fields.forEach((f) => {
+          const r = renderField(f, fieldText(f, nums[idx]), k * L.scale);
+          ctx.drawImage(r.canvas, x + f.x * w + r.ox, y + f.y * h + r.oy);
+        });
+      });
+
+      const g = cutGeometry(L);
+      if (S.layout.cutLines) {
+        ctx.strokeStyle = "#9ca3af"; ctx.lineWidth = Math.max(1, 0.2 * k); ctx.setLineDash([1.5 * k, 1 * k]);
+        g.lines.forEach(([a, b, c, d]) => { ctx.beginPath(); ctx.moveTo(a * k, b * k); ctx.lineTo(c * k, d * k); ctx.stroke(); });
+        ctx.setLineDash([]);
+      }
+      if (S.layout.cutMarks) {
+        ctx.strokeStyle = "#000"; ctx.lineWidth = Math.max(1, 0.2 * k);
+        g.marks.forEach(([a, b, c, d]) => { ctx.beginPath(); ctx.moveTo(a * k, b * k); ctx.lineTo(c * k, d * k); ctx.stroke(); });
+      }
+
+      const first = L.slots.map((_, s) => ticketIndex(L, page, s, pages)).filter((i) => i < nums.length);
+      $("pageHint").textContent = err ? err : first.length
+        ? `本頁編號（由左上到右下）：${first.map((i) => nums[i]).join("、")}`
+        : "沒有可輸出的編號";
+    }
+    $("pgPrev").onclick = () => { page--; drawPreview(); };
+    $("pgNext").onclick = () => { page++; drawPreview(); };
+    $("pgInput").addEventListener("change", () => { page = Math.floor(num($("pgInput").value, 1)) - 1; drawPreview(); });
+    new ResizeObserver(() => schedulePreview()).observe($("pageWrap"));
+
+    // ---------- 資訊面板 ----------
+    function updateInfo() {
+      const { nums, err, skipped } = buildNumbers();
+      const L = computeLayout();
+      const pages = Math.ceil(nums.length / L.perPage);
+      const info = $("layoutInfo");
+      info.innerHTML = "";
+      const add = (t, strong) => { const d = document.createElement("div"); if (strong) d.style.fontWeight = "600"; d.textContent = t; info.appendChild(d); };
+      if (err) { add(err, true); return; }
+      add(`共 ${nums.length} 張${skipped ? `（已排除 ${skipped} 個）` : ""} · 每頁 ${L.perPage} 張 · 共 ${pages} 頁`, true);
+      add(`紙張 ${L.pw}×${L.ph} mm，單張實際印出 ${(L.sw).toFixed(1)}×${(L.sh).toFixed(1)} mm`);
+      if (L.scale < 0.999) add(`⚠ 放不下原尺寸，已縮放為 ${(L.scale * 100).toFixed(1)}%`, true);
+      else add("✓ 原尺寸 100% 輸出");
+      $("btnPdf").textContent = `下載拼版 PDF（${pages} 頁）`;
+      $("btnZip").textContent = `下載全部單張圖片 ZIP（${nums.length} 張）`;
+    }
+
+    $("btnAutoLayout").onclick = () => {
+      let best = null;
+      for (const orient of ["portrait", "landscape"])
+        for (let cols = 1; cols <= 10; cols++)
+          for (let rows = 1; rows <= 30; rows++) {
+            const L = computeLayout({ orient, cols, rows });
+            if (L.scale < 0.999) continue;
+            if (!best || L.perPage > best.n) best = { n: L.perPage, orient, cols, rows };
+          }
+      if (!best) { alert("這張紙在目前邊界下放不下原尺寸的券，請改用較大紙張或縮小邊界。"); return; }
+      Object.assign(S.layout, { orient: best.orient, cols: best.cols, rows: best.rows });
+      syncBindings(); refreshAll();
+    };
+
+    function refreshAll() {
+      updateAspectWarn(); updateInfo(); renderChips(); fillFieldForm(); renderEditor(); schedulePreview(); save();
+    }
+
+    // ---------- 輸出 ----------
+    function setBusy(on, text) {
+      busy = on;
+      $("btnPdf").disabled = $("btnZip").disabled = on;
+      $("progress").style.display = on ? "block" : "none";
+      if (text != null) $("statusText").textContent = text;
+    }
+    const setProgress = (r) => { $("progress").firstElementChild.style.width = (r * 100).toFixed(1) + "%"; };
+
+    function bgForOutput(pxW, pxH) {
+      const c = document.createElement("canvas");
+      c.width = Math.round(pxW); c.height = Math.round(pxH);
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(bgImg, 0, 0, c.width, c.height);
+      return c;
+    }
+    function preflight() {
+      if (busy) return null;
+      const { nums, err } = buildNumbers();
+      if (err) { alert(err); return null; }
+      if (!nums.length) { alert("沒有可輸出的編號。"); return null; }
+      if (!bgImg && !S.out.noBg && !confirm("尚未載入底圖，要只輸出編號嗎？")) return null;
+      return nums;
+    }
+    const fileRange = (nums) => `${nums[0]}_${nums[nums.length - 1]}`;
+
+    $("btnPdf").onclick = async () => {
+      const nums = preflight(); if (!nums) return;
+      if (!window.jspdf) { alert("PDF 元件載入失敗，請確認網路連線後重新整理。"); return; }
+      const L = computeLayout(), pages = Math.ceil(nums.length / L.perPage);
+      const dpi = num(S.out.dpi, 200), pxmm = dpi / 25.4;
+      setBusy(true, "正在產生 PDF…"); setProgress(0);
+      try {
+        await document.fonts?.ready;
+        const orientation = L.pw > L.ph ? "landscape" : "portrait";
+        const doc = new window.jspdf.jsPDF({ orientation, unit: "mm", format: [L.pw, L.ph], compress: true });
+        const useBg = bgImg && !S.out.noBg;
+        const bgData = useBg ? bgForOutput(L.sw * pxmm, L.sh * pxmm).toDataURL("image/jpeg", 0.92) : null;
+        const g = cutGeometry(L);
+        for (let p = 0; p < pages; p++) {
+          if (p > 0) doc.addPage([L.pw, L.ph], orientation);
+          L.slots.forEach((slot, s) => {
+            const idx = ticketIndex(L, p, s, pages);
+            if (idx >= nums.length) return;
+            if (bgData) doc.addImage(bgData, "JPEG", slot.x, slot.y, L.sw, L.sh, "ticket-bg", "NONE");
+            S.fields.forEach((f) => {
+              const text = fieldText(f, nums[idx]);
+              if (!text) return;
+              const r = renderField(f, text, pxmm * L.scale);
+              doc.addImage(r.canvas.toDataURL("image/png"), "PNG",
+                slot.x + f.x * L.sw + r.ox / pxmm, slot.y + f.y * L.sh + r.oy / pxmm,
+                r.canvas.width / pxmm, r.canvas.height / pxmm, undefined, "FAST");
+            });
+          });
+          if (S.layout.cutLines) {
+            doc.setDrawColor(150); doc.setLineWidth(0.15); doc.setLineDashPattern([1.5, 1], 0);
+            g.lines.forEach(([a, b, c, d]) => doc.line(a, b, c, d));
+            doc.setLineDashPattern([], 0);
+          }
+          if (S.layout.cutMarks) {
+            doc.setDrawColor(0); doc.setLineWidth(0.2);
+            g.marks.forEach(([a, b, c, d]) => doc.line(a, b, c, d));
+          }
+          setProgress((p + 1) / pages);
+          $("statusText").textContent = `正在產生 PDF… ${p + 1} / ${pages} 頁`;
+          await tick();
+        }
+        doc.save(`摸彩券_${fileRange(nums)}.pdf`);
+        setBusy(false, `已下載 PDF：${pages} 頁、${nums.length} 張。列印時請選「實際大小 / 100%」，不要選「符合頁面」。`);
+      } catch (e) {
+        console.error(e); setBusy(false, "產生 PDF 時發生錯誤：" + e.message);
+      }
+    };
+
+    $("btnZip").onclick = async () => {
+      const nums = preflight(); if (!nums) return;
+      if (!window.JSZip) { alert("ZIP 元件載入失敗，請確認網路連線後重新整理。"); return; }
+      const dpi = num(S.out.dpi, 200), pxmm = dpi / 25.4;
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50);
+      setBusy(true, "正在產生圖片…"); setProgress(0);
+      try {
+        await document.fonts?.ready;
+        const zip = new JSZip();
+        const base = bgImg && !S.out.noBg ? bgForOutput(tw * pxmm, th * pxmm) : null;
+        const c = document.createElement("canvas");
+        c.width = Math.round(tw * pxmm); c.height = Math.round(th * pxmm);
+        const ctx = c.getContext("2d");
+        for (let i = 0; i < nums.length; i++) {
+          ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+          if (base) ctx.drawImage(base, 0, 0);
+          S.fields.forEach((f) => {
+            const r = renderField(f, fieldText(f, nums[i]), pxmm);
+            ctx.drawImage(r.canvas, f.x * c.width + r.ox, f.y * c.height + r.oy);
+          });
+          const blob = await new Promise((res) => c.toBlob(res, "image/jpeg", 0.92));
+          zip.file(`摸彩券_${nums[i]}.jpg`, blob);
+          if (i % 5 === 4 || i === nums.length - 1) {
+            setProgress(((i + 1) / nums.length) * 0.8);
+            $("statusText").textContent = `正在產生圖片… ${i + 1} / ${nums.length}`;
+            await tick();
+          }
+        }
+        $("statusText").textContent = "正在壓縮 ZIP…";
+        const out = await zip.generateAsync({ type: "blob" }, (m) => setProgress(0.8 + (m.percent / 100) * 0.2));
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(out); a.download = `摸彩券_${fileRange(nums)}.zip`; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+        setBusy(false, `已下載 ${nums.length} 張圖片（${dpi} dpi）。`);
+      } catch (e) {
+        console.error(e); setBusy(false, "產生 ZIP 時發生錯誤：" + e.message);
+      }
+    };
+
+    // ---------- 範本匯出／匯入 ----------
+    $("btnExportTpl").onclick = () => {
+      const data = { app: "ticket-studio", version: 2, savedAt: new Date().toISOString(), state: S, background: bgDataURL };
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
+      a.download = "摸彩券範本.json"; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    };
+    $("tplInput").addEventListener("change", async (e) => {
+      const file = e.target.files[0]; e.target.value = "";
+      if (!file) return;
+      try {
+        const data = JSON.parse(await file.text());
+        if (!data || data.app !== "ticket-studio" || !data.state) throw new Error("不是摸彩券工作室的範本檔");
+        S = mergeState(data.state);
+        selId = S.fields[0]?.id ?? null;
+        bgImg = null; bgDataURL = null;
+        if (typeof data.background === "string" && data.background.startsWith("data:image/")) await setBackground(data.background);
+        syncBindings(); refreshAll();
+        $("statusText").textContent = "已載入範本。";
+      } catch (err) { alert("範本載入失敗：" + err.message); }
+    });
+    $("btnReset").onclick = () => {
+      if (!confirm("確定要恢復預設？目前的設定與底圖會被清除（建議先匯出範本）。")) return;
+      S = defaultState(); bgImg = null; bgDataURL = null; selId = S.fields[0].id; page = 0;
+      $("bgInput").value = ""; syncBindings(); refreshAll();
+    };
+
+    $("bgInput").addEventListener("change", (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const ok = await setBackground(ev.target.result);
+        if (!ok) { alert("無法讀取這張圖片。"); return; }
+        $("statusText").textContent = `已載入底圖（${bgImg.naturalWidth}×${bgImg.naturalHeight} px）。`;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // ---------- 啟動 ----------
+    loadSaved();
+    selId = S.fields[0]?.id ?? null;
+    syncBindings();
+    refreshAll();
+  })();
+  </script>
+</body>
+</html>
