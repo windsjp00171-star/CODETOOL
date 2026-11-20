@@ -69,7 +69,20 @@
       border: 1px solid #cbd5e1; overflow: hidden; user-select: none; touch-action: none;
     }
     .stage .placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 14px; pointer-events: none; text-align: center; padding: 10px; }
-    .stage .safe { position: absolute; border: 1px dashed rgba(14,165,233,.9); pointer-events: none; }
+    .stage #stageBg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .stage .trim { position: absolute; border: 2px solid #e11d48; box-shadow: 0 0 0 9999px rgba(244,63,94,.28); pointer-events: none; z-index: 1; }
+    .stage .safe { position: absolute; border: 1.5px dashed #0ea5e9; pointer-events: none; z-index: 1; }
+    .stage canvas.fld { z-index: 2; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: #374151; margin-top: 8px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend .sw { display: inline-block; width: 22px; height: 12px; border-radius: 2px; }
+    .sw-bleed { background: rgba(244,63,94,.35); }
+    .sw-trim { border-top: 2px solid #e11d48; height: 0 !important; }
+    .sw-safe { border-top: 2px dashed #0ea5e9; height: 0 !important; }
+    details.explain { margin: 4px 0 10px; font-size: 12.5px; color: #374151; background: #f9fafb; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+    details.explain summary { cursor: pointer; color: var(--primary); font-weight: 500; }
+    details.explain svg { width: 100%; max-width: 300px; display: block; margin: 8px 0 4px; }
+    details.explain p { margin: 6px 0; line-height: 1.6; }
     .stage canvas.fld { position: absolute; cursor: grab; touch-action: none; outline: 1.5px dashed rgba(239,68,68,.8); outline-offset: 1px; }
     .stage canvas.fld.on { outline: 2px solid var(--sel); }
     .stage canvas.fld:active { cursor: grabbing; }
@@ -177,25 +190,56 @@
       </div>
       <div class="hint" style="margin-top:-4px;">先選用途再載入底圖。套用會覆蓋目前的尺寸、欄位與拼版設定。</div>
 
-      <h2>1. 底圖與券尺寸</h2>
+      <h2>1. 底圖與尺寸</h2>
       <div class="fg">
         <input type="file" id="bgInput" accept="image/*" />
-        <div class="hint">選取設計好的摸彩券圖片（不載入底圖也能輸出，適合套印到已印好的券上）。</div>
+        <div class="hint">圖片像素大小不限，會依下面的「成品尺寸」放大縮小。不載入底圖也能輸出（印在白紙，或套印到已印好的券上）。</div>
       </div>
-      <div class="row2 fg">
-        <div><label class="l">券寬（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.w" /></div>
-        <div><label class="l">券高（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.h" /></div>
+      <div class="fg">
+        <label class="l">成品尺寸（裁切後的實際大小）</label>
+        <select id="sizePreset"></select>
       </div>
-      <div class="row2 fg">
-        <div><label class="l">出血（mm）</label><input type="number" step="0.5" min="0" max="10" data-bind="ticket.bleed" /></div>
-        <div><label class="l">底圖的出血</label>
-          <select data-bind="ticket.bgMode">
-            <option value="extend">底圖不含出血，自動延伸邊緣</option>
-            <option value="included">底圖已含出血（成品＋出血）</option>
-          </select>
+      <div class="fg" style="display:grid; grid-template-columns: 1fr 1fr auto; gap:8px; align-items:end;">
+        <div><label class="l">寬（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.w" /></div>
+        <div><label class="l">高（mm）</label><input type="number" step="0.1" min="10" data-bind="ticket.h" /></div>
+        <button class="btn-sm" id="btnSwapSize" title="寬高對調（直式 ↔ 橫式）" style="height:32px;">⇄</button>
+      </div>
+      <div class="info" id="sizeInfo" style="margin-bottom:10px;"></div>
+
+      <div class="fg">
+        <label class="l">印製方式</label>
+        <select id="printMode">
+          <option value="home">自己用印表機印（不需要出血）</option>
+          <option value="shop">送印刷廠，圖案印到邊（自動加 3 mm 出血）</option>
+          <option value="custom">自訂出血寬度</option>
+        </select>
+      </div>
+      <div id="bleedOpts">
+        <div class="fg" style="display:grid; grid-template-columns: 96px 1fr; gap:8px;">
+          <div><label class="l">出血寬度（mm）</label><input type="number" step="0.5" min="0" max="10" data-bind="ticket.bleed" id="bleedInput" /></div>
+          <div><label class="l">我的底圖</label>
+            <select data-bind="ticket.bgMode">
+              <option value="extend">只做了成品大小（自動補出血）</option>
+              <option value="included">已經多做了出血（成品＋四邊出血）</option>
+            </select>
+          </div>
         </div>
       </div>
-      <div class="hint" style="margin-top:-4px; margin-bottom:8px;">滿版設計送印刷廠時通常需要 3 mm 出血，自己用印表機印可以設 0。上方券寬／券高一律填<b>成品（裁切後）尺寸</b>。</div>
+      <details class="explain">
+        <summary>什麼是出血？看圖說明</summary>
+        <svg viewBox="0 0 300 140" role="img" aria-label="出血示意圖">
+          <rect x="10" y="10" width="200" height="110" fill="#fecdd3" />
+          <rect x="22" y="22" width="176" height="86" fill="#fde68a" />
+          <rect x="22" y="22" width="176" height="86" fill="none" stroke="#e11d48" stroke-width="2" />
+          <rect x="34" y="34" width="152" height="62" fill="none" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="4 3" />
+          <text x="110" y="70" font-size="13" text-anchor="middle" fill="#1f2937">重要文字放這裡</text>
+          <line x1="215" y1="16" x2="236" y2="16" stroke="#fecdd3" stroke-width="10" /><text x="242" y="20" font-size="11" fill="#374151">出血區</text>
+          <line x1="215" y1="46" x2="236" y2="46" stroke="#e11d48" stroke-width="2" /><text x="242" y="50" font-size="11" fill="#374151">裁切線</text>
+          <line x1="215" y1="76" x2="236" y2="76" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="4 3" /><text x="242" y="80" font-size="11" fill="#374151">安全區</text>
+        </svg>
+        <p>印刷廠裁紙時刀子可能偏 1～2 mm。如果背景剛好畫到邊，偏一點就會露出<b>白邊</b>。所以背景要多畫一圈（<b>出血區</b>），裁完後這一圈會被切掉。</p>
+        <p>同理，文字太靠邊可能被切到，請放在<b>安全區</b>（藍色虛線）裡。自己用印表機印、或背景本來就是白色時，不需要出血。</p>
+      </details>
       <div id="aspectWarn" class="warn" hidden></div>
 
       <h2>2. 資料來源</h2>
@@ -314,7 +358,17 @@
           <strong>單張編輯（拖曳欄位對齊位置）</strong>
           <span class="meta">預覽編號：<span id="sampleNum"></span></span>
         </div>
-        <div class="stage" id="stage"><div class="placeholder" id="stagePh">尚未載入底圖，可先調整欄位位置</div><div class="safe" id="safeGuide" hidden title="安全範圍：重要文字請放在虛線內"></div></div>
+        <div class="stage" id="stage">
+          <canvas id="stageBg"></canvas>
+          <div class="placeholder" id="stagePh">尚未載入底圖，可先調整欄位位置</div>
+          <div class="trim" id="trimBox" hidden></div>
+          <div class="safe" id="safeGuide" hidden></div>
+        </div>
+        <div class="legend" id="stageLegend" hidden>
+          <span><i class="sw sw-bleed"></i>出血區（會被裁掉，背景要畫滿）</span>
+          <span><i class="sw sw-trim"></i>裁切線（成品邊緣）</span>
+          <span><i class="sw sw-safe"></i>安全區（重要文字放裡面）</span>
+        </div>
       </section>
 
       <section class="card">
@@ -493,7 +547,7 @@
       return [...a].map((b) => b.toString(16).padStart(2, "0")).join("");
     };
     const defaultState = () => ({
-      ticket: { w: 215.9, h: 69.5, bleed: 0, bgMode: "extend" },
+      ticket: { w: 215.9, h: 69.5, bleed: 0, bgMode: "extend", printMode: "home" },
       num: { start: 1, end: 250, digits: 6, exDigits: "", exList: "", codeLen: 4, seed: newSeed() },
       fields: [
         defaultField({ id: "f1", name: "左編號", x: 0.28, y: 0.81, color: "#1f2937" }),
@@ -521,6 +575,7 @@
       if (!src || typeof src !== "object") return d;
       for (const k of ["ticket", "num", "layout", "out", "meta", "data"]) d[k] = Object.assign(d[k], src[k] || {});
       if (Array.isArray(src.fields)) d.fields = src.fields.map((f) => defaultField(f));
+      if (!src.ticket || !src.ticket.printMode) d.ticket.printMode = num(d.ticket.bleed, 0) > 0 ? "custom" : "home"; // 舊版設定
       return d;
     }
     // 復原／重做：每次設定穩定下來（300ms 沒再變動）就記一個快照
@@ -830,19 +885,18 @@
     function sampleNumber() { const { nums } = buildNumbers(); return nums[0] ?? String(num(S.num.start, 1)).padStart(num(S.num.digits, 1), "0"); }
 
     function renderEditor() {
-      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50);
-      stage.style.aspectRatio = `${tw} / ${th}`;
-      stage.style.backgroundImage = bgDataURL ? `url("${bgDataURL}")` : "none";
-      // 底圖含出血時，編輯器只顯示成品範圍
-      const b = bleedMm();
-      stage.style.backgroundSize = S.ticket.bgMode === "included" && b > 0
-        ? `${((tw + 2 * b) / tw) * 100}% ${((th + 2 * b) / th) * 100}%` : "100% 100%";
-      stage.style.backgroundPosition = "center";
-      $("safeGuide").hidden = b <= 0;
-      Object.assign($("safeGuide").style, { left: (b / tw) * 100 + "%", right: (b / tw) * 100 + "%", top: (b / th) * 100 + "%", bottom: (b / th) * 100 + "%" });
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50), b = bleedMm();
+      // 有出血時，編輯器顯示「成品＋出血」全貌，並畫出裁切線與安全區
+      stage.style.aspectRatio = `${tw + 2 * b} / ${th + 2 * b}`;
+      const pctX = (v) => (v / (tw + 2 * b)) * 100 + "%", pctY = (v) => (v / (th + 2 * b)) * 100 + "%";
+      $("trimBox").hidden = $("safeGuide").hidden = $("stageLegend").hidden = b <= 0;
+      Object.assign($("trimBox").style, { left: pctX(b), right: pctX(b), top: pctY(b), bottom: pctY(b) });
+      const sm = b + SAFE_MM;
+      Object.assign($("safeGuide").style, { left: pctX(sm), right: pctX(sm), top: pctY(sm), bottom: pctY(sm) });
       $("stagePh").hidden = !!bgDataURL;
       fieldEls.forEach((el) => el.remove()); fieldEls.clear();
       const W = stage.clientWidth; if (!W) return;
+      paintStageBg();
       const sample = sampleNumber();
       $("sampleNum").textContent = sample;
       S.fields.forEach((f) => {
@@ -854,9 +908,27 @@
         el.addEventListener("pointerdown", (e) => startDrag(e, f, el));
       });
     }
+    const SAFE_MM = 3;
+    // 編輯器裡「成品範圍」的位置（相對 stage，px）
+    function trimRect() {
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50), b = bleedMm();
+      const k = stage.clientWidth / (tw + 2 * b);
+      return { x: b * k, y: b * k, w: tw * k, h: th * k, k };
+    }
+    let stageBgKey = null;
+    function paintStageBg() {
+      const cv = $("stageBg"), dpr = window.devicePixelRatio || 1;
+      const key = [bgDataURL?.length, bgDataURL?.slice(-32), S.ticket.w, S.ticket.h, bleedMm(), S.ticket.bgMode, stage.clientWidth, dpr].join("|");
+      if (key === stageBgKey) return;
+      stageBgKey = key;
+      if (!bgImg) { cv.width = cv.height = 1; cv.getContext("2d").clearRect(0, 0, 1, 1); return; }
+      const full = makeBgFull(trimRect().k * dpr);
+      cv.width = full.width; cv.height = full.height;
+      cv.getContext("2d").drawImage(full, 0, 0);
+    }
     function paintFieldEl(f, el, sample) {
-      const W = stage.clientWidth, dpr = window.devicePixelRatio || 1;
-      const ppm = (W / num(S.ticket.w, 100)) * dpr;
+      const dpr = window.devicePixelRatio || 1;
+      const ppm = trimRect().k * dpr;
       const r = renderField(f, fieldText(f, sample ?? sampleNumber()), ppm);
       el.width = r.canvas.width; el.height = r.canvas.height;
       el.getContext("2d").drawImage(r.canvas, 0, 0);
@@ -865,14 +937,16 @@
       positionFieldEl(f, el);
     }
     function positionFieldEl(f, el) {
-      el.style.left = f.x * stage.clientWidth + +el.dataset.ox + "px";
-      el.style.top = f.y * stage.clientHeight + +el.dataset.oy + "px";
+      const t = trimRect();
+      el.style.left = t.x + f.x * t.w + +el.dataset.ox + "px";
+      el.style.top = t.y + f.y * t.h + +el.dataset.oy + "px";
     }
     function startDrag(e, f, el) {
       e.preventDefault();
       selectField(f.id);
       el.setPointerCapture(e.pointerId);
-      const r = stage.getBoundingClientRect();
+      const sr = stage.getBoundingClientRect(), t = trimRect();
+      const r = { left: sr.left + t.x, top: sr.top + t.y, width: t.w, height: t.h };
       drag = { f, el, r, dx: e.clientX - (r.left + f.x * r.width), dy: e.clientY - (r.top + f.y * r.height) };
     }
     stage.addEventListener("pointermove", (e) => {
@@ -1080,15 +1154,20 @@
       $("btnZip").textContent = `下載全部單張圖片 ZIP（${nums.length} 張）`;
     }
 
-    function autoLayout() {
+    // 目前紙張下，原尺寸 100% 一頁最多可放幾張（找不到回傳 null）
+    function bestLayout() {
       let best = null;
       for (const orient of ["portrait", "landscape"])
-        for (let cols = 1; cols <= 10; cols++)
+        for (let cols = 1; cols <= 12; cols++)
           for (let rows = 1; rows <= 30; rows++) {
             const L = computeLayout({ orient, cols, rows });
-            if (L.scale < 0.999) continue;
+            if (L.scale < 0.999) break; // 再多列只會更擠
             if (!best || L.perPage > best.n) best = { n: L.perPage, orient, cols, rows };
           }
+      return best;
+    }
+    function autoLayout() {
+      const best = bestLayout();
       if (best) Object.assign(S.layout, { orient: best.orient, cols: best.cols, rows: best.rows });
       return !!best;
     }
@@ -1149,7 +1228,7 @@
     $("btnPreset").onclick = () => {
       const p = PRESETS[$("presetSelect").value]; if (!p) return;
       if (!confirm(`套用「${p.name}」範本？\n目前的尺寸、文字欄位、拼版設定與底圖會被取代（建議先匯出範本備份）。`)) return;
-      Object.assign(S.ticket, p.ticket, { bleed: 0, bgMode: "extend" });
+      Object.assign(S.ticket, p.ticket, { bleed: 0, bgMode: "extend", printMode: "home" });
       Object.assign(S.num, { start: 1, exDigits: "", exList: "" }, p.num);
       S.data.mode = p.data; if (p.list && !S.data.list.trim()) S.data.list = p.list;
       S.meta.name = p.name;
@@ -1193,8 +1272,76 @@
       });
     }
 
+    // ---------- 成品尺寸 ----------
+    const SIZES = [
+      ["摸彩券（長條）", 215.9, 69.5], ["名片", 90, 54], ["信用卡大小", 85.6, 54], ["餐券／小卡", 90, 50],
+      ["入場券", 180, 65], ["明信片", 148, 100], ["4×6 吋相片", 152.4, 101.6], ["A6", 105, 148], ["A5", 148, 210], ["A4", 210, 297],
+    ];
+    (() => {
+      const sel = $("sizePreset");
+      const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "自訂尺寸（直接在下面輸入）"; sel.appendChild(o0);
+      SIZES.forEach(([n, w, h], i) => { const o = document.createElement("option"); o.value = i; o.textContent = `${n}　${w}×${h} mm`; sel.appendChild(o); });
+    })();
+    $("sizePreset").onchange = () => {
+      const v = $("sizePreset").value; if (v === "") return;
+      const [, w, h] = SIZES[+v];
+      Object.assign(S.ticket, { w, h }); autoLayout(); syncBindings(); refreshAll();
+      $("statusText").textContent = "已換成新尺寸並重新排版。";
+    };
+    $("btnSwapSize").onclick = () => {
+      [S.ticket.w, S.ticket.h] = [S.ticket.h, S.ticket.w];
+      S.fields.forEach((f) => { [f.x, f.y] = [f.y, f.x]; });
+      autoLayout(); syncBindings(); refreshAll();
+    };
+
+    // 印製方式 → 出血
+    $("printMode").onchange = () => {
+      const m = $("printMode").value;
+      S.ticket.printMode = m;
+      const notes = [];
+      if (m === "home") S.ticket.bleed = 0;
+      else {
+        if (m === "shop" || !(num(S.ticket.bleed, 0) > 0)) S.ticket.bleed = 3;
+        const L = computeLayout(), need = +(2 * bleedMm()).toFixed(2);
+        if ((L.cols > 1 || L.rows > 1) && num(S.layout.gap, 0) < need) { S.layout.gap = need; notes.push(`券與券的間距改為 ${need} mm，每張四邊才都有出血`); }
+        if (S.layout.cutLines) { S.layout.cutLines = false; notes.push("關掉券之間的虛線（印刷廠看頁緣的裁切標記裁切）"); }
+        if (computeLayout().scale < 0.999 && autoLayout()) notes.push("重新排版");
+      }
+      syncBindings(); refreshAll();
+      $("statusText").textContent = m === "home" ? "已取消出血。" : `已設定 ${bleedMm()} mm 出血。${notes.length ? "另外自動幫你：" + notes.join("；") + "。" : ""}`;
+    };
+    $("bleedInput").addEventListener("input", () => { if (S.ticket.printMode !== "custom") { S.ticket.printMode = "custom"; updateSizeUI(); } });
+
+    function updateSizeUI() {
+      $("printMode").value = S.ticket.printMode || "home";
+      $("bleedOpts").hidden = S.ticket.printMode === "home";
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50), b = bleedMm();
+      const i = SIZES.findIndex(([, w, h]) => Math.abs(w - tw) < 0.05 && Math.abs(h - th) < 0.05);
+      $("sizePreset").value = i >= 0 ? String(i) : "";
+
+      const box = $("sizeInfo"); box.innerHTML = "";
+      const add = (t, strong) => { const d = document.createElement("div"); if (strong) d.style.fontWeight = "600"; d.textContent = t; box.appendChild(d); };
+      const L = computeLayout(), m = num(S.layout.margin, 0), paperName = S.layout.paper;
+      const [pw0, ph0] = PAPERS[paperName] || PAPERS.A4;
+      const maxW = +(Math.max(pw0, ph0) - 2 * m - 2 * b).toFixed(1), maxH = +(Math.min(pw0, ph0) - 2 * m - 2 * b).toFixed(1);
+      const best = bestLayout();
+      if (best) add(`原尺寸印在 ${paperName}：一頁最多 ${best.n} 張（${best.orient === "portrait" ? "直向" : "橫向"} ${best.cols}×${best.rows}）`, true);
+      else add(`比 ${paperName} 能印的範圍還大，會被縮小列印`, true);
+      add(`${paperName} 可印的最大成品：${maxH}×${maxW} mm（直式）或 ${maxW}×${maxH} mm（橫式）`);
+
+      // 底圖解析度
+      const inc = S.ticket.bgMode === "included" ? 2 * b : 0;
+      const needW = Math.round(((tw + inc) / 25.4) * 300), needH = Math.round(((th + inc) / 25.4) * 300);
+      if (bgImg) {
+        const real = Math.round(bgImg.naturalWidth / (((tw + inc) * L.scale) / 25.4));
+        const tag = real >= 250 ? "✓ 很清楚" : real >= 150 ? "可以接受" : "⚠ 偏低，印出來可能會模糊";
+        add(`底圖 ${bgImg.naturalWidth}×${bgImg.naturalHeight} px，印出約 ${real} dpi：${tag}`, real < 150);
+        if (real < 250) add(`想要印得清楚，底圖建議至少 ${needW}×${needH} px（300 dpi）`);
+      } else add(`底圖建議至少 ${needW}×${needH} px（300 dpi${inc ? "，含出血" : ""}）`);
+    }
+
     function refreshAll() {
-      updateDataUI(); updateAspectWarn(); updateInfo(); renderChips(); fillFieldForm(); renderEditor(); schedulePreview(); save();
+      updateDataUI(); updateSizeUI(); updateAspectWarn(); updateInfo(); renderChips(); fillFieldForm(); renderEditor(); schedulePreview(); save();
     }
 
     // ---------- 輸出 ----------
