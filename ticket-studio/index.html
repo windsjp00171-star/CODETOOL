@@ -21,6 +21,16 @@
     .file-btn:hover { background: var(--primary-h) !important; }
     .file-name { font-size: 12.5px; color: var(--muted); }
     .stage-wrap { position: relative; }
+    .gen-btn { background: #fef3c7 !important; color: #92400e !important; font-weight: 600 !important; padding: 7px 12px !important; }
+    .gen-btn:hover { background: #fde68a !important; }
+    .gen-dlg { border: none; border-radius: 14px; padding: 20px 22px; width: min(920px, calc(100vw - 32px)); box-shadow: 0 20px 60px rgba(0,0,0,.3); color: var(--text); }
+    .gen-dlg::backdrop { background: rgba(15,23,42,.55); }
+    .gen-dlg h3 { margin: 0 0 14px; font-size: 18px; }
+    .gen-grid { display: grid; grid-template-columns: 300px 1fr; gap: 18px; }
+    @media (max-width: 760px) { .gen-grid { grid-template-columns: 1fr; } }
+    .gen-preview { background: #cbd5e1; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+    .gen-preview canvas { max-width: 100%; box-shadow: 0 6px 20px rgba(0,0,0,.2); background: #fff; }
+    .gen-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
     .mini-bar { position: absolute; z-index: 5; display: flex; gap: 4px; align-items: center; background: #1e293b; padding: 4px; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,.25); transform: translate(-50%, -100%); white-space: nowrap; }
     .mini-bar button { background: #334155; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 13px; cursor: pointer; }
     .mini-bar button:hover { background: #475569; }
@@ -217,6 +227,7 @@
       <div class="fg">
         <div class="file-row">
           <label class="btn-sm file-btn">🖼 選擇券的圖片<input type="file" id="bgInput" accept="image/*" hidden /></label>
+          <button type="button" class="btn-sm gen-btn" id="btnGen">✨ 沒有圖？幫我做一張</button>
           <span class="file-name" id="bgName">還沒選擇（也可以不用圖片，直接印在白紙上）</span>
         </div>
       </div>
@@ -493,6 +504,29 @@
     </main>
   </div>
 
+  <dialog id="genDlg" class="gen-dlg">
+    <h3>✨ 幫我做一張券的圖片</h3>
+    <div class="gen-grid">
+      <div class="gen-form">
+        <div class="fg"><label class="l">活動名稱</label><input type="text" id="genTitle" maxlength="30" placeholder="例：年終尾牙摸彩" /></div>
+        <div class="fg"><label class="l">日期、地點（可不填）</label><input type="text" id="genSub" maxlength="50" placeholder="例：2027.1.15（五）晚上 6:30｜○○飯店" /></div>
+        <div class="fg"><label class="l">備註（可不填）</label><input type="text" id="genNote" maxlength="60" placeholder="例：中獎請本人持券領取" /></div>
+        <div class="fg"><label class="l">風格</label><select id="genTheme"></select></div>
+        <label class="check"><input type="checkbox" id="genStub" /> 右邊加存根（撕下來給主辦單位）</label>
+        <label class="check"><input type="checkbox" id="genName" /> 姓名欄</label>
+        <label class="check"><input type="checkbox" id="genPhone" /> 電話欄</label>
+      </div>
+      <div class="gen-preview">
+        <canvas id="genCanvas"></canvas>
+        <div class="hint" id="genHint"></div>
+      </div>
+    </div>
+    <div class="gen-btns">
+      <button type="button" class="btn-sm" id="genCancel">取消</button>
+      <button type="button" class="btn btn-primary" id="genUse" style="width:auto; margin:0;">使用這張圖</button>
+    </div>
+  </dialog>
+
   <dialog id="printDlg" class="print-dlg">
     <h3 id="printDlgTitle">✓ PDF 已下載</h3>
     <p class="big-tip">列印前最重要的一步：<br>在列印視窗把縮放選成 <b>「實際大小」</b> 或 <b>「100%」</b></p>
@@ -610,6 +644,7 @@
       out: { dpi: 200, noBg: false },
       meta: { name: "摸彩券", preset: "lottery" },
       data: { mode: "seq", list: "" },
+      gen: { title: "年終尾牙摸彩", sub: "", note: "", theme: "red", stub: true, name: true, phone: false, active: false },
     });
 
     let S = defaultState();
@@ -626,7 +661,7 @@
     function mergeState(src) {
       const d = defaultState();
       if (!src || typeof src !== "object") return d;
-      for (const k of ["ticket", "num", "layout", "out", "meta", "data"]) d[k] = Object.assign(d[k], src[k] || {});
+      for (const k of ["ticket", "num", "layout", "out", "meta", "data", "gen"]) d[k] = Object.assign(d[k], src[k] || {});
       if (Array.isArray(src.fields)) d.fields = src.fields.map((f) => defaultField(f));
       if (!src.ticket || !src.ticket.printMode) d.ticket.printMode = num(d.ticket.bleed, 0) > 0 ? "custom" : "home"; // 舊版設定
       return d;
@@ -922,6 +957,17 @@
       const inc = S.ticket.bgMode === "included" ? 2 * bleedMm() : 0;
       const tw = num(S.ticket.w, 1), th = num(S.ticket.h, 1);
       const ia = bgImg.naturalWidth / bgImg.naturalHeight, ta = (tw + inc) / (th + inc);
+      // 用「幫我做一張」產生的圖：尺寸或出血改了就提供重新產生
+      if (S.gen.active) {
+        const tb = 2 * bleedMm(), ga = (tw + tb) / (th + tb);
+        const genInc = S.ticket.bgMode === "included" ? 2 * bleedMm() : 0;
+        if (Math.abs(ia - ga) / ga < 0.01 && genInc === tb) { box.hidden = true; return; }
+        box.hidden = false; box.textContent = "券的大小或印製方式改了，圖片需要重新產生。";
+        const gb = document.createElement("button"); gb.className = "btn-sm"; gb.textContent = "✨ 依新的大小重新產生圖片";
+        gb.onclick = () => useGenerated();
+        box.appendChild(document.createElement("br")); box.appendChild(gb);
+        return;
+      }
       if (Math.abs(ia - ta) / ta < 0.015) { box.hidden = true; return; }
       box.hidden = false;
       box.textContent = `這張圖片的長寬比例，跟設定的券大小不太一樣，直接用的話圖片會被${ia > ta ? "壓扁" : "拉長"}一點。建議按下面的按鈕，讓券的高度配合圖片。`;
@@ -1326,7 +1372,7 @@
       S.fields.forEach((f) => (f.id = "f" + Math.random().toString(36).slice(2, 8)));
       Object.assign(S.layout, { margin: 5, stackCut: true, cutMarks: true, cutLines: true }, p.layout);
       if (p.auto !== false) autoLayout();
-      bgImg = null; bgDataURL = null; $("bgInput").value = ""; setBgName(null);
+      bgImg = null; bgDataURL = null; $("bgInput").value = ""; S.gen.active = false; setBgName(null);
       selId = S.fields[0].id; page = 0;
       syncBindings(); refreshAll();
       $("statusText").textContent = `已換成「${p.name}」，接著可以選擇券的圖片。`;
@@ -1596,7 +1642,222 @@
     };
 
     function setBgName(name) {
-      $("bgName").textContent = name ? `✓ ${name}` : bgImg ? "✓ 已載入（上次的圖片）" : "還沒選擇（也可以不用圖片，直接印在白紙上）";
+      $("bgName").textContent = name ? (name.startsWith("✨") ? name : `✓ ${name}`) : bgImg ? "✓ 已載入（上次的圖片）" : "還沒選擇（也可以不用圖片，直接印在白紙上）";
+    }
+
+    // =====================================================================
+    // ✨ 幫我做一張：用文字＋風格直接產生券的底圖
+    // =====================================================================
+    const THEMES = {
+      red:    { label: "喜氣紅金", bg: ["#c81e1e", "#7f1d1d"], ink: "#fde68a", sub: "#fef3c7", line: "#fcd34d", stubBg: "#fff7e0", stubInk: "#7f1d1d", stubLine: "#b45309", pattern: "frame" },
+      blue:   { label: "清爽藍", bg: ["#eff6ff", "#dbeafe"], ink: "#1e3a8a", sub: "#1d4ed8", line: "#1e40af", stubBg: "#1e3a8a", stubInk: "#ffffff", stubLine: "#bfdbfe", pattern: "stripes" },
+      mono:   { label: "簡約黑白（省墨水）", bg: ["#ffffff", "#ffffff"], ink: "#111827", sub: "#374151", line: "#111827", stubBg: "#ffffff", stubInk: "#111827", stubLine: "#111827", pattern: "border" },
+      orange: { label: "活潑橘黃", bg: ["#fff7ed", "#fed7aa"], ink: "#9a3412", sub: "#c2410c", line: "#9a3412", stubBg: "#ea580c", stubInk: "#ffffff", stubLine: "#ffedd5", pattern: "dots" },
+      xmas:   { label: "聖誕綠紅", bg: ["#166534", "#14532d"], ink: "#ffffff", sub: "#dcfce7", line: "#fca5a5", stubBg: "#b91c1c", stubInk: "#ffffff", stubLine: "#fecaca", pattern: "snow" },
+      pink:   { label: "粉嫩可愛", bg: ["#fdf2f8", "#fbcfe8"], ink: "#9d174d", sub: "#be185d", line: "#9d174d", stubBg: "#f9a8d4", stubInk: "#831843", stubLine: "#831843", pattern: "confetti" },
+    };
+    const GEN_FONT = FONTS[0].v;
+    function rng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+    // 找出放得進 maxW×maxH（px）的最大字級
+    function fitFont(ctx, text, weight, maxW, maxH) {
+      let size = Math.max(4, maxH);
+      ctx.font = `${weight} ${size}px ${GEN_FONT}`;
+      const w = ctx.measureText(text).width;
+      if (w > maxW) size = Math.max(4, size * (maxW / w));
+      return size;
+    }
+    // o：gen 設定；回傳 { canvas, slots }，slots 為號碼位置（成品比例 0~1）與字級（pt）、顏色
+    function genBackground(o, tw, th, b, ppm) {
+      const T = THEMES[o.theme] || THEMES.red;
+      const W = Math.round((tw + 2 * b) * ppm), H = Math.round((th + 2 * b) * ppm);
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      const ctx = c.getContext("2d");
+      const X = (mm) => (b + mm) * ppm, Y = (mm) => (b + mm) * ppm, M = (mm) => mm * ppm;
+      const portrait = th > tw * 1.1;
+      const main = { x: 0, y: 0, w: tw, h: th }; let stub = null;
+      if (o.stub) {
+        if (!portrait) { const sw = clamp(tw * 0.25, Math.min(28, tw * 0.4), 60); stub = { x: tw - sw, y: 0, w: sw, h: th }; main.w = tw - sw; }
+        else { const sh = clamp(th * 0.24, Math.min(25, th * 0.4), 55); stub = { x: 0, y: th - sh, w: tw, h: sh }; main.h = th - sh; }
+      }
+      // 背景（畫滿出血）
+      const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, T.bg[0]); g.addColorStop(1, T.bg[1]);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      const mainClip = () => { ctx.beginPath(); if (!stub) ctx.rect(0, 0, W, H); else if (!portrait) ctx.rect(0, 0, X(stub.x), H); else ctx.rect(0, 0, W, Y(stub.y)); ctx.clip(); };
+      // 花紋
+      ctx.save(); mainClip();
+      const r = rng(20261120);
+      if (T.pattern === "stripes") {
+        ctx.strokeStyle = "rgba(59,130,246,.08)"; ctx.lineWidth = M(2.2);
+        for (let x = -H; x < W + H; x += M(7)) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke(); }
+      } else if (T.pattern === "dots") {
+        for (let x = 0; x < W; x += M(4)) for (let y = 0; y < H; y += M(4)) {
+          const k = x / W; if (k < 0.45) continue;
+          ctx.fillStyle = `rgba(234,88,12,${(0.05 + 0.18 * (k - 0.45)).toFixed(3)})`;
+          ctx.beginPath(); ctx.arc(x, y, M(0.35 + 1.1 * (k - 0.45)), 0, Math.PI * 2); ctx.fill();
+        }
+      } else if (T.pattern === "snow") {
+        for (let i = 0; i < (W * H) / (M(9) * M(9)); i++) { ctx.fillStyle = `rgba(255,255,255,${(0.15 + r() * 0.35).toFixed(2)})`; ctx.beginPath(); ctx.arc(r() * W, r() * H, M(0.3 + r() * 0.9), 0, Math.PI * 2); ctx.fill(); }
+      } else if (T.pattern === "confetti") {
+        const cols = ["#f472b6", "#a78bfa", "#60a5fa", "#fbbf24", "#34d399"];
+        for (let i = 0; i < (W * H) / (M(11) * M(11)); i++) {
+          ctx.save(); ctx.translate(r() * W, r() * H); ctx.rotate(r() * Math.PI); ctx.globalAlpha = 0.28;
+          ctx.fillStyle = cols[i % cols.length]; ctx.fillRect(-M(0.9), -M(0.4), M(1.8), M(0.8)); ctx.restore();
+        }
+      }
+      ctx.restore();
+      // 存根底色
+      if (stub) { ctx.fillStyle = T.stubBg; if (!portrait) ctx.fillRect(X(stub.x), 0, W - X(stub.x), H); else ctx.fillRect(0, Y(stub.y), W, H - Y(stub.y)); }
+      // 外框
+      const inset = Math.min(main.w, main.h) * 0.045;
+      if (T.pattern === "frame" || T.pattern === "border") {
+        ctx.strokeStyle = T.line; ctx.globalAlpha = T.pattern === "frame" ? 0.85 : 1;
+        ctx.lineWidth = M(T.pattern === "frame" ? 0.5 : 0.3);
+        ctx.strokeRect(X(main.x + inset), Y(main.y + inset), M(main.w - 2 * inset), M(main.h - 2 * inset));
+        if (T.pattern === "frame") { ctx.lineWidth = M(0.2); const i2 = inset + 1.2; ctx.strokeRect(X(main.x + i2), Y(main.y + i2), M(main.w - 2 * i2), M(main.h - 2 * i2)); }
+        ctx.globalAlpha = 1;
+      }
+      // 撕線
+      if (stub) {
+        ctx.strokeStyle = T.pattern === "border" ? "#6b7280" : (portrait ? T.stubLine : T.line); ctx.lineWidth = M(0.35); ctx.setLineDash([M(1.6), M(1.2)]);
+        ctx.beginPath(); if (!portrait) { ctx.moveTo(X(stub.x), Y(0)); ctx.lineTo(X(stub.x), Y(th)); } else { ctx.moveTo(X(0), Y(stub.y)); ctx.lineTo(X(tw), Y(stub.y)); } ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = ctx.strokeStyle; ctx.font = `${M(3.2)}px ${GEN_FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        if (!portrait) ctx.fillText("✂", X(stub.x), Y(Math.min(4.5, th * 0.12))); else ctx.fillText("✂", X(Math.min(4.5, tw * 0.08)), Y(stub.y));
+      }
+
+      // 「標籤＋底線」，回傳底線在 x 方向的起訖（mm）
+      const labelLine = (label, x, yLine, w, sizeMm, color, lineColor) => {
+        ctx.font = `500 ${M(sizeMm)}px ${GEN_FONT}`; ctx.fillStyle = color; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+        ctx.fillText(label, X(x), Y(yLine) - M(sizeMm * 0.12));
+        const lw = ctx.measureText(label).width / ppm + sizeMm * 0.4;
+        ctx.strokeStyle = lineColor; ctx.lineWidth = M(Math.max(0.25, sizeMm * 0.07));
+        ctx.beginPath(); ctx.moveTo(X(x + lw), Y(yLine)); ctx.lineTo(X(x + w), Y(yLine)); ctx.stroke();
+        return [x + lw, x + w];
+      };
+
+      // 主券內容
+      const P = Math.min(main.w, main.h) * 0.11;
+      const L = { x: main.x + P, y: main.y + P * 0.95, w: main.w - 2 * P, h: main.h - 2 * P };
+      const hasInfo = o.name || o.phone;
+      const titleH = L.h * (o.sub ? 0.24 : 0.3);
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      const title = (o.title || "").trim() || " ";
+      let fs = fitFont(ctx, title, 800, M(L.w), M(titleH));
+      ctx.font = `800 ${fs}px ${GEN_FONT}`; ctx.fillStyle = T.ink; ctx.fillText(title, X(L.x), Y(L.y + L.h * 0.03) + M(titleH) / 2);
+      let yCur = L.y + L.h * 0.03 + titleH;
+      if (o.sub) {
+        const subH = L.h * 0.1;
+        fs = fitFont(ctx, o.sub, 500, M(L.w), M(subH));
+        ctx.font = `500 ${fs}px ${GEN_FONT}`; ctx.fillStyle = T.sub; ctx.fillText(o.sub, X(L.x), Y(yCur + L.h * 0.05) + M(subH) / 2);
+        yCur += L.h * 0.17;
+      }
+      const labelMm = clamp(main.h * 0.065, 2.6, 6);
+      const numMm = clamp(main.h * 0.1, 3.2, 11);
+      const noteMm = clamp(main.h * 0.048, 2.3, 4);
+      const lineNo = L.y + L.h - (o.note ? noteMm * 2.2 : 0);
+      if (hasInfo) {
+        const lineInfo = lineNo - Math.max(labelMm * 2.6, (lineNo - yCur) * 0.5);
+        if (o.name && o.phone) { const half = (L.w - P * 0.6) / 2; labelLine("姓名", L.x, lineInfo, half, labelMm, T.sub, T.line); labelLine("電話", L.x + half + P * 0.6, lineInfo, half, labelMm, T.sub, T.line); }
+        else labelLine(o.name ? "姓名" : "電話", L.x, lineInfo, L.w * 0.75, labelMm, T.sub, T.line);
+      }
+      const [n0, n1] = labelLine("No.", L.x, lineNo, Math.min(L.w * 0.6, L.w), labelMm, T.sub, T.line);
+      const slots = { main: { x: (n0 + n1) / 2 / tw, y: (lineNo - numMm * 0.48) / th, pt: numMm / PT_MM, color: T.ink } };
+      if (o.note) {
+        ctx.font = `400 ${M(noteMm)}px ${GEN_FONT}`; ctx.fillStyle = T.sub; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        let note = o.note; while (note.length > 1 && ctx.measureText(note).width > M(L.w)) note = note.slice(0, -1);
+        ctx.fillText(note, X(L.x), Y(L.y + L.h - noteMm * 0.4));
+      }
+      // 存根內容
+      if (stub) {
+        const sp = Math.min(stub.w, stub.h) * 0.13;
+        const S0 = { x: stub.x + sp, y: stub.y + sp, w: stub.w - 2 * sp, h: stub.h - 2 * sp };
+        ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillStyle = T.stubInk;
+        if (!portrait) {
+          const sLabel = clamp(stub.h * 0.065, 2.4, 5), sNum = clamp(Math.min(stub.h * 0.1, stub.w * 0.11), 3, 10);
+          fs = fitFont(ctx, "存根", 700, M(S0.w), M(Math.min(S0.h * 0.2, 7)));
+          ctx.font = `700 ${fs}px ${GEN_FONT}`; ctx.fillText("存根", X(S0.x), Y(S0.y) + fs / 2);
+          const sNo = S0.y + S0.h * 0.94;
+          if (hasInfo) labelLine(o.name ? "姓名" : "電話", S0.x, sNo - Math.max(sLabel * 2.8, S0.h * 0.33), S0.w, sLabel, T.stubInk, T.stubLine);
+          const [s0, s1] = labelLine("No.", S0.x, sNo, S0.w, sLabel, T.stubInk, T.stubLine);
+          slots.stub = { x: (s0 + s1) / 2 / tw, y: (sNo - sNum * 0.48) / th, pt: sNum / PT_MM, color: T.stubInk };
+        } else {
+          // 直式：上面一行「存根」，下面一行「姓名＿＿  No.＿＿」並排
+          const sLabel = clamp(S0.h * 0.2, 2.6, 5.5), sNum = clamp(S0.h * 0.26, 3.2, 10);
+          fs = fitFont(ctx, "存根", 700, M(S0.w), M(Math.min(S0.h * 0.32, 7)));
+          ctx.font = `700 ${fs}px ${GEN_FONT}`; ctx.fillText("存根", X(S0.x), Y(S0.y) + fs / 2);
+          const sNo = S0.y + S0.h * 0.95, gap = S0.w * 0.06;
+          let nx = S0.x, nw = S0.w;
+          if (hasInfo) { const half = (S0.w - gap) / 2; labelLine(o.name ? "姓名" : "電話", S0.x, sNo, half, sLabel, T.stubInk, T.stubLine); nx = S0.x + half + gap; nw = half; }
+          const [s0, s1] = labelLine("No.", nx, sNo, nw, sLabel, T.stubInk, T.stubLine);
+          slots.stub = { x: (s0 + s1) / 2 / tw, y: (sNo - sNum * 0.48) / th, pt: sNum / PT_MM, color: T.stubInk };
+        }
+      }
+      return { canvas: c, slots };
+    }
+
+    // 對話框
+    Object.entries(THEMES).forEach(([k, t]) => { const o = document.createElement("option"); o.value = k; o.textContent = t.label; $("genTheme").appendChild(o); });
+    const genIds = { genTitle: "title", genSub: "sub", genNote: "note", genTheme: "theme", genStub: "stub", genName: "name", genPhone: "phone" };
+    function readGenForm() {
+      const o = {};
+      Object.entries(genIds).forEach(([id, k]) => { const el = $(id); o[k] = el.type === "checkbox" ? el.checked : el.value.trim(); });
+      return o;
+    }
+    function drawGenPreview() {
+      const o = readGenForm(), tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50);
+      const box = $("genCanvas").parentElement;
+      const maxW = Math.max(200, box.clientWidth - 28), maxH = 360;
+      const dpr = window.devicePixelRatio || 1;
+      const ppmCss = Math.min(maxW / tw, maxH / th);
+      const { canvas, slots } = genBackground(o, tw, th, 0, ppmCss * dpr);
+      const cv = $("genCanvas"); cv.width = canvas.width; cv.height = canvas.height;
+      cv.style.width = canvas.width / dpr + "px"; cv.style.height = canvas.height / dpr + "px";
+      const ctx = cv.getContext("2d"); ctx.drawImage(canvas, 0, 0);
+      const sample = sampleNumber();
+      Object.values(slots).forEach((sl) => {
+        const r = renderField(defaultField({ x: sl.x, y: sl.y, size: sl.pt, color: sl.color, align: "center" }), sample, ppmCss * dpr);
+        ctx.drawImage(r.canvas, sl.x * canvas.width + r.ox, sl.y * canvas.height + r.oy);
+      });
+      $("genStub").parentElement.lastChild.textContent = th > tw * 1.1 ? " 下面加存根（撕下來給主辦單位）" : " 右邊加存根（撕下來給主辦單位）";
+      $("genHint").textContent = `券的大小：${tw}×${th} mm（要改大小請先在左邊「券的大小」調整）。號碼會自動放在「No.」的線上。`;
+    }
+    $("btnGen").onclick = () => {
+      Object.entries(genIds).forEach(([id, k]) => { const el = $(id); if (el.type === "checkbox") el.checked = !!S.gen[k]; else el.value = S.gen[k] ?? ""; });
+      $("genDlg").showModal(); drawGenPreview();
+    };
+    Object.keys(genIds).forEach((id) => $(id).addEventListener("input", drawGenPreview));
+    $("genCancel").onclick = () => $("genDlg").close();
+    $("genUse").onclick = async () => {
+      const o = readGenForm();
+      Object.assign(S.gen, o, { active: true });
+      await useGenerated();
+      $("genDlg").close();
+    };
+    async function useGenerated() {
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50), b = bleedMm();
+      const { canvas, slots } = genBackground(S.gen, tw, th, b, 300 / 25.4);
+      S.ticket.bgMode = b > 0 ? "included" : "extend";
+      const notes = [];
+      if (!isList()) {
+        const isNum = (f) => f.type !== "qr" && String(f.tpl || "").includes("{n}");
+        const targets = [slots.main, slots.stub].filter(Boolean);
+        const numFields = S.fields.filter(isNum);
+        targets.forEach((sl, i) => {
+          let f = numFields[i];
+          if (!f) { f = defaultField({ name: i ? "存根編號" : "編號" }); S.fields.push(f); }
+          if (/^\s*(no\.?|#)?\s*\{n\}\s*$/i.test(f.tpl)) f.tpl = "{n}"; // 圖上已經有「No.」
+          Object.assign(f, { x: sl.x, y: sl.y, size: +sl.pt.toFixed(1), color: sl.color, align: "center", rotate: 0, font: FONTS[0].v, bold: true, stroke: 0 });
+        });
+        // 多出來的編號欄位、和圖上重複的固定文字，移除（可按復原找回）
+        const extra = numFields.slice(targets.length);
+        const staticText = S.fields.filter((f) => f.type !== "qr" && !/\{[^{}]+\}/.test(f.tpl || ""));
+        const drop = new Set([...extra, ...staticText]);
+        if (drop.size) { S.fields = S.fields.filter((f) => !drop.has(f)); notes.push(`移除了 ${drop.size} 個和圖片重複的文字欄位（可按「↶ 復原」找回）`); }
+        selId = S.fields[0]?.id ?? null;
+      }
+      await setBackground(canvas.toDataURL("image/jpeg", 0.93));
+      setBgName("✨ 用「幫我做一張」產生的圖片");
+      syncBindings(); refreshAll();
+      $("statusText").textContent = `已產生券的圖片，號碼也放好了。${notes.join("。")}`;
     }
 
     // ---- 8. 依圖片深淺自動選黑字或白字 ----
@@ -1628,7 +1889,7 @@
       reader.onload = async (ev) => {
         const ok = await setBackground(ev.target.result);
         if (!ok) { alert("無法讀取這張圖片。"); return; }
-        setBgName(file.name);
+        setBgName(file.name); S.gen.active = false;
         const changed = autoContrast();
         $("statusText").textContent = `已載入圖片。${changed ? "已依圖片深淺自動調整文字顏色。" : ""}`;
       };
