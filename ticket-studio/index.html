@@ -31,6 +31,19 @@
     .gen-preview { background: #cbd5e1; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
     .gen-preview canvas { max-width: 100%; box-shadow: 0 6px 20px rgba(0,0,0,.2); background: #fff; }
     .gen-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .gen-dlg { max-height: 92vh; }
+    .gen-dlg textarea { width: 100%; font-size: 13px; padding: 6px 9px; border: 1px solid var(--input); border-radius: 6px; font-family: inherit; resize: vertical; }
+    .seg { display: flex; gap: 6px; }
+    .seg label { flex: 1; display: flex; align-items: center; gap: 6px; justify-content: center; border: 1px solid var(--input); border-radius: 8px; padding: 7px 8px; font-size: 13px; cursor: pointer; }
+    .seg label:has(input:checked) { border-color: var(--primary); background: #eef2ff; color: var(--primary); font-weight: 600; }
+    .seg input { margin: 0; }
+    .ai-box { border: 1px solid #c7d2fe; background: #f8faff; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+    .ai-box label.l a { font-weight: 400; margin-left: 6px; }
+    .ai-status { font-size: 13px; min-height: 18px; }
+    .ai-status.err { color: #b91c1c; } .ai-status.ok { color: var(--ok); } .ai-status.busy { color: var(--primary); }
+    .ai-thumbs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+    .ai-thumbs img { width: 72px; height: 32px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
+    .ai-thumbs img.on { border-color: var(--primary); }
     .mini-bar { position: absolute; z-index: 5; display: flex; gap: 4px; align-items: center; background: #1e293b; padding: 4px; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,.25); transform: translate(-50%, -100%); white-space: nowrap; }
     .mini-bar button { background: #334155; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 13px; cursor: pointer; }
     .mini-bar button:hover { background: #475569; }
@@ -67,7 +80,7 @@
     .panel h2:first-child { margin-top: 0; }
     .fg { margin-bottom: 10px; }
     label.l { display: block; font-size: 12.5px; font-weight: 500; margin-bottom: 3px; color: #374151; }
-    input[type="number"], input[type="text"], select {
+    input[type="number"], input[type="text"], input[type="password"], select {
       width: 100%; padding: 6px 9px; border: 1px solid var(--input); border-radius: 6px; font-size: 13px; background: #fff; color: var(--text);
     }
     input[type="color"] { width: 100%; height: 32px; border: 1px solid var(--input); border-radius: 6px; padding: 2px; background: #fff; }
@@ -511,7 +524,36 @@
         <div class="fg"><label class="l">活動名稱</label><input type="text" id="genTitle" maxlength="30" placeholder="例：年終尾牙摸彩" /></div>
         <div class="fg"><label class="l">日期、地點（可不填）</label><input type="text" id="genSub" maxlength="50" placeholder="例：2027.1.15（五）晚上 6:30｜○○飯店" /></div>
         <div class="fg"><label class="l">備註（可不填）</label><input type="text" id="genNote" maxlength="60" placeholder="例：中獎請本人持券領取" /></div>
-        <div class="fg"><label class="l">風格</label><select id="genTheme"></select></div>
+        <div class="fg"><label class="l">背景</label>
+          <div class="seg">
+            <label><input type="radio" name="genSrc" value="theme" /> 內建風格</label>
+            <label><input type="radio" name="genSrc" value="ai" /> 🤖 AI 畫背景</label>
+          </div>
+        </div>
+        <div class="fg" id="genThemeRow"><label class="l">風格</label><select id="genTheme"></select></div>
+        <div id="genAiBox" class="ai-box" hidden>
+          <div class="fg">
+            <label class="l">想要什麼樣的背景？（不用寫文字內容，字會由工具加上）</label>
+            <textarea id="genAiPrompt" rows="3" maxlength="400" placeholder="例：紅色和金色的春節祥雲、燈籠，喜氣洋洋"></textarea>
+            <div class="chips" id="genAiIdeas" style="margin:6px 0 0;"></div>
+          </div>
+          <div class="row2 fg">
+            <div><label class="l">AI 服務</label>
+              <select id="genAiProvider"><option value="gemini">Google Gemini</option><option value="openai">OpenAI</option></select>
+            </div>
+            <div><label class="l">模型</label><select id="genAiModel"></select></div>
+          </div>
+          <div class="fg">
+            <label class="l">API 金鑰 <a href="#" id="genAiKeyHelp" target="_blank" rel="noopener">怎麼申請？</a></label>
+            <input type="password" id="genAiKey" autocomplete="off" placeholder="貼上你的金鑰" />
+            <label class="check" style="margin-top:4px;"><input type="checkbox" id="genAiRemember" /> 記住在這台電腦（公用電腦請不要勾）</label>
+          </div>
+          <label class="check"><input type="checkbox" id="genPanel" /> 文字後面加半透明底（字比較清楚）</label>
+          <button type="button" class="btn btn-primary" id="genAiGo" style="margin:6px 0 4px;">🤖 產生背景</button>
+          <div class="ai-status" id="genAiStatus"></div>
+          <div class="ai-thumbs" id="genAiThumbs"></div>
+          <div class="hint">你的描述和金鑰只會送到你選的 AI 服務，用來產生圖片；費用依該服務的計價。金鑰不會存進「存成檔案」的檔案裡。</div>
+        </div>
         <label class="check"><input type="checkbox" id="genStub" /> 右邊加存根（撕下來給主辦單位）</label>
         <label class="check"><input type="checkbox" id="genName" /> 姓名欄</label>
         <label class="check"><input type="checkbox" id="genPhone" /> 電話欄</label>
@@ -644,7 +686,8 @@
       out: { dpi: 200, noBg: false },
       meta: { name: "摸彩券", preset: "lottery" },
       data: { mode: "seq", list: "" },
-      gen: { title: "年終尾牙摸彩", sub: "", note: "", theme: "red", stub: true, name: true, phone: false, active: false },
+      gen: { title: "年終尾牙摸彩", sub: "", note: "", theme: "red", stub: true, name: true, phone: false, active: false,
+             src: "theme", aiPrompt: "", aiProvider: "gemini", aiModel: "", panel: true },
     });
 
     let S = defaultState();
@@ -1609,7 +1652,7 @@
     // ---------- 範本匯出／匯入 ----------
     $("btnExportTpl").onclick = () => {
       const data = { app: "ticket-studio", version: 2, savedAt: new Date().toISOString(), state: S, background: bgDataURL,
-                     draw: { prizes: D.prizes, voidList: D.voidList, verify: D.verify } };
+                     draw: { prizes: D.prizes, voidList: D.voidList, verify: D.verify }, genAi: genAiDataURL };
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
       a.download = `${outName()}範本.json`; a.click();
@@ -1626,6 +1669,7 @@
         bgImg = null; bgDataURL = null;
         if (typeof data.background === "string" && data.background.startsWith("data:image/")) await setBackground(data.background);
         setBgName(bgImg ? "（從檔案載入的圖片）" : null);
+        if (typeof data.genAi === "string" && data.genAi.startsWith("data:image/")) { await setGenAi(data.genAi); if (!genAiHistory.includes(data.genAi)) genAiHistory.unshift(data.genAi); }
         if (data.draw && Array.isArray(data.draw.prizes)) {
           D.prizes = data.draw.prizes.map((p) => ({ id: p.id || uid(), name: String(p.name || "獎項"), qty: Math.max(1, Math.floor(num(p.qty, 1))) }));
           D.voidList = String(data.draw.voidList || ""); D.verify = !!data.draw.verify;
@@ -1668,10 +1712,11 @@
     }
     // o：gen 設定；回傳 { canvas, slots }，slots 為號碼位置（成品比例 0~1）與字級（pt）、顏色
     function genBackground(o, tw, th, b, ppm) {
-      const T = THEMES[o.theme] || THEMES.red;
+      let T = THEMES[o.theme] || THEMES.red;
       const W = Math.round((tw + 2 * b) * ppm), H = Math.round((th + 2 * b) * ppm);
       const c = document.createElement("canvas"); c.width = W; c.height = H;
       const ctx = c.getContext("2d");
+      const useAi = o.src === "ai" && !!genAiImg;
       const X = (mm) => (b + mm) * ppm, Y = (mm) => (b + mm) * ppm, M = (mm) => mm * ppm;
       const portrait = th > tw * 1.1;
       const main = { x: 0, y: 0, w: tw, h: th }; let stub = null;
@@ -1680,8 +1725,21 @@
         else { const sh = clamp(th * 0.24, Math.min(25, th * 0.4), 55); stub = { x: 0, y: th - sh, w: tw, h: sh }; main.h = th - sh; }
       }
       // 背景（畫滿出血）
-      const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, T.bg[0]); g.addColorStop(1, T.bg[1]);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      if (useAi) {
+        // AI 圖片鋪滿（cover），再依圖片深淺決定字的顏色
+        const iw = genAiImg.naturalWidth, ih = genAiImg.naturalHeight, sc = Math.max(W / iw, H / ih);
+        ctx.drawImage(genAiImg, (W - iw * sc) / 2, (H - ih * sc) / 2, iw * sc, ih * sc);
+        const mx = Math.round(X(main.x)), my = Math.round(Y(main.y)), mw = Math.max(1, Math.round(M(main.w))), mh = Math.max(1, Math.round(M(main.h)));
+        const d = ctx.getImageData(mx, my, mw, mh).data; let sum = 0, n = 0;
+        for (let i = 0; i < d.length; i += 4 * 9) { sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; n++; }
+        const dark = sum / n < 140;
+        T = dark
+          ? { ink: "#ffffff", sub: "#f8fafc", line: "rgba(255,255,255,.9)", stubBg: "rgba(255,255,255,.9)", stubInk: "#111827", stubLine: "#374151", pattern: "none", panel: "rgba(15,23,42,.42)" }
+          : { ink: "#111827", sub: "#1f2937", line: "#111827", stubBg: "rgba(255,255,255,.9)", stubInk: "#111827", stubLine: "#374151", pattern: "none", panel: "rgba(255,255,255,.62)" };
+      } else {
+        const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, T.bg[0]); g.addColorStop(1, T.bg[1]);
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      }
       const mainClip = () => { ctx.beginPath(); if (!stub) ctx.rect(0, 0, W, H); else if (!portrait) ctx.rect(0, 0, X(stub.x), H); else ctx.rect(0, 0, W, Y(stub.y)); ctx.clip(); };
       // 花紋
       ctx.save(); mainClip();
@@ -1737,6 +1795,12 @@
       // 主券內容
       const P = Math.min(main.w, main.h) * 0.11;
       const L = { x: main.x + P, y: main.y + P * 0.95, w: main.w - 2 * P, h: main.h - 2 * P };
+      if (useAi && o.panel) {
+        const pad = P * 0.45;
+        ctx.fillStyle = T.panel; ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(X(L.x - pad), Y(L.y - pad), M(L.w + 2 * pad), M(L.h + 2 * pad), M(2.5)); else ctx.rect(X(L.x - pad), Y(L.y - pad), M(L.w + 2 * pad), M(L.h + 2 * pad));
+        ctx.fill();
+      }
       const hasInfo = o.name || o.phone;
       const titleH = L.h * (o.sub ? 0.24 : 0.3);
       ctx.textAlign = "left"; ctx.textBaseline = "middle";
@@ -1797,9 +1861,11 @@
     // 對話框
     Object.entries(THEMES).forEach(([k, t]) => { const o = document.createElement("option"); o.value = k; o.textContent = t.label; $("genTheme").appendChild(o); });
     const genIds = { genTitle: "title", genSub: "sub", genNote: "note", genTheme: "theme", genStub: "stub", genName: "name", genPhone: "phone" };
+    Object.assign(genIds, { genAiPrompt: "aiPrompt", genAiProvider: "aiProvider", genAiModel: "aiModel", genPanel: "panel" });
     function readGenForm() {
       const o = {};
       Object.entries(genIds).forEach(([id, k]) => { const el = $(id); o[k] = el.type === "checkbox" ? el.checked : el.value.trim(); });
+      o.src = document.querySelector('input[name="genSrc"]:checked')?.value || "theme";
       return o;
     }
     function drawGenPreview() {
@@ -1821,17 +1887,171 @@
       $("genHint").textContent = `券的大小：${tw}×${th} mm（要改大小請先在左邊「券的大小」調整）。號碼會自動放在「No.」的線上。`;
     }
     $("btnGen").onclick = () => {
-      Object.entries(genIds).forEach(([id, k]) => { const el = $(id); if (el.type === "checkbox") el.checked = !!S.gen[k]; else el.value = S.gen[k] ?? ""; });
+      fillAiModels(S.gen.aiProvider || "gemini");
+      Object.entries(genIds).forEach(([id, k]) => { const el = $(id); if (el.type === "checkbox") el.checked = !!S.gen[k]; else if (S.gen[k]) el.value = S.gen[k]; else if (el.tagName !== "SELECT") el.value = ""; });
+      document.querySelectorAll('input[name="genSrc"]').forEach((r) => (r.checked = r.value === (S.gen.src || "theme")));
+      loadAiKey(); updateGenSrcUI(); renderAiThumbs();
       $("genDlg").showModal(); drawGenPreview();
     };
     Object.keys(genIds).forEach((id) => $(id).addEventListener("input", drawGenPreview));
     $("genCancel").onclick = () => $("genDlg").close();
     $("genUse").onclick = async () => {
       const o = readGenForm();
+      if (o.src === "ai" && !genAiImg) { setAiStatus("err", "還沒有 AI 背景：請先按「🤖 產生背景」，或改用內建風格。"); return; }
       Object.assign(S.gen, o, { active: true });
       await useGenerated();
       $("genDlg").close();
     };
+    // ---------- 🤖 AI 畫背景（使用者自己的金鑰，瀏覽器直接呼叫） ----------
+    let genAiImg = null, genAiDataURL = null;
+    const genAiHistory = [];
+    const AI_MODELS = {
+      gemini: [["gemini-3.1-flash-image", "Gemini 3.1 Flash Image（推薦，快）"], ["gemini-3-pro-image", "Gemini 3 Pro Image（品質最好、較慢）"], ["gemini-2.5-flash-image", "Gemini 2.5 Flash Image（舊版）"]],
+      openai: [["gpt-image-2", "GPT Image 2（推薦）"], ["gpt-image-2.5-flare", "GPT Image 2.5 Flare（較新）"], ["gpt-image-1.5", "GPT Image 1.5（舊版）"]],
+    };
+    const AI_KEY_HELP = { gemini: "https://aistudio.google.com/apikey", openai: "https://platform.openai.com/api-keys" };
+    const AI_IDEAS = [
+      ["春節喜氣", "紅色與金色的春節背景，祥雲、燈籠、梅花，喜氣洋洋"], ["金色派對", "香檳金色的派對背景，彩帶、亮片、柔和光暈，高級感"],
+      ["星空夜景", "深藍色星空與銀河，點點星光，夢幻寧靜"], ["聖誕雪景", "聖誕節雪景，松樹、雪花、溫暖燈光，紅綠配色"],
+      ["櫻花水彩", "淡粉色櫻花水彩畫風，花瓣飄落，清新柔和"], ["夏日海洋", "清爽的夏日海洋，藍綠色海浪與陽光，明亮"],
+      ["科技感", "深色科技感背景，藍紫色光線與幾何線條"],
+    ];
+    AI_IDEAS.forEach(([t, prompt]) => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t;
+      b.onclick = () => { $("genAiPrompt").value = prompt; };
+      $("genAiIdeas").appendChild(b);
+    });
+    function fillAiModels(provider) {
+      const sel = $("genAiModel"); sel.innerHTML = "";
+      (AI_MODELS[provider] || AI_MODELS.gemini).forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; sel.appendChild(o); });
+      $("genAiKeyHelp").href = AI_KEY_HELP[provider] || AI_KEY_HELP.gemini;
+    }
+    const keyName = (p) => "ticketStudio.aiKey." + p;
+    function loadAiKey() {
+      let k = ""; try { k = localStorage.getItem(keyName($("genAiProvider").value)) || ""; } catch (e) {}
+      $("genAiKey").value = k; $("genAiRemember").checked = !!k;
+    }
+    function updateGenSrcUI() {
+      const ai = (document.querySelector('input[name="genSrc"]:checked')?.value || "theme") === "ai";
+      $("genAiBox").hidden = !ai; $("genThemeRow").hidden = ai;
+    }
+    function setAiStatus(type, text) { const el = $("genAiStatus"); el.className = "ai-status " + type; el.textContent = text; }
+    document.querySelectorAll('input[name="genSrc"]').forEach((r) => r.addEventListener("change", () => { updateGenSrcUI(); drawGenPreview(); }));
+    $("genAiProvider").addEventListener("change", () => { fillAiModels($("genAiProvider").value); loadAiKey(); });
+    $("genAiRemember").addEventListener("change", () => { if (!$("genAiRemember").checked) { try { localStorage.removeItem(keyName($("genAiProvider").value)); } catch (e) {} } });
+
+    function buildAiPrompt(desc, portrait) {
+      return `${desc}\n\nDecorative background artwork for a printed raffle ticket, ${portrait ? "tall vertical layout; keep the upper and middle area calm and uncluttered" : "wide horizontal banner; keep the left two-thirds calm and uncluttered"} so that text can be placed on top later. Soft, high quality, print friendly. Absolutely no text, letters, numbers, logos, frames with writing or watermarks anywhere in the image. 畫面中不要出現任何文字或數字。`;
+    }
+    function nearestRatio(r, list) {
+      let best = list[0], bd = Infinity;
+      list.forEach((s) => { const [a, b] = s.split(":").map(Number); const d = Math.abs(Math.log(r / (a / b))); if (d < bd) { bd = d; best = s; } });
+      return best;
+    }
+    async function postJSON(url, headers, body, signal) {
+      const res = await fetch(url, { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, headers), body: JSON.stringify(body), signal });
+      let json = null; try { json = await res.json(); } catch (e) {}
+      return { status: res.status, ok: res.ok, json };
+    }
+    function aiErrorText(status, json, provider) {
+      const m = json?.error?.message || "";
+      if (status === 401 || status === 403 || /API key not valid|invalid_api_key|Incorrect API key/i.test(m)) return "金鑰不正確或沒有權限，請確認貼上的金鑰。";
+      if (status === 429 || /quota|rate limit|billing|insufficient/i.test(m)) return provider === "openai" ? "額度不足或太頻繁：請確認 OpenAI 帳號已儲值，或稍等一下再試。" : "額度用完或太頻繁：請稍等一下再試，或到 Google AI Studio 確認方案。";
+      if (status === 404) return "找不到這個模型，請換一個模型試試。";
+      if (/safety|moderation|blocked|policy/i.test(m)) return "AI 拒絕畫這張（可能觸發了安全限制），請換個說法。";
+      return `產生失敗（${status}）：${m || "未知錯誤"}`;
+    }
+    async function callGemini(key, model, prompt, ratio, signal) {
+      const isNew = model.startsWith("gemini-3.1");
+      const ratios = isNew ? ["1:8", "1:4", "9:16", "2:3", "3:4", "4:5", "1:1", "5:4", "4:3", "3:2", "16:9", "21:9", "4:1", "8:1"] : ["9:16", "2:3", "3:4", "4:5", "1:1", "5:4", "4:3", "3:2", "16:9", "21:9"];
+      const mk = (full) => {
+        const imageConfig = { aspectRatio: full ? nearestRatio(ratio, ratios) : (ratio >= 1 ? "16:9" : "9:16") };
+        if (full && !model.startsWith("gemini-2.5")) imageConfig.imageSize = "2K";
+        return { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseModalities: ["TEXT", "IMAGE"], imageConfig } };
+      };
+      const hdr = { "x-goog-api-key": key };
+      const url = (v) => `https://generativelanguage.googleapis.com/${v}/models/${encodeURIComponent(model)}:generateContent`;
+      let r = await postJSON(url("v1"), hdr, mk(true), signal);
+      if (r.status === 404) r = await postJSON(url("v1beta"), hdr, mk(true), signal);
+      if (r.status === 400 && !/API key/i.test(r.json?.error?.message || "")) r = await postJSON(url("v1beta"), hdr, mk(false), signal); // 退回最基本的設定
+      if (!r.ok) throw new Error(aiErrorText(r.status, r.json, "gemini"));
+      const cand = r.json?.candidates?.[0];
+      const part = cand?.content?.parts?.find((p) => p.inlineData || p.inline_data);
+      const inl = part && (part.inlineData || part.inline_data);
+      if (!inl?.data) {
+        const why = r.json?.promptFeedback?.blockReason || cand?.finishReason || "";
+        throw new Error(/SAFETY|BLOCK|PROHIBITED|IMAGE_SAFETY/i.test(why) ? "AI 拒絕畫這張（可能觸發了安全限制），請換個說法。" : "AI 沒有回傳圖片，請再按一次試試。");
+      }
+      return `data:${inl.mimeType || inl.mime_type || "image/png"};base64,${inl.data}`;
+    }
+    async function callOpenAI(key, model, prompt, ratio, signal) {
+      const flexible = /^gpt-image-2/.test(model);
+      const stdSize = ratio > 1.2 ? "1536x1024" : ratio < 0.83 ? "1024x1536" : "1024x1024";
+      let size = stdSize;
+      if (flexible) {
+        const r = clamp(ratio, 1 / 3, 3);
+        const w = r >= 1 ? 2048 : Math.round((2048 * r) / 16) * 16, h = r >= 1 ? Math.round(2048 / r / 16) * 16 : 2048;
+        size = `${w}x${h}`;
+      }
+      const body = (sz) => ({ model, prompt, size: sz, n: 1, quality: "medium", output_format: "jpeg", output_compression: 92 });
+      const hdr = { Authorization: "Bearer " + key };
+      let r = await postJSON("https://api.openai.com/v1/images/generations", hdr, body(size), signal);
+      if (r.status === 400 && size !== stdSize && /size/i.test(r.json?.error?.message || "")) r = await postJSON("https://api.openai.com/v1/images/generations", hdr, body(stdSize), signal);
+      if (!r.ok) throw new Error(aiErrorText(r.status, r.json, "openai"));
+      const b64 = r.json?.data?.[0]?.b64_json;
+      if (!b64) throw new Error("AI 沒有回傳圖片，請再按一次試試。");
+      return "data:image/jpeg;base64," + b64;
+    }
+    // 統一轉成 JPEG（檔案小、存得進瀏覽器）
+    function loadImage(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("圖片讀取失敗")); i.src = src; }); }
+    async function toJpeg(src) {
+      const img = await loadImage(src);
+      const sc = Math.min(1, 3000 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      return c.toDataURL("image/jpeg", 0.9);
+    }
+    async function setGenAi(dataURL) {
+      genAiDataURL = dataURL; genAiImg = dataURL ? await loadImage(dataURL) : null;
+      try { dataURL ? localStorage.setItem("ticketStudio.genAi", dataURL) : localStorage.removeItem("ticketStudio.genAi"); } catch (e) {}
+    }
+    function renderAiThumbs() {
+      const box = $("genAiThumbs"); box.innerHTML = "";
+      genAiHistory.forEach((u) => {
+        const im = document.createElement("img"); im.src = u; im.title = "用這張"; if (u === genAiDataURL) im.className = "on";
+        im.onclick = async () => { await setGenAi(u); renderAiThumbs(); drawGenPreview(); };
+        box.appendChild(im);
+      });
+    }
+    let aiBusy = false;
+    $("genAiGo").onclick = async () => {
+      if (aiBusy) return;
+      const provider = $("genAiProvider").value, model = $("genAiModel").value, key = $("genAiKey").value.trim(), desc = $("genAiPrompt").value.trim();
+      if (!desc) return setAiStatus("err", "請先寫想要的背景，或點一個靈感。");
+      if (!key) return setAiStatus("err", "請貼上 API 金鑰（點「怎麼申請？」看說明）。");
+      try { $("genAiRemember").checked ? localStorage.setItem(keyName(provider), key) : localStorage.removeItem(keyName(provider)); } catch (e) {}
+      const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50), b = bleedMm();
+      const ratio = (tw + 2 * b) / (th + 2 * b);
+      const prompt = buildAiPrompt(desc, th > tw * 1.1);
+      aiBusy = true; $("genAiGo").disabled = true;
+      const t0 = Date.now();
+      const timer = setInterval(() => setAiStatus("busy", `🎨 AI 正在畫…（${Math.round((Date.now() - t0) / 1000)} 秒，通常 10～40 秒）`), 500);
+      const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 150000);
+      try {
+        const raw = provider === "openai" ? await callOpenAI(key, model, prompt, ratio, ctrl.signal) : await callGemini(key, model, prompt, ratio, ctrl.signal);
+        const jpg = await toJpeg(raw);
+        genAiHistory.unshift(jpg); if (genAiHistory.length > 6) genAiHistory.pop();
+        await setGenAi(jpg);
+        clearInterval(timer);
+        setAiStatus("ok", "✓ 畫好了！不滿意可以再按一次，下方會保留最近幾張讓你挑。");
+        renderAiThumbs(); drawGenPreview();
+      } catch (e) {
+        clearInterval(timer);
+        setAiStatus("err", e.name === "AbortError" ? "等太久了（超過 150 秒），請再試一次。" : (e.message === "Failed to fetch" ? "連不上 AI 服務，請檢查網路。" : e.message));
+      } finally { clearTimeout(to); aiBusy = false; $("genAiGo").disabled = false; }
+    };
+    try { const g = localStorage.getItem("ticketStudio.genAi"); if (g) { setGenAi(g).then(() => genAiHistory.push(g)); } } catch (e) {}
+
     async function useGenerated() {
       const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50), b = bleedMm();
       const { canvas, slots } = genBackground(S.gen, tw, th, b, 300 / 25.4);
