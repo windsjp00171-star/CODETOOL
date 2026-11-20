@@ -16,6 +16,21 @@
     * { box-sizing: border-box; font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif; }
     [hidden] { display: none !important; }
     body.simple .adv { display: none !important; }
+    body.simple #fullPanel, body:not(.simple) #simplePanel { display: none !important; }
+    .simple-panel { padding: 18px 18px 14px; }
+    .step { display: grid; grid-template-columns: 34px 1fr; gap: 10px; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .step-no { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+    .step-body h3 { margin: 4px 0 10px; font-size: 16px; }
+    .s-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .s-line { font-size: 13.5px; color: #374151; margin: 6px 0; }
+    .s-range { font-size: 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .s-range input[type="number"] { width: 90px; } .s-range select { width: auto; }
+    .s-size { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; }
+    .s-size input[type="number"] { width: 80px; }
+    .s-info { font-size: 13.5px; background: #eef2ff; color: #3730a3; border-radius: 8px; padding: 8px 10px; line-height: 1.6; }
+    .s-foot { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+    .link-btn { background: none; border: none; color: var(--primary); cursor: pointer; padding: 0; font-size: 13px; text-decoration: underline; }
+    .warn hr { border: none; border-top: 1px dashed #f59e0b; margin: 8px 0; }
     .file-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .file-btn { cursor: pointer; background: var(--primary) !important; color: #fff !important; padding: 7px 12px !important; font-weight: 600 !important; }
     .file-btn:hover { background: var(--primary-h) !important; }
@@ -232,7 +247,54 @@
   </header>
 
   <div class="container" id="viewDesign">
-    <aside class="panel">
+    <aside class="panel simple-panel" id="simplePanel">
+      <div class="step">
+        <div class="step-no">1</div>
+        <div class="step-body">
+          <h3>放上券的圖片</h3>
+          <div class="s-btns">
+            <label class="btn-sm file-btn" for="bgInput">🖼 選擇圖片</label>
+            <button type="button" class="btn-sm gen-btn" id="sGen">✨ 沒有圖？幫我做一張</button>
+          </div>
+          <div class="file-name" id="sBgName"></div>
+          <div id="sWarn" class="warn" hidden></div>
+          <div class="s-line">券的大小：<b id="sSize"></b> <button type="button" class="link-btn" id="sSizeToggle">改大小</button></div>
+          <div id="sSizeBox" class="s-size" hidden>
+            <label>寬 <input type="number" step="0.1" min="10" data-bind="ticket.w" /> mm</label>
+            <label>高 <input type="number" step="0.1" min="10" data-bind="ticket.h" /> mm</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-no">2</div>
+        <div class="step-body">
+          <h3>放號碼</h3>
+          <div class="s-range" id="sRange">從 <input type="number" min="0" data-bind="num.start" /> 號　到 <input type="number" min="0" data-bind="num.end" /> 號</div>
+          <div class="s-line" id="sListLine" hidden></div>
+          <div class="hint">在右邊的預覽上：<b>拖曳</b>號碼可以移動位置，<b>點一下</b>可以放大縮小、換顏色。</div>
+          <button type="button" class="btn-sm" id="sAddNum" style="margin-top:6px;">＋ 再加一個號碼（例如存根）</button>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-no">3</div>
+        <div class="step-body">
+          <h3>下載列印</h3>
+          <div class="s-range">紙張 <select data-bind="layout.paper"><option value="A4">A4</option><option value="A3">A3</option><option value="B4">B4</option><option value="Letter">Letter</option></select></div>
+          <div class="s-info" id="sInfo"></div>
+          <button type="button" class="btn btn-primary" id="sPdf" style="margin:8px 0 0;">下載 PDF 去列印</button>
+          <div class="status" id="sStatus"></div>
+        </div>
+      </div>
+
+      <div class="s-foot">
+        <div class="s-line">做的不是摸彩券？<select id="sPreset" style="width:auto;"></select></div>
+        <button type="button" class="btn-sm" id="sFull">⚙ 更多設定（字型、出血、名單、驗證碼…）</button>
+      </div>
+    </aside>
+
+    <aside class="panel" id="fullPanel">
       <h2>你要做什麼？</h2>
       <div class="fg"><select id="presetSelect"></select></div>
 
@@ -398,7 +460,7 @@
       <button class="btn btn-primary" id="btnPdf">下載拼版 PDF</button>
       <button class="btn btn-success adv" id="btnZip">下載全部單張圖片（ZIP）</button>
       <div class="progress" id="progress"><div></div></div>
-      <div class="simple-note simple-only">目前是<b>簡易模式</b>：字型、描邊、排版欄列、邊界、解析度、驗證碼等進階設定已收起來，排版會自動處理。需要時按右上角「⚙ 完整設定」。</div>
+
       <div class="status" id="statusText"></div>
     </aside>
 
@@ -989,14 +1051,71 @@
     function setBackground(dataURL) {
       return new Promise((resolve) => {
         const img = new Image();
-        img.onload = () => { bgImg = img; bgDataURL = dataURL; refreshAll(); resolve(true); };
+        img.onload = () => { bgImg = img; bgDataURL = dataURL; bgBorder = S.gen.active ? null : detectWhiteBorder(img); refreshAll(); resolve(true); };
         img.onerror = () => { resolve(false); };
         img.src = dataURL;
       });
     }
-    function updateAspectWarn() {
-      const box = $("aspectWarn");
-      if (!bgImg) { box.hidden = true; return; }
+    // ---------- 白邊偵測：圖片某一兩邊有整條白色（常見於截圖或匯出時多留的邊） ----------
+    let bgBorder = null;
+    function detectWhiteBorder(img) {
+      const sc = Math.min(1, 900 / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.max(1, Math.round(img.naturalWidth * sc)), h = Math.max(1, Math.round(img.naturalHeight * sc));
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const ctx = c.getContext("2d"); ctx.drawImage(img, 0, 0, w, h);
+      const d = ctx.getImageData(0, 0, w, h).data;
+      const white = (x, y) => { const i = (y * w + x) * 4; return 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2] > 236 && d[i + 3] > 200; };
+      const rowWhite = (y) => { let bad = 0; for (let x = 0; x < w; x++) if (!white(x, y) && ++bad > w * 0.01) return false; return true; };
+      const colWhite = (x) => { let bad = 0; for (let y = 0; y < h; y++) if (!white(x, y) && ++bad > h * 0.01) return false; return true; };
+      let t = 0, bt = 0, l = 0, r = 0;
+      while (t < h * 0.2 && rowWhite(t)) t++;
+      while (bt < h * 0.2 && rowWhite(h - 1 - bt)) bt++;
+      while (l < w * 0.2 && colWhite(l)) l++;
+      while (r < w * 0.2 && colWhite(w - 1 - r)) r++;
+      const sides = [t, bt, l, r].filter((v) => v > 0).length;
+      // 四邊都白通常是「白底設計」，不是多出來的白邊
+      if (sides === 0 || sides > 2) return null;
+      const px = (v) => (v ? Math.ceil((v + 1) / sc) : 0); // 多裁 1 個縮圖像素，避免殘留灰線
+      const res = { t: px(t), b: px(bt), l: px(l), r: px(r) };
+      if (res.t + res.b < img.naturalHeight * 0.004 && res.l + res.r < img.naturalWidth * 0.004) return null;
+      return res;
+    }
+    async function trimWhiteBorder() {
+      if (!bgImg || !bgBorder) return;
+      const { t, b, l, r } = bgBorder;
+      const w = bgImg.naturalWidth - l - r, h = bgImg.naturalHeight - t - b;
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      c.getContext("2d").drawImage(bgImg, l, t, w, h, 0, 0, w, h);
+      await setBackground(c.toDataURL("image/jpeg", 0.95));
+      bgBorder = null;
+      // 裁掉之後比例會變，直接讓券的高度配合圖片
+      const tw = num(S.ticket.w, 1), ia = w / h, ta = tw / num(S.ticket.h, 1);
+      if (S.ticket.bgMode !== "included" && Math.abs(ia - ta) / ta >= 0.015) S.ticket.h = +(tw / ia).toFixed(2);
+      syncBindings(); refreshAll();
+      ["statusText", "sStatus"].forEach((id) => ($(id).textContent = "✓ 已裁掉白邊。"));
+    }
+    function updateAspectWarn() { ["aspectWarn", "sWarn"].forEach((id) => renderWarn($(id))); }
+    function renderWarn(box) {
+      box.innerHTML = ""; box.hidden = true;
+      if (!bgImg) return;
+      const addMsg = (text, btnText, fn) => {
+        if (box.childNodes.length) box.appendChild(document.createElement("hr"));
+        const d = document.createElement("div"); d.textContent = text; box.appendChild(d);
+        if (btnText) { const b = document.createElement("button"); b.className = "btn-sm"; b.style.marginTop = "6px"; b.textContent = btnText; b.onclick = fn; box.appendChild(b); }
+        box.hidden = false;
+      };
+      if (bgBorder && !S.gen.active) {
+        const th0 = num(S.ticket.h, 1), tw0 = num(S.ticket.w, 1), ih = bgImg.naturalHeight, iw = bgImg.naturalWidth;
+        const parts = [];
+        if (bgBorder.t) parts.push(`上方約 ${((bgBorder.t / ih) * th0).toFixed(1)} mm`);
+        if (bgBorder.b) parts.push(`下方約 ${((bgBorder.b / ih) * th0).toFixed(1)} mm`);
+        if (bgBorder.l) parts.push(`左邊約 ${((bgBorder.l / iw) * tw0).toFixed(1)} mm`);
+        if (bgBorder.r) parts.push(`右邊約 ${((bgBorder.r / iw) * tw0).toFixed(1)} mm`);
+        addMsg(`圖片邊緣有一條白邊（${parts.join("、")}），印出來每張券都會多一條白線。`, "✂ 自動裁掉白邊（建議）", trimWhiteBorder);
+      }
+      renderAspectMsg(addMsg);
+    }
+    function renderAspectMsg(addMsg) {
       const inc = S.ticket.bgMode === "included" ? 2 * bleedMm() : 0;
       const tw = num(S.ticket.w, 1), th = num(S.ticket.h, 1);
       const ia = bgImg.naturalWidth / bgImg.naturalHeight, ta = (tw + inc) / (th + inc);
@@ -1004,20 +1123,14 @@
       if (S.gen.active) {
         const tb = 2 * bleedMm(), ga = (tw + tb) / (th + tb);
         const genInc = S.ticket.bgMode === "included" ? 2 * bleedMm() : 0;
-        if (Math.abs(ia - ga) / ga < 0.01 && genInc === tb) { box.hidden = true; return; }
-        box.hidden = false; box.textContent = "券的大小或印製方式改了，圖片需要重新產生。";
-        const gb = document.createElement("button"); gb.className = "btn-sm"; gb.textContent = "✨ 依新的大小重新產生圖片";
-        gb.onclick = () => useGenerated();
-        box.appendChild(document.createElement("br")); box.appendChild(gb);
+        if (Math.abs(ia - ga) / ga < 0.01 && genInc === tb) return;
+        addMsg("券的大小或印製方式改了，圖片需要重新產生。", "✨ 依新的大小重新產生圖片", () => useGenerated());
         return;
       }
-      if (Math.abs(ia - ta) / ta < 0.015) { box.hidden = true; return; }
-      box.hidden = false;
-      box.textContent = `這張圖片的長寬比例，跟設定的券大小不太一樣，直接用的話圖片會被${ia > ta ? "壓扁" : "拉長"}一點。建議按下面的按鈕，讓券的高度配合圖片。`;
-      const b = document.createElement("button");
-      b.className = "btn-sm"; b.textContent = "讓券的高度配合圖片（建議）";
-      b.onclick = () => { S.ticket.h = +((tw + inc) / ia - inc).toFixed(2); syncBindings(); refreshAll(); };
-      box.appendChild(document.createElement("br")); box.appendChild(b);
+      if (bgBorder) return; // 先處理白邊，裁完會自動調整比例
+      if (Math.abs(ia - ta) / ta < 0.015) return;
+      addMsg(`這張圖片的長寬比例，跟設定的券大小不太一樣，直接用的話圖片會被${ia > ta ? "壓扁" : "拉長"}一點。建議按下面的按鈕，讓券的高度配合圖片。`,
+        "讓券的高度配合圖片（建議）", () => { S.ticket.h = +((tw + inc) / ia - inc).toFixed(2); syncBindings(); refreshAll(); });
     }
 
     // ---------- 單張編輯器 ----------
@@ -1519,7 +1632,7 @@
     }
 
     function refreshAll() {
-      updateDataUI(); updateSizeUI(); updateAspectWarn(); updateInfo(); renderChips(); fillFieldForm(); renderEditor(); schedulePreview(); save();
+      updateDataUI(); updateSizeUI(); updateAspectWarn(); if (typeof updateSimpleUI === "function") updateSimpleUI(); updateInfo(); renderChips(); fillFieldForm(); renderEditor(); schedulePreview(); save();
     }
 
     // ---------- 輸出 ----------
@@ -1686,7 +1799,7 @@
     };
 
     function setBgName(name) {
-      $("bgName").textContent = name ? (name.startsWith("✨") ? name : `✓ ${name}`) : bgImg ? "✓ 已載入（上次的圖片）" : "還沒選擇（也可以不用圖片，直接印在白紙上）";
+      $("bgName").textContent = $("sBgName").textContent = name ? (name.startsWith("✨") ? name : `✓ ${name}`) : bgImg ? "✓ 已載入（上次的圖片）" : "還沒選擇（也可以不用圖片，直接印在白紙上）";
     }
 
     // =====================================================================
@@ -2107,9 +2220,11 @@
       const file = e.target.files[0]; if (!file) return;
       const reader = new FileReader();
       reader.onload = async (ev) => {
+        const wasGen = S.gen.active; S.gen.active = false;
         const ok = await setBackground(ev.target.result);
+        if (!ok) S.gen.active = wasGen;
         if (!ok) { alert("無法讀取這張圖片。"); return; }
-        setBgName(file.name); S.gen.active = false;
+        setBgName(file.name);
         const changed = autoContrast();
         $("statusText").textContent = `已載入圖片。${changed ? "已依圖片深淺自動調整文字顏色。" : ""}`;
       };
@@ -2464,6 +2579,49 @@
     $("btnMoveSave").onclick = () => $("btnExportTpl").click();
     $("btnMoveHide").onclick = () => { $("moveTip").hidden = true; try { localStorage.setItem("ticketStudio.moveTipHidden", "1"); } catch (e) {} };
 
+    // ---------- 三步驟面板（簡易模式） ----------
+    Object.entries(PRESETS).forEach(([k, p]) => { const o = document.createElement("option"); o.value = k; o.textContent = p.name; $("sPreset").appendChild(o); });
+    $("sPreset").onchange = () => {
+      $("presetSelect").value = $("sPreset").value;
+      $("presetSelect").dispatchEvent(new Event("change"));
+      updateSimpleUI();
+    };
+    $("sGen").onclick = () => $("btnGen").click();
+    $("sPdf").onclick = () => $("btnPdf").click();
+    $("sFull").onclick = () => $("btnMode").click();
+    $("sSizeToggle").onclick = () => { $("sSizeBox").hidden = !$("sSizeBox").hidden; $("sSizeToggle").textContent = $("sSizeBox").hidden ? "改大小" : "收起"; };
+    $("sAddNum").onclick = () => {
+      const f = defaultField({ name: "編號 " + (S.fields.length + 1), x: 0.85, y: 0.5 });
+      S.fields.push(f); selId = f.id; refreshAll(); autoContrast();
+      $("sStatus").textContent = "已加一個號碼，請在右邊預覽上把它拖到想要的位置。";
+    };
+    function updateSimpleUI() {
+      $("sSize").textContent = `${+num(S.ticket.w, 0).toFixed(1)} × ${+num(S.ticket.h, 0).toFixed(1)} mm`;
+      $("sPreset").value = S.meta.preset && PRESETS[S.meta.preset] ? S.meta.preset : "lottery";
+      const list = isList();
+      $("sRange").hidden = list; $("sListLine").hidden = !list;
+      if (list) $("sListLine").textContent = `使用匯入的名單（${parseList(S.data.list).records.length} 人）。要改名單請到「⚙ 更多設定」。`;
+      // 排版摘要（和完整面板同一套說法）
+      const { nums, err } = buildNumbers(), L = computeLayout(), box = $("sInfo");
+      box.innerHTML = "";
+      const add = (t, strong) => { const d = document.createElement("div"); if (strong) d.style.fontWeight = "600"; d.textContent = t; box.appendChild(d); };
+      if (err) { add(err, true); $("sPdf").disabled = true; return; }
+      $("sPdf").disabled = false;
+      const pages = Math.ceil(nums.length / L.perPage);
+      add(`共 ${nums.length} 張，一頁 ${L.perPage} 張，要印 ${pages} 頁`, true);
+      if (L.scale < 0.999) {
+        add(`為了一頁放 ${L.perPage} 張，券會稍微縮小（${(L.scale * 100).toFixed(0)}%）。`);
+        const best = bestLayout();
+        if (best) {
+          const b = document.createElement("button"); b.className = "btn-sm"; b.style.margin = "4px 0 0";
+          b.textContent = `改成原本大小（一頁 ${best.n} 張，共 ${Math.ceil(nums.length / best.n)} 頁）`;
+          b.onclick = () => { autoLayout(); syncBindings(); refreshAll(); };
+          box.appendChild(b);
+        }
+      } else add("✓ 原本大小，不縮放");
+      $("sPdf").textContent = `下載 PDF 去列印（${pages} 頁）`;
+    }
+
     // ---------- 簡易／完整設定 ----------
     let simpleUI = true;
     try { simpleUI = localStorage.getItem("ticketStudio.ui") !== "full"; } catch (e) {}
@@ -2480,6 +2638,7 @@
     applyUIMode();
 
     // ---------- 啟動 ----------
+    setBgName(null);
     loadSaved();
     selId = S.fields[0]?.id ?? null;
     syncBindings();
