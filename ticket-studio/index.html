@@ -35,6 +35,7 @@
     .fit-opt input { margin-top: 3px; }
     .fit-opt div { display: flex; flex-direction: column; gap: 2px; }
     .fit-opt b { font-size: 13.5px; } .fit-opt small { font-size: 12px; color: var(--muted); }
+    .stack-list { margin: 4px 0 0; padding-left: 18px; font-size: 12.5px; color: #374151; }
     .okbox { background: #ecfdf5; color: #065f46; font-size: 12.5px; border-radius: 6px; padding: 8px 10px; margin: 6px 0 10px; line-height: 1.5; }
     .okbox hr { border: none; border-top: 1px dashed #6ee7b7; margin: 8px 0; }
     .drop-hint { position: fixed; inset: 0; background: rgba(79,70,229,.18); border: 4px dashed var(--primary); z-index: 60; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -85,7 +86,7 @@
     .mini-bar button { background: #334155; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 13px; cursor: pointer; }
     .mini-bar button:hover { background: #475569; }
     .mini-bar input[type="color"] { width: 30px; height: 26px; padding: 0; border: none; background: transparent; cursor: pointer; }
-    .move-tip { background: #fff7ed; border: 1px solid #fdba74; color: #7c2d12; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; line-height: 1.6; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+    .move-tip { background: #fff7ed; border: 1px solid #fdba74; color: #7c2d12; border-radius: 10px; padding: 7px 12px; font-size: 13px; line-height: 1.6; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
     .move-tip-btns { display: flex; gap: 6px; flex-wrap: wrap; }
     .print-dlg { border: none; border-radius: 14px; padding: 22px 24px; max-width: min(480px, calc(100vw - 32px)); box-shadow: 0 20px 60px rgba(0,0,0,.3); color: var(--text); }
     .print-dlg::backdrop { background: rgba(15,23,42,.55); }
@@ -185,6 +186,10 @@
     header .left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
     /* 抽獎紀錄 */
+    .prize-sum { border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; margin-bottom: 8px; }
+    .prize-sum div { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13.5px; border-bottom: 1px dashed var(--line); }
+    .prize-sum div:last-child { border-bottom: none; }
+    .prize-sum .q { color: var(--muted); font-variant-numeric: tabular-nums; }
     .prize-row { display: grid; grid-template-columns: 1fr 64px auto; gap: 6px; margin-bottom: 6px; align-items: center; }
     .prize-row .ops { display: flex; gap: 3px; }
     .prize-row .ops button { padding: 4px 7px; }
@@ -315,6 +320,11 @@
           <div class="wait-note" hidden>先完成第 1 步放上圖片</div>
           <div class="s-range">紙張 <select data-bind="layout.paper"><option value="A4">A4</option><option value="A3">A3</option><option value="B4">B4</option><option value="Letter">Letter</option></select></div>
           <div class="s-info" id="sInfo"></div>
+          <div class="s-order" id="sOrder">
+            <div class="s-line" style="margin:10px 0 0; font-weight:600;">號碼怎麼排</div>
+            <label class="fit-opt" data-order="stack"><input type="radio" name="sOrder" value="stack" /><div><b>裁好疊起來就連號（推薦）</b><small id="sOrderStackHint"></small></div></label>
+            <label class="fit-opt" data-order="page"><input type="radio" name="sOrder" value="page" /><div><b>每頁依序排</b><small id="sOrderPageHint"></small></div></label>
+          </div>
           <button type="button" class="btn btn-primary" id="sPdf" style="margin:8px 0 0;">下載 PDF 去列印</button>
           <div class="status" id="sStatus"></div>
         </div>
@@ -541,25 +551,29 @@
 
   <div class="container" id="viewDraw" hidden>
     <aside class="panel">
-      <h2>投影畫面標題</h2>
-      <div class="fg"><input type="text" id="drawTitle" placeholder="例：2026 尾牙摸彩" /></div>
-
       <h2>1. 獎項（依抽獎順序排列）</h2>
       <div id="prizeList"></div>
       <button class="btn-sm" id="btnAddPrize">＋ 新增獎項</button>
       <div class="hint">登記時會自動填入第一個還沒抽滿的獎項，也可以在右邊手動切換。</div>
 
-      <h2>2. 不參加抽獎的編號</h2>
-      <div class="fg">
-        <input type="text" id="voidList" placeholder="未發出／作廢，例：201-250, 77" />
-        <div class="hint">發出範圍沿用「印券設計」的編號設定，這裡再扣掉沒發出去或作廢的券。</div>
-      </div>
+      <h2>2. 投影畫面標題</h2>
+      <div class="fg"><input type="text" id="drawTitle" placeholder="例：2026 尾牙摸彩" /></div>
 
-      <h2>3. 防偽</h2>
-      <label class="check"><input type="checkbox" id="verifyCode" /> 登記時核對券上的驗證碼</label>
-      <div class="hint">需在印券時加上 {code} 欄位。驗證碼不符的券會被擋下。</div>
+      <details class="explain" id="drawMore">
+        <summary>其他設定（通常不用改）</summary>
+        <div style="margin-top:10px;">
+          <label class="l">不參加抽獎的編號</label>
+          <div class="fg">
+            <input type="text" id="voidList" placeholder="未發出／作廢，例：201-250, 77" />
+            <div class="hint">發出範圍沿用「印券設計」的編號設定，這裡再扣掉沒發出去或作廢的券。</div>
+          </div>
+          <label class="l">防偽</label>
+          <label class="check"><input type="checkbox" id="verifyCode" /> 登記時核對券上的驗證碼</label>
+          <div class="hint">需在印券時加上 {code} 欄位。驗證碼不符的券會被擋下。</div>
+        </div>
+      </details>
 
-      <h2>4. 統計與匯出</h2>
+      <h2>3. 統計與匯出</h2>
       <div class="info" id="poolInfo"></div>
       <div class="tool-row">
         <button class="btn-sm" id="btnWinCsv">匯出得獎名單 CSV</button>
@@ -570,8 +584,8 @@
 
     <main>
       <div class="move-tip" id="moveTip">
-        <div><b>活動當天用的不是這台電腦嗎？</b>設定只存在這台電腦的瀏覽器裡。請先在這台按「💾 存成檔案」，把檔案帶到活動用的電腦，再按右上角「⋯ 選單」裡的「📂 開啟檔案」。</div>
-        <div class="move-tip-btns"><button class="btn-sm" id="btnMoveSave">💾 存成檔案</button><button class="btn-sm" id="btnMoveHide" title="我就用這台電腦">不用，就用這台</button></div>
+        <div><b>當天換電腦？</b>先在這台按「💾 存成檔案」，到那台用「⋯ 選單 → 📂 開啟檔案」。</div>
+        <div class="move-tip-btns"><button class="btn-sm" id="btnMoveSave">💾 存成檔案</button><button class="btn-sm" id="btnMoveHide" title="我就用這台電腦">不用</button></div>
       </div>
       <section class="card">
         <div class="card-head">
@@ -676,6 +690,7 @@
     <ul>
       <li>選錯的話，印出來會變小，跟設定的尺寸不一樣。</li>
       <li>自己裁切時，沿著紙張四周的<b>黑色短線</b>對齊裁下。</li>
+      <li id="printDlgStack" hidden></li>
       <li id="printDlgDraw">活動當天，到上方「<b>抽獎紀錄</b>」分頁登記中獎號碼。</li>
     </ul>
     <form method="dialog"><button class="btn btn-primary" style="margin:0;">知道了</button></form>
@@ -1525,6 +1540,18 @@
       const pg = (b) => Math.ceil(nums.length / b.n);
       return { save, exact, savePages: pg(save), exactPages: pg(exact) };
     }
+    // 疊切時，每一疊的號碼範圍（只有一頁多張且疊切才回傳）
+    function stackInfo(nums, L) {
+      if (!S.layout.stackCut || L.perPage < 2 || !nums.length) return null;
+      const pages = Math.ceil(nums.length / L.perPage), out = [];
+      const pos = (s) => L.cols === 1 ? `由上數來第 ${s + 1} 張` : L.rows === 1 ? `由左數來第 ${s + 1} 張` : `第 ${Math.floor(s / L.cols) + 1} 排第 ${(s % L.cols) + 1} 張`;
+      for (let s = 0; s < L.perPage; s++) {
+        const a = s * pages, z = Math.min((s + 1) * pages, nums.length) - 1;
+        if (a > z) break;
+        out.push(`第 ${s + 1} 疊（${pos(s)}）：${nums[a]}～${nums[z]}`);
+      }
+      return out;
+    }
     function chooseFit(fit) { S.layout.fit = fit; autoLayout(); syncBindings(); refreshAll(); }
 
     // ---------- 用途範本 ----------
@@ -1777,6 +1804,17 @@
         doc.save(`${outName()}_${fileRange(nums)}.pdf`);
         setBusy(false, `已下載 PDF：${pages} 頁、${nums.length} 張。列印時請選「實際大小 / 100%」。`);
         $("printDlgTitle").textContent = `✓ PDF 已下載（${pages} 頁、${nums.length} 張）`;
+        const stk = stackInfo(nums, L);
+        $("printDlgStack").hidden = !stk;
+        if (stk) $("printDlgStack").innerHTML = "";
+        if (stk) {
+          const li = $("printDlgStack");
+          const b0 = document.createElement("b"); b0.textContent = `裁好後會有 ${stk.length} 疊`;
+          li.append(b0, `（每頁同一個位置的券疊成一疊）。依序疊起來就是連號：`);
+          const ol = document.createElement("ol"); ol.className = "stack-list";
+          stk.forEach((t) => { const x = document.createElement("li"); x.textContent = t; ol.appendChild(x); });
+          li.appendChild(ol);
+        }
         try { $("printDlg").showModal(); } catch (e) {}
       } catch (e) {
         console.error(e); setBusy(false, "產生 PDF 時發生錯誤：" + e.message);
@@ -2439,10 +2477,25 @@
     };
     $("drawTitle").oninput = () => { D.title = $("drawTitle").value; saveDraw(); renderDrawStatus(); };
 
+    let prizeEditing = false; // 已開始登記後，獎項預設收成摘要
     function renderDraw() {
       // 獎項清單
       const list = $("prizeList"); list.innerHTML = "";
-      D.prizes.forEach((p, i) => {
+      const compact = D.winners.length > 0 && !prizeEditing;
+      $("btnAddPrize").hidden = compact;
+      if (compact) {
+        const box = document.createElement("div"); box.className = "prize-sum";
+        D.prizes.forEach((p) => {
+          const r = document.createElement("div");
+          const n = document.createElement("span"); n.textContent = p.name;
+          const q = document.createElement("span"); q.className = "q"; q.textContent = `${okCount(p.id)} / ${p.qty}`;
+          r.append(n, q); box.appendChild(r);
+        });
+        const eb = document.createElement("button"); eb.className = "btn-sm"; eb.textContent = "✏ 編輯獎項";
+        eb.onclick = () => { prizeEditing = true; renderDraw(); };
+        list.append(box, eb);
+      }
+      if (!compact) D.prizes.forEach((p, i) => {
         const row = document.createElement("div"); row.className = "prize-row";
         const name = document.createElement("input"); name.type = "text"; name.value = p.name;
         name.oninput = () => { p.name = name.value; saveDraw(); renderDrawStatus(); };
@@ -2459,6 +2512,7 @@
         row.append(name, qty, ops); list.appendChild(row);
       });
       $("voidList").value = D.voidList;
+      if (D.verify || String(D.voidList || "").trim()) $("drawMore").open = true; // 有設定就展開，免得被忽略
       $("drawTitle").value = D.title || "";
       $("verifyCode").checked = !!D.verify;
       $("entryCode").hidden = !D.verify;
@@ -2467,6 +2521,12 @@
     }
 
     function renderDrawStatus() {
+      // 第一次登記後，獎項改成摘要；摘要裡的已抽數量即時更新
+      if (D.winners.length > 0 && !prizeEditing) {
+        const sum = $("prizeList").querySelector(".prize-sum");
+        if (!sum || sum.children.length !== D.prizes.length) return renderDraw();
+        D.prizes.forEach((p, i) => { sum.children[i].querySelector(".q").textContent = `${okCount(p.id)} / ${p.qty}`; });
+      } else if (D.winners.length === 0 && $("prizeList").querySelector(".prize-sum")) return renderDraw();
       $("showTitle").textContent = D.title || "";
       // 目前獎項下拉
       const cur = currentPrize();
@@ -2691,6 +2751,7 @@
       updateSimpleUI();
     };
     $("sGen").onclick = () => $("btnGen").click();
+    document.querySelectorAll('#sOrder input[name="sOrder"]').forEach((r) => r.addEventListener("change", () => { S.layout.stackCut = r.value === "stack"; syncBindings(); refreshAll(); }));
     $("sPdf").onclick = () => $("btnPdf").click();
     $("sFull").onclick = () => $("btnMode").click();
     $("sSizeToggle").onclick = () => { $("sSizeBox").hidden = !$("sSizeBox").hidden; $("sSizeToggle").textContent = $("sSizeBox").hidden ? "改大小" : "收起"; };
@@ -2727,6 +2788,20 @@
         mk("exact", `原尺寸：一頁 ${fc.exact.n} 張，共 ${fc.exactPages} 頁`, `跟設定的大小完全一樣，紙要多用 ${saved} 頁`);
       }
       $("sPdf").textContent = `下載 PDF 去列印（${pages} 頁）`;
+      // 號碼排列
+      $("sOrder").hidden = L.perPage < 2 || nums.length <= L.perPage;
+      if (!$("sOrder").hidden) {
+        const first = L.slots.map((_, sIdx) => ticketIndex(L, 0, sIdx, pages)).filter((i) => i < nums.length).map((i) => nums[i]);
+        const pageFirst = nums.slice(0, L.perPage);
+        $("sOrderStackHint").textContent = S.layout.stackCut
+          ? `第 1 頁是 ${first.join("、")}。整疊一起裁，再把 ${Math.min(L.perPage, nums.length)} 疊依序疊好，就是 ${nums[0]}～${nums[nums.length - 1]} 連號，不用一張張整理。`
+          : `整疊一起裁，再把各疊依序疊好就是連號，不用一張張整理。`;
+        $("sOrderPageHint").textContent = `第 1 頁是 ${pageFirst.join("、")}。裁好後要一張一張整理順序。`;
+        document.querySelectorAll('#sOrder .fit-opt').forEach((lab) => {
+          const on = (lab.dataset.order === "stack") === !!S.layout.stackCut;
+          lab.classList.toggle("on", on); lab.querySelector("input").checked = on;
+        });
+      }
       // 還沒放圖：第 2、3 步先變淡
       const waiting = !bgImg;
       document.querySelectorAll("#simplePanel .step").forEach((st, i) => {
