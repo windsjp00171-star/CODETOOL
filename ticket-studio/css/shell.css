@@ -1,0 +1,118 @@
+/* 外框：報頭、四色導表、工作區（左工單＋右切割墊）、選單。 */
+
+/* ---------- 報頭 ---------- */
+.masthead {
+  position: sticky; top: 0; z-index: 40;
+  height: var(--head-h); padding: 0 16px 0 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--rich-black); color: #fff;
+}
+.mast-left { display: flex; align-items: center; gap: 22px; min-width: 0; }
+.wordmark { display: flex; align-items: center; gap: 10px; font-size: var(--fs-xl); font-weight: 800; letter-spacing: 0.06em; white-space: nowrap; }
+.wordmark .sub { font-size: var(--fs-xs); font-weight: 500; letter-spacing: 0.04em; color: #a9b2b6; }
+.reg-mark { width: 24px; height: 24px; fill: none; stroke: var(--magenta); stroke-width: 2.2; }
+
+/* 分頁：像工單的索引標籤 */
+.tabs { display: flex; gap: 2px; align-self: stretch; align-items: flex-end; }
+.tabs button {
+  height: 40px; padding: 0 18px; border: none; border-radius: var(--radius) var(--radius) 0 0;
+  background: transparent; color: #aab3b7; font: 600 var(--fs-md)/1 var(--font); letter-spacing: 0.04em; cursor: pointer;
+  transition: color 150ms var(--ease), background-color 150ms var(--ease);
+}
+.tabs button:hover { color: #fff; background: rgba(255, 255, 255, 0.07); }
+.tabs button.on { background: var(--paper); color: var(--ink); }
+.mast-actions { display: flex; align-items: center; gap: 8px; }
+
+/* 四色導表（打樣紙邊上的色條） */
+.slug {
+  height: var(--slug-h);
+  background: linear-gradient(90deg,
+    #00a0e0 0 6%, #e6007e 6% 12%, #ffe500 12% 18%, #15181a 18% 24%,
+    #6fc6ec 24% 27%, #f080b8 27% 30%, #fff27f 30% 33%, #8a8f92 33% 36%,
+    var(--rich-black) 36%);
+}
+
+/* ---------- 選單 ---------- */
+.menu-wrap { position: relative; }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; min-width: 240px;
+  display: flex; flex-direction: column; padding: 6px;
+  background: var(--paper); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: var(--radius);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18), 0 16px 32px rgba(0, 0, 0, 0.28);
+}
+.menu > button, .menu > label {
+  display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border: none; background: none;
+  color: var(--ink); font: 500 var(--fs-md)/1.35 var(--font); text-align: left; cursor: pointer; border-radius: var(--radius);
+}
+.menu > button > span, .menu > label > span { display: flex; flex-direction: column; gap: 1px; }
+.menu small { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 400; }
+.menu .ic { margin-top: 1px; }
+.menu > button:hover:not(:disabled), .menu > label:hover, .menu > button:focus-visible, .menu > label:focus-visible { background: var(--paper-2); outline: none; box-shadow: inset 2px 0 0 var(--magenta); }
+.menu > button:disabled { opacity: 0.4; cursor: default; }
+.menu .danger { color: var(--danger); }
+.menu hr { border: none; border-top: 1px solid var(--rule); margin: 4px 2px; }
+.menu hr.gap { margin-top: 10px; }
+
+/* ---------- 工作區 ---------- */
+.workspace {
+  display: grid; grid-template-columns: var(--sheet-w) minmax(0, 1fr);
+  min-height: calc(100vh - var(--head-h) - var(--slug-h));
+}
+
+/* 左：工單紙 */
+.ticket-sheet {
+  background: var(--paper); border-right: 1px solid var(--rule-strong);
+  padding: 4px 22px 28px; position: relative; z-index: 1;
+  box-shadow: 4px 0 18px rgba(0, 0, 0, 0.22);
+}
+body.simple #fullPanel, body:not(.simple) #simplePanel { display: none !important; }
+
+.block { padding: 18px 0; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 10px; }
+.block:last-child { border-bottom: none; }
+.block > h2 { display: flex; align-items: center; gap: 9px; font-size: var(--fs-lg); font-weight: 800; letter-spacing: 0.02em; }
+.block-no {
+  display: inline-grid; place-items: center; width: 22px; height: 22px; flex: none;
+  background: var(--ink); color: #fff; font-size: var(--fs-sm); font-weight: 700; border-radius: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.file-name { font-size: var(--fs-xs); color: var(--ink-3); }
+
+/* 右：切割墊（綠色、5 mm 細格、5 格一粗線） */
+.mat {
+  min-width: 0; padding: 22px clamp(16px, 3vw, 40px) 40px; color: var(--mat-ink);
+  display: flex; flex-direction: column; gap: 22px;
+  background-color: var(--mat);
+  background-image:
+    linear-gradient(var(--mat-line-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--mat-line-major) 1px, transparent 1px),
+    linear-gradient(var(--mat-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--mat-line) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  background-position: -1px -1px;
+}
+.mat-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 12px; }
+.mat-head h2 { font-size: var(--fs-lg); font-weight: 800; letter-spacing: 0.04em; color: #fff; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.mat-sub { font-size: var(--fs-sm); font-weight: 500; color: var(--mat-ink-2); letter-spacing: 0; }
+.mat-meta { font-size: var(--fs-sm); color: var(--mat-ink-2); }
+.mat-meta b { color: #fff; }
+.mat-hint { font-size: var(--fs-sm); color: var(--mat-ink-2); line-height: 1.6; margin-top: 10px; }
+
+/* ---------- 窄螢幕 ---------- */
+@media (max-width: 960px) {
+  .workspace { grid-template-columns: 1fr; }
+  .ticket-sheet { border-right: none; border-bottom: 1px solid var(--rule-strong); box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22); padding: 4px 16px 22px; }
+  .mat { padding: 20px 16px 32px; }
+}
+@media (max-width: 640px) {
+  .masthead { padding: 0 10px 0 14px; gap: 8px; }
+  .mast-left { gap: 10px; }
+  .wordmark { font-size: var(--fs-lg); gap: 7px; letter-spacing: 0.02em; }
+  .wordmark .sub { display: none; }
+  .reg-mark { width: 20px; height: 20px; }
+  .tabs button { padding: 0 11px; font-size: var(--fs-sm); }
+  .mast-actions .btn > span { display: none; }
+  .mast-actions .btn { padding: 0; width: 36px; }
+}
+@media (max-width: 380px) {
+  .wordmark span:not(.sub) { display: none; }
+}

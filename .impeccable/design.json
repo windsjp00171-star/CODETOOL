@@ -1,0 +1,747 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-21T09:11:27.288979+00:00",
+  "title": "Design System: 票券工作室",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Job-Ticket White",
+        "canonical": "#fbfcfc",
+        "tonalRamp": [
+          "#212c2c",
+          "#374949",
+          "#4c6666",
+          "#628383",
+          "#85a3a3",
+          "#a8bdbd",
+          "#cbd8d8",
+          "#f0f4f4"
+        ]
+      },
+      "paper-2": {
+        "role": "neutral",
+        "displayName": "Field Ground",
+        "canonical": "#f0f3f3",
+        "tonalRamp": [
+          "#222a2a",
+          "#394747",
+          "#4f6363",
+          "#667f7f",
+          "#88a0a0",
+          "#aabbbb",
+          "#ccd6d6",
+          "#f1f4f4"
+        ]
+      },
+      "paper-3": {
+        "role": "neutral",
+        "displayName": "Pressed Ground",
+        "canonical": "#e3e8e8",
+        "tonalRamp": [
+          "#222a2a",
+          "#394646",
+          "#506262",
+          "#677e7e",
+          "#899e9e",
+          "#abbaba",
+          "#cdd6d6",
+          "#f1f3f3"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#c5ced0",
+        "tonalRamp": [
+          "#22292a",
+          "#394446",
+          "#505f63",
+          "#677a7f",
+          "#899b9f",
+          "#aab8bb",
+          "#ccd4d6",
+          "#f1f3f4"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Box Rule",
+        "canonical": "#15181a",
+        "tonalRamp": [
+          "#22272a",
+          "#394147",
+          "#505b63",
+          "#67757f",
+          "#89969f",
+          "#aab4bb",
+          "#ccd2d6",
+          "#f1f3f4"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Process Black",
+        "canonical": "#15181a",
+        "tonalRamp": [
+          "#22272a",
+          "#394147",
+          "#505b63",
+          "#67757f",
+          "#89969f",
+          "#aab4bb",
+          "#ccd2d6",
+          "#f1f3f4"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Secondary Ink",
+        "canonical": "#3b4246",
+        "tonalRamp": [
+          "#23272a",
+          "#3a4145",
+          "#525b61",
+          "#69757d",
+          "#8b969d",
+          "#acb4b9",
+          "#cdd2d5",
+          "#f1f3f3"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Hint Ink",
+        "canonical": "#5c666b",
+        "tonalRamp": [
+          "#232729",
+          "#3b4145",
+          "#535b60",
+          "#6a767b",
+          "#8c979c",
+          "#adb4b8",
+          "#ced2d5",
+          "#f1f3f3"
+        ]
+      },
+      "rich-black": {
+        "role": "neutral",
+        "displayName": "Rich Black",
+        "canonical": "#0b0d0e",
+        "tonalRamp": [
+          "#22282b",
+          "#384247",
+          "#4f5d64",
+          "#657781",
+          "#8798a1",
+          "#a9b6bc",
+          "#ccd3d7",
+          "#f1f3f4"
+        ]
+      },
+      "magenta": {
+        "role": "primary",
+        "displayName": "Process Magenta",
+        "canonical": "#d6006f",
+        "tonalRamp": [
+          "#4c0028",
+          "#800042",
+          "#b2005d",
+          "#e60077",
+          "#ff2998",
+          "#ff66b5",
+          "#ffa3d3",
+          "#ffe5f3"
+        ]
+      },
+      "magenta-press": {
+        "role": "primary",
+        "displayName": "Press Magenta",
+        "canonical": "#b0005b",
+        "tonalRamp": [
+          "#4c0028",
+          "#800042",
+          "#b2005c",
+          "#e60077",
+          "#ff2998",
+          "#ff66b5",
+          "#ffa3d3",
+          "#ffe5f3"
+        ]
+      },
+      "magenta-tint": {
+        "role": "primary",
+        "displayName": "Magenta Wash",
+        "canonical": "#fde6f1",
+        "tonalRamp": [
+          "#470625",
+          "#76093d",
+          "#a50d56",
+          "#d5116e",
+          "#ef3990",
+          "#f471b0",
+          "#f8aacf",
+          "#fde7f2"
+        ]
+      },
+      "cyan": {
+        "role": "secondary",
+        "displayName": "Guide Cyan",
+        "canonical": "#0089c4",
+        "tonalRamp": [
+          "#00354c",
+          "#005980",
+          "#007db2",
+          "#00a0e6",
+          "#29bfff",
+          "#66d1ff",
+          "#a3e3ff",
+          "#e5f7ff"
+        ]
+      },
+      "cyan-ink": {
+        "role": "secondary",
+        "displayName": "Cyan Ink",
+        "canonical": "#006a97",
+        "tonalRamp": [
+          "#00364c",
+          "#005a80",
+          "#007db2",
+          "#00a1e6",
+          "#29bfff",
+          "#66d1ff",
+          "#a3e4ff",
+          "#e5f7ff"
+        ]
+      },
+      "cyan-tint": {
+        "role": "secondary",
+        "displayName": "Cyan Wash",
+        "canonical": "#e2f2f9",
+        "tonalRamp": [
+          "#0d303f",
+          "#16506a",
+          "#1f7094",
+          "#2790be",
+          "#4eafda",
+          "#80c6e5",
+          "#b3ddef",
+          "#eaf6fb"
+        ]
+      },
+      "yellow": {
+        "role": "secondary",
+        "displayName": "Process Yellow",
+        "canonical": "#ffe500",
+        "tonalRamp": [
+          "#4c4500",
+          "#807200",
+          "#b2a000",
+          "#e6ce00",
+          "#ffe929",
+          "#ffef66",
+          "#fff6a3",
+          "#fffce5"
+        ]
+      },
+      "yellow-tint": {
+        "role": "secondary",
+        "displayName": "Yellow Wash",
+        "canonical": "#fff7bf",
+        "tonalRamp": [
+          "#4c4300",
+          "#807000",
+          "#b29c00",
+          "#e6c900",
+          "#ffe429",
+          "#ffec66",
+          "#fff4a3",
+          "#fffce5"
+        ]
+      },
+      "yellow-ink": {
+        "role": "secondary",
+        "displayName": "Yellow Ink",
+        "canonical": "#5c4b00",
+        "tonalRamp": [
+          "#4c3e00",
+          "#806800",
+          "#b29200",
+          "#e6bb00",
+          "#ffd729",
+          "#ffe366",
+          "#ffeea3",
+          "#fffae5"
+        ]
+      },
+      "ok": {
+        "role": "tertiary",
+        "displayName": "Proof Green",
+        "canonical": "#0a7a52",
+        "tonalRamp": [
+          "#064730",
+          "#0a764f",
+          "#0ea56f",
+          "#11d48f",
+          "#39efae",
+          "#72f3c5",
+          "#aaf8dc",
+          "#e7fdf5"
+        ]
+      },
+      "ok-tint": {
+        "role": "tertiary",
+        "displayName": "Proof Green Wash",
+        "canonical": "#e1f3ea",
+        "tonalRamp": [
+          "#163726",
+          "#245b40",
+          "#337f59",
+          "#42a473",
+          "#66c294",
+          "#92d3b2",
+          "#bde5d1",
+          "#edf8f2"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Reject Red",
+        "canonical": "#b4231a",
+        "tonalRamp": [
+          "#430d0a",
+          "#6f1610",
+          "#9c1e17",
+          "#c9271d",
+          "#e44d44",
+          "#ec8079",
+          "#f3b3af",
+          "#fceae9"
+        ]
+      },
+      "danger-tint": {
+        "role": "tertiary",
+        "displayName": "Reject Wash",
+        "canonical": "#fbe7e5",
+        "tonalRamp": [
+          "#420f0a",
+          "#6e1911",
+          "#9b2418",
+          "#c72e1f",
+          "#e25445",
+          "#eb857a",
+          "#f3b6af",
+          "#fcebe9"
+        ]
+      },
+      "mat": {
+        "role": "neutral",
+        "displayName": "Cutting Mat Green",
+        "canonical": "#2c6249",
+        "tonalRamp": [
+          "#183527",
+          "#285842",
+          "#377b5c",
+          "#479e76",
+          "#6bbd97",
+          "#95d0b5",
+          "#c0e3d2",
+          "#edf7f3"
+        ]
+      },
+      "mat-2": {
+        "role": "neutral",
+        "displayName": "Mat Block",
+        "canonical": "#24553e",
+        "tonalRamp": [
+          "#173627",
+          "#265a41",
+          "#357d5b",
+          "#44a176",
+          "#69bf97",
+          "#94d1b4",
+          "#bfe4d2",
+          "#edf7f3"
+        ]
+      },
+      "mat-night": {
+        "role": "neutral",
+        "displayName": "Night Mat",
+        "canonical": "#17271f",
+        "tonalRamp": [
+          "#1c3026",
+          "#2f5040",
+          "#427059",
+          "#559073",
+          "#78b094",
+          "#9fc6b2",
+          "#c5ddd1",
+          "#eff6f2"
+        ]
+      },
+      "mat-night-2": {
+        "role": "neutral",
+        "displayName": "Night Mat Block",
+        "canonical": "#10201a",
+        "tonalRamp": [
+          "#1a3329",
+          "#2b5545",
+          "#3c7761",
+          "#4d997c",
+          "#70b89d",
+          "#99ccb9",
+          "#c2e0d5",
+          "#eef6f3"
+        ]
+      },
+      "mat-ink": {
+        "role": "neutral",
+        "displayName": "Mat Ink",
+        "canonical": "#e8f4ec",
+        "tonalRamp": [
+          "#193422",
+          "#295638",
+          "#3a794f",
+          "#4a9b65",
+          "#6eba87",
+          "#97ceaa",
+          "#c1e1cc",
+          "#eef7f1"
+        ]
+      },
+      "mat-ink-2": {
+        "role": "neutral",
+        "displayName": "Mat Ink Soft",
+        "canonical": "#b9d4c4",
+        "tonalRamp": [
+          "#1d2f25",
+          "#314f3d",
+          "#446f55",
+          "#578e6e",
+          "#7aad8f",
+          "#a0c5af",
+          "#c6dccf",
+          "#eff5f2"
+        ]
+      },
+      "ruler": {
+        "role": "neutral",
+        "displayName": "Ruler White",
+        "canonical": "#f4f6f2",
+        "tonalRamp": [
+          "#262d1f",
+          "#404b34",
+          "#596949",
+          "#73885e",
+          "#94a780",
+          "#b3c0a5",
+          "#d1d9c9",
+          "#f2f5f0"
+        ]
+      },
+      "ruler-ink": {
+        "role": "neutral",
+        "displayName": "Ruler Ink",
+        "canonical": "#1b1f21",
+        "tonalRamp": [
+          "#22282a",
+          "#394246",
+          "#505c62",
+          "#67777e",
+          "#89979f",
+          "#abb5ba",
+          "#cdd3d6",
+          "#f1f3f4"
+        ]
+      },
+      "log-sheet": {
+        "role": "neutral",
+        "displayName": "Dimmed Log Sheet",
+        "canonical": "#dde3e1",
+        "tonalRamp": [
+          "#232a27",
+          "#3a4642",
+          "#51625c",
+          "#687e76",
+          "#8a9e97",
+          "#abbab5",
+          "#cdd6d3",
+          "#f1f3f3"
+        ]
+      },
+      "process-cyan": {
+        "role": "secondary",
+        "displayName": "Process Cyan (print mark)",
+        "canonical": "#00a0e0",
+        "tonalRamp": [
+          "#00374c",
+          "#005b80",
+          "#0080b2",
+          "#00a4e6",
+          "#29c2ff",
+          "#66d3ff",
+          "#a3e5ff",
+          "#e5f8ff"
+        ]
+      },
+      "process-magenta": {
+        "role": "primary",
+        "displayName": "Process Magenta (print mark)",
+        "canonical": "#e6007e",
+        "tonalRamp": [
+          "#4c002a",
+          "#800046",
+          "#b20062",
+          "#e6007e",
+          "#ff299e",
+          "#ff66ba",
+          "#ffa3d5",
+          "#ffe5f3"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Winner Numeral",
+        "purpose": "Winner number on the show sheet and projector; digits only."
+      },
+      "headline": {
+        "displayName": "Prize Name",
+        "purpose": "Prize name on the show sheet, in yellow."
+      },
+      "title": {
+        "displayName": "Step Title",
+        "purpose": "Step headings and dialog headings."
+      },
+      "title-small": {
+        "displayName": "Section Title",
+        "purpose": "Boxed section, mat and log headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Controls and running text."
+      },
+      "body-small": {
+        "displayName": "Body Small",
+        "purpose": "Notes, hints, mat captions."
+      },
+      "label": {
+        "displayName": "Boxed Label",
+        "purpose": "Tiny labels over fields, tally captions, table heads."
+      },
+      "count": {
+        "displayName": "Tally Numeral",
+        "purpose": "The three tally cells; digits only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sheet-on-mat",
+        "value": "0 1px 2px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.28)",
+        "purpose": "Ticket proof, page preview, generator preview: paper lying on the mat."
+      },
+      {
+        "name": "job-sheet-edge",
+        "value": "4px 0 18px rgba(0,0,0,0.22)",
+        "purpose": "Left job ticket casting onto the mat (0 4px 18px when stacked)."
+      },
+      {
+        "name": "menu",
+        "value": "0 2px 4px rgba(0,0,0,0.18), 0 16px 32px rgba(0,0,0,0.28)",
+        "purpose": "Masthead menu lifted above the page."
+      },
+      {
+        "name": "mini-bar",
+        "value": "0 2px 4px rgba(0,0,0,0.25), 0 8px 18px rgba(0,0,0,0.3)",
+        "purpose": "Floating field toolbar on the proof."
+      },
+      {
+        "name": "dialog",
+        "value": "0 4px 8px rgba(0,0,0,0.2), 0 24px 60px rgba(0,0,0,0.4)",
+        "purpose": "Dialog sheets over a rgba(11,13,14,0.62) backdrop."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "All state transitions."
+      },
+      {
+        "name": "state",
+        "value": "150ms",
+        "purpose": "Hover, focus, selection color changes."
+      },
+      {
+        "name": "step",
+        "value": "200ms",
+        "purpose": "Step stamp done state, dialog entrance (8px rise)."
+      },
+      {
+        "name": "winner-pop",
+        "value": "600ms",
+        "purpose": "Winner number reveal: scale 0.6 to 1.06 to 1 with blur clearing."
+      },
+      {
+        "name": "confetti",
+        "value": "cf-fall linear",
+        "purpose": "Projector confetti in process cyan, magenta, yellow, white."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stack",
+        "value": "960px"
+      },
+      {
+        "name": "dialog-stack",
+        "value": "760px"
+      },
+      {
+        "name": "compact",
+        "value": "640px"
+      },
+      {
+        "name": "narrow",
+        "value": "480px"
+      },
+      {
+        "name": "tiny",
+        "value": "380px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one magenta action on a panel: download the PDF, 登記, a dialog's confirm.",
+      "html": "<button class=\"ds-btn ds-btn-primary\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M14 3.5H6.5a1 1 0 0 0-1 1v15a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V8Z\"/><path d=\"M14 3.5V8h4.5M12 11v6m-2.5-2.5L12 17l2.5-2.5\"/></svg><span>下載 PDF 去列印</span></button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:7px 14px;border-radius:2px;font:600 0.875rem/1.2 \"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;letter-spacing:0.01em;border:1px solid transparent;cursor:pointer;transition:background-color 150ms cubic-bezier(0.16,1,0.3,1),border-color 150ms cubic-bezier(0.16,1,0.3,1),transform 150ms cubic-bezier(0.16,1,0.3,1);} .ds-btn:active{transform:translateY(1px);} .ds-btn:focus-visible{outline:2px solid #d6006f;outline-offset:2px;} .ds-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;} .ds-btn-primary{background:#d6006f;color:#fff;} .ds-btn-primary:hover{background:#b0005b;}"
+    },
+    {
+      "name": "Ink Button",
+      "kind": "button",
+      "refersTo": "button-ink",
+      "description": "Process-black plate for a step's first action.",
+      "html": "<button class=\"ds-btn ds-btn-ink\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3.5\" y=\"4.5\" width=\"17\" height=\"15\" rx=\"1\"/><circle cx=\"9\" cy=\"10\" r=\"1.8\"/><path d=\"m4 18 5.5-5.5 4 4 2.5-2.5 4.5 4.5\"/></svg><span>選擇圖片</span></button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:7px 14px;border-radius:2px;font:600 0.875rem/1.2 \"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;letter-spacing:0.01em;border:1px solid transparent;cursor:pointer;transition:background-color 150ms cubic-bezier(0.16,1,0.3,1),border-color 150ms cubic-bezier(0.16,1,0.3,1),transform 150ms cubic-bezier(0.16,1,0.3,1);} .ds-btn:active{transform:translateY(1px);} .ds-btn:focus-visible{outline:2px solid #d6006f;outline-offset:2px;} .ds-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;} .ds-btn-ink{background:#15181a;color:#fff;} .ds-btn-ink:hover{background:#2d3336;}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "White hairline button for secondary actions on paper.",
+      "html": "<button class=\"ds-btn ds-btn-quiet\"><span>再加一個號碼</span></button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:7px 14px;border-radius:2px;font:600 0.875rem/1.2 \"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;letter-spacing:0.01em;border:1px solid transparent;cursor:pointer;transition:background-color 150ms cubic-bezier(0.16,1,0.3,1),border-color 150ms cubic-bezier(0.16,1,0.3,1),transform 150ms cubic-bezier(0.16,1,0.3,1);} .ds-btn:active{transform:translateY(1px);} .ds-btn:focus-visible{outline:2px solid #d6006f;outline-offset:2px;} .ds-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;} .ds-btn-quiet{background:#fff;color:#15181a;border-color:#c5ced0;} .ds-btn-quiet:hover{border-color:#15181a;background:#f0f3f3;}"
+    },
+    {
+      "name": "Boxed Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Job-ticket field: tiny 600 label over a square white field; magenta on focus.",
+      "html": "<label class=\"ds-field\"><span>從幾號</span><input type=\"number\" value=\"1\"></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:3px;width:140px;font-family:\"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;} .ds-field span{font-size:0.75rem;font-weight:600;color:#3b4246;letter-spacing:0.02em;} .ds-field input{min-height:34px;padding:6px 9px;font:400 0.875rem \"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;color:#15181a;background:#fff;border:1px solid #c5ced0;border-radius:2px;font-variant-numeric:tabular-nums;transition:border-color 150ms,box-shadow 150ms;} .ds-field input:hover{border-color:#5c666b;} .ds-field input:focus{outline:none;border-color:#d6006f;box-shadow:0 0 0 1px #d6006f;}"
+    },
+    {
+      "name": "Masthead with Tabs",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Rich-black masthead, registration mark, paper tab plate for the active view, CMYK slug beneath.",
+      "html": "<div class=\"ds-mast-wrap\"><header class=\"ds-mast\"><span class=\"ds-mark\"><svg viewBox=\"0 0 32 32\" aria-hidden=\"true\"><circle cx=\"16\" cy=\"16\" r=\"8.5\"/><circle cx=\"16\" cy=\"16\" r=\"3.2\"/><path d=\"M16 1.5v29M1.5 16h29\"/></svg>票券工作室</span><nav class=\"ds-tabs\"><button class=\"on\">印券設計</button><button>抽獎紀錄</button></nav></header><div class=\"ds-slug\"></div></div>",
+      "css": ".ds-mast{height:56px;padding:0 16px;display:flex;align-items:center;gap:22px;background:#0b0d0e;color:#fff;font-family:\"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;} .ds-mark{display:flex;align-items:center;gap:10px;font-size:1.125rem;font-weight:800;letter-spacing:0.06em;} .ds-mark svg{width:24px;height:24px;fill:none;stroke:#d6006f;stroke-width:2.2;} .ds-tabs{display:flex;gap:2px;align-self:stretch;align-items:flex-end;} .ds-tabs button{height:40px;padding:0 18px;border:none;border-radius:2px 2px 0 0;background:transparent;color:#aab3b7;font:600 0.875rem/1 \"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;letter-spacing:0.04em;cursor:pointer;transition:color 150ms,background-color 150ms;} .ds-tabs button:hover{color:#fff;background:rgba(255,255,255,0.07);} .ds-tabs button:focus-visible{outline:2px solid #d6006f;outline-offset:2px;} .ds-tabs button.on{background:#fbfcfc;color:#15181a;} .ds-slug{height:6px;background:linear-gradient(90deg,#00a0e0 0 6%,#e6007e 6% 12%,#ffe500 12% 18%,#15181a 18% 24%,#6fc6ec 24% 27%,#f080b8 27% 30%,#fff27f 30% 33%,#8a8f92 33% 36%,#0b0d0e 36%);}"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Square preset chip; solid magenta when on.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip on\">摸彩券</button><button class=\"ds-chip\">號碼牌</button><button class=\"ds-chip\">入場券</button></div>",
+      "css": ".ds-chips{display:flex;gap:6px;} .ds-chip{min-height:28px;padding:3px 11px;border:1px solid #c5ced0;background:#fff;color:#15181a;border-radius:2px;font:500 0.8125rem/1.3 \"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;cursor:pointer;transition:border-color 150ms,background-color 150ms;} .ds-chip:hover{border-color:#15181a;} .ds-chip:focus-visible{outline:2px solid #d6006f;outline-offset:2px;} .ds-chip.on{background:#d6006f;border-color:#d6006f;color:#fff;}"
+    },
+    {
+      "name": "Step Stamp",
+      "kind": "custom",
+      "refersTo": "step-number",
+      "description": "Stamped black square numbering a job-ticket step; proof green when done.",
+      "html": "<div class=\"ds-step\"><span class=\"ds-stamp\">2</span><h2>放號碼</h2></div>",
+      "css": ".ds-step{display:flex;align-items:center;gap:12px;font-family:\"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;} .ds-stamp{width:30px;height:30px;display:grid;place-items:center;background:#15181a;color:#fff;font-size:1rem;font-weight:800;border-radius:1px;font-variant-numeric:tabular-nums;transition:background-color 200ms;} .ds-step:hover .ds-stamp{background:#0a7a52;} .ds-step h2{margin:0;font-size:1.125rem;font-weight:800;letter-spacing:0.02em;color:#15181a;}"
+    },
+    {
+      "name": "Proof on Mat",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Ticket at true proportion on the green cutting mat, crop marks at the corners, selected field in magenta.",
+      "html": "<div class=\"ds-mat\"><div class=\"ds-proof\"><i class=\"ds-c tl\"></i><i class=\"ds-c tr\"></i><i class=\"ds-c bl\"></i><i class=\"ds-c br\"></i><span class=\"ds-fld\">000001</span></div></div>",
+      "css": ".ds-mat{padding:40px;background-color:#2c6249;background-image:linear-gradient(rgba(232,244,236,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(232,244,236,.22) 1px,transparent 1px),linear-gradient(rgba(232,244,236,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(232,244,236,.1) 1px,transparent 1px);background-size:100px 100px,100px 100px,20px 20px,20px 20px;} .ds-proof{position:relative;width:280px;height:90px;margin:auto;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.28);display:grid;place-items:center;} .ds-c{position:absolute;width:12px;height:12px;} .ds-c.tl{left:-17px;top:-17px;border-right:1px solid #e8f4ec;border-bottom:1px solid #e8f4ec;} .ds-c.tr{right:-17px;top:-17px;border-left:1px solid #e8f4ec;border-bottom:1px solid #e8f4ec;} .ds-c.bl{left:-17px;bottom:-17px;border-right:1px solid #e8f4ec;border-top:1px solid #e8f4ec;} .ds-c.br{right:-17px;bottom:-17px;border-left:1px solid #e8f4ec;border-top:1px solid #e8f4ec;} .ds-fld{font:700 1.5rem system-ui;color:#15181a;padding:0 4px;outline:1px dashed rgba(0,137,196,.9);outline-offset:1px;cursor:grab;transition:outline-color 150ms;} .ds-fld:hover{outline:2px solid #d6006f;outline-offset:2px;box-shadow:0 0 0 2px #fff;}"
+    },
+    {
+      "name": "Show Sheet",
+      "kind": "custom",
+      "refersTo": "show-sheet",
+      "description": "Draw-night rich-black press sheet: yellow prize, condensed winner numeral, CMYK foot bar.",
+      "html": "<div class=\"ds-show\"><div class=\"ds-prize\">頭獎</div><div class=\"ds-big\">0128</div><div class=\"ds-bar\"></div></div>",
+      "css": ".ds-show{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;padding:40px 28px 46px;background:#0b0d0e;color:#fff;text-align:center;font-family:\"Noto Sans TC\", \"PingFang TC\", \"Microsoft JhengHei\", system-ui, sans-serif;} .ds-prize{font-size:28px;font-weight:800;color:#ffe500;letter-spacing:0.06em;} .ds-big{font-family:\"Barlow Semi Condensed\", \"Noto Sans TC\", system-ui, sans-serif;font-size:96px;font-weight:800;line-height:1;letter-spacing:0.02em;font-variant-numeric:tabular-nums;} .ds-bar{position:absolute;left:0;right:0;bottom:0;height:8px;background:linear-gradient(90deg,#00a0e0 0 25%,#e6007e 25% 50%,#ffe500 50% 75%,#5b6266 75%);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Print-Shop Proof",
+    "overview": "Every screen says \"this is what will come off the press\". The workspace is a print-shop proof: a job ticket (工單) of cool white paper with ruled, boxed fields on the left, and on the right a green self-healing cutting mat (切割墊) with a millimetre grid, on which the ticket sits at true proportion with mm rulers on its top and left edges and crop marks at its corners. The ink is process black; process magenta marks selection and the one primary path; cyan is information and guides; process yellow is caution. A CMYK color bar runs under the ink-black masthead as the sheet's slug line, and a registration target is the mark.\n\nThe interface is dense but calm, because the people using it run an event a few times a year and every session is close to a first session. Forms read as a filled-in job ticket: tiny boxed labels over square fields, steps numbered in stamped black squares, thin rules between sections. On draw night (抽獎紀錄) the same proof language turns into a rich-black press sheet with registration targets on four sides and a CMYK bar along its foot, announcing each winner in a condensed numeral face. Motion is state change only (150 to 200 ms), except the winner pop and confetti on the projector.\n\nThe world rejects the generic SaaS editor: rounded white cards on grey, indigo buttons.",
+    "keyCharacteristics": [
+      "Two materials side by side: job-ticket paper (left, 392px) and the cutting mat (right, fills the rest).",
+      "Square corners everywhere (2px, stamps 1px).",
+      "Four process inks with fixed jobs: black for ink and structure, magenta for selection and the primary path, cyan for information and guides, yellow for caution.",
+      "Print-trade marks as structure: CMYK slug, crop marks, mm rulers, registration targets.",
+      "Numbers in tabular figures; the winner number and tallies in Barlow Semi Condensed."
+    ],
+    "rules": [
+      {
+        "name": "The Four Inks Rule",
+        "body": "Each process color has one job. Magenta selects and leads, cyan informs and guides, yellow cautions, black structures. A color never borrows another's job.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Magenta Path Rule",
+        "body": "On any panel or dialog, exactly one filled magenta button exists: the action that produces the print (下載 PDF), 登記 on draw night, or a dialog's confirming action. Everything else is ink, quiet, or mat.",
+        "section": "colors"
+      },
+      {
+        "name": "The Slug Is Not a Palette Rule",
+        "body": "The CMYK bar colors are print marks. They appear as bars, confetti and the favicon, never as button, text or surface colors.",
+        "section": "colors"
+      },
+      {
+        "name": "The Digits-Only Display Rule",
+        "body": "Barlow Semi Condensed is loaded as a digits subset. It sets numbers (winner number, tallies, drawn-number list) and nothing else; any Chinese or Latin word in a numeral slot falls through to Noto Sans TC.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Every number that can change or be compared (ranges, counts, codes, step stamps, table columns) uses tabular figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The Paper-On-Mat Rule",
+        "body": "Shadows only appear under something that is a separate sheet over the mat or a tool lifted above it. Nothing on the job sheet itself casts a shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep the two materials: paper (#fbfcfc family) for forms and decisions, the green mat for anything that previews the print.",
+      "**Do** use magenta for the single primary path and for selection, cyan for guides and information, yellow for caution, black for structure (The Four Inks Rule).",
+      "**Do** frame the proof with crop marks and mm rulers, and label fields with small 12px 600 labels over square white fields.",
+      "**Do** keep corners at 2px (1px on stamps) and draw boxes with rules: hairline (#c5ced0) for dividers, box rule (#15181a) for frames.",
+      "**Do** set every changing number in tabular figures, and winner numbers and tallies in Barlow Semi Condensed.",
+      "**Do** keep state transitions at 150 to 200ms on `cubic-bezier(0.16, 1, 0.3, 1)`; reserve larger motion for the winner pop and confetti.",
+      "**Do** darken the mat (#17271f) wherever the black show sheet must carry the room."
+    ],
+    "donts": [
+      "**Don't** use rounded white cards on grey or indigo buttons; this is a proof sheet, not a SaaS editor.",
+      "**Don't** use the CMYK slug colors (#00a0e0, #e6007e) as UI fills or text; they are print marks.",
+      "**Don't** put more than one filled magenta button on a panel.",
+      "**Don't** add shadows to elements that sit on the job sheet; only sheets on the mat and lifted tools cast them.",
+      "**Don't** set words in Barlow Semi Condensed; it is loaded for digits only."
+    ]
+  }
+}

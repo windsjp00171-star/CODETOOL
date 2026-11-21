@@ -1,0 +1,151 @@
+/* 印券設計：三步驟工單、完整設定、單張打樣（量尺＋裁切記號）、整頁預覽。 */
+
+/* ---------- 三步驟 ---------- */
+.simple-panel { padding-top: 10px; }
+.step { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 18px 0 20px; border-bottom: 1px solid var(--rule); }
+.step-no {
+  position: relative; width: 30px; height: 30px; display: grid; place-items: center;
+  background: var(--ink); color: #fff; font-size: var(--fs-lg); font-weight: 800; border-radius: 1px;
+  font-variant-numeric: tabular-nums; transition: background-color 200ms var(--ease);
+}
+.step-no .done-mark { position: absolute; inset: 0; margin: auto; width: 20px; height: 20px; stroke-width: 2.6; opacity: 0; transform: scale(0.6); transition: opacity 200ms var(--ease), transform 200ms var(--ease); }
+.step.done .step-no { background: var(--ok); }
+.step.done .step-no > span { opacity: 0; }
+.step.done .step-no .done-mark { opacity: 1; transform: none; }
+.step-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.step-body h2 { font-size: var(--fs-xl); font-weight: 800; letter-spacing: 0.02em; line-height: 30px; }
+.step.wait .step-no { background: var(--paper-3); color: var(--ink-3); }
+.step.wait .step-body > *:not(h2):not(.wait-note) { opacity: 0.5; }
+.wait-note { font-size: var(--fs-xs); color: var(--ink-3); margin-top: -4px; }
+.s-line { font-size: var(--fs-sm); color: var(--ink-2); }
+
+.spec { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: var(--fs-sm); }
+.spec dt { color: var(--ink-2); font-weight: 600; font-size: var(--fs-xs); }
+.spec dd { margin: 0; display: flex; align-items: baseline; gap: 10px; }
+.spec b { font-size: var(--fs-md); }
+
+.inline-fields { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.inline-fields .box-field { width: 110px; }
+.inline-fields.range .box-field { width: 120px; }
+.inline-fields .paper-field { width: 140px; }
+.range-dash { padding-bottom: 8px; color: var(--ink-3); }
+
+.s-info { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-sm); color: var(--ink-2); }
+.s-info .sum, .s-info .strong { font-weight: 700; color: var(--ink); font-size: var(--fs-md); }
+.fit-opt {
+  display: flex; gap: 10px; align-items: flex-start; padding: 9px 11px; cursor: pointer;
+  background: #fff; border: 1px solid var(--rule); border-radius: var(--radius);
+  transition: border-color 150ms var(--ease), background-color 150ms var(--ease);
+}
+.fit-opt:hover { border-color: var(--ink); }
+.fit-opt.on { border-color: var(--magenta); background: var(--magenta-tint); box-shadow: inset 0 0 0 1px var(--magenta); }
+.fit-opt input { margin-top: 3px; }
+.fit-text { display: flex; flex-direction: column; gap: 2px; }
+.fit-text b { font-size: var(--fs-sm); color: var(--ink); }
+.fit-text small { font-size: var(--fs-xs); color: var(--ink-2); }
+#sPdf { margin-top: 4px; min-height: 44px; font-size: var(--fs-lg); }
+
+.sheet-foot { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding-top: 18px; }
+.foot-line { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--ink-2); flex-wrap: wrap; }
+.foot-line select { width: auto; min-width: 130px; }
+
+/* ---------- 完整設定 ---------- */
+.full-panel { padding-top: 0; }
+.field-form { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius); }
+.field-ops { padding-top: 2px; }
+.block-out #btnPdf { min-height: 44px; font-size: var(--fs-lg); }
+
+details.explain { font-size: var(--fs-sm); color: var(--ink-2); border: 1px solid var(--rule); border-radius: var(--radius); padding: 8px 11px; background: #fff; }
+details.explain summary { cursor: pointer; color: var(--magenta); font-weight: 600; }
+details.explain[open] summary { margin-bottom: 6px; }
+details.explain svg { width: 100%; max-width: 300px; display: block; margin: 8px 0 4px; }
+details.explain p { margin: 6px 0; line-height: 1.65; }
+
+/* ---------- 切割墊上的打樣 ---------- */
+@media (min-width: 961px) {
+  #viewDesign .mat { position: sticky; top: var(--head-h); height: calc(100vh - var(--head-h)); overflow-y: auto; align-self: start; }
+}
+.proof { max-width: 1100px; width: 100%; }
+@media (min-width: 961px) {
+  body.simple #viewDesign .mat:has(#pageCard:not(.open)) { justify-content: center; }
+}
+
+/* 量尺在上方與左方，0 對齊成品左上角 */
+.stage-frame { display: grid; grid-template-columns: 22px minmax(0, 1fr); grid-template-rows: 22px auto; }
+.ruler-corner { display: grid; place-items: center; background: var(--ruler); color: var(--ruler-ink); font-size: 9px; font-weight: 700; border-right: 1px solid #c9cec8; border-bottom: 1px solid #c9cec8; }
+.ruler { display: block; background: var(--ruler); }
+.ruler-x { height: 22px; width: 100%; border-bottom: 1px solid #c9cec8; }
+.ruler-y { width: 22px; grid-row: 2; border-right: 1px solid #c9cec8; }
+.stage-wrap { position: relative; grid-column: 2; grid-row: 2; margin: 18px; }
+
+/* 裁切記號：四個角各兩條短線 */
+.crop { position: absolute; width: 14px; height: 14px; pointer-events: none; }
+.crop::before, .crop::after { content: ""; position: absolute; background: var(--mat-ink); }
+.crop::before { width: 12px; height: 1px; }
+.crop::after { width: 1px; height: 12px; }
+.crop.tl { left: -17px; top: -17px; } .crop.tl::before { right: 0; bottom: 3px; } .crop.tl::after { right: 3px; bottom: 0; }
+.crop.tr { right: -17px; top: -17px; } .crop.tr::before { left: 0; bottom: 3px; } .crop.tr::after { left: 3px; bottom: 0; }
+.crop.bl { left: -17px; bottom: -17px; } .crop.bl::before { right: 0; top: 3px; } .crop.bl::after { right: 3px; top: 0; }
+.crop.br { right: -17px; bottom: -17px; } .crop.br::before { left: 0; top: 3px; } .crop.br::after { left: 3px; top: 0; }
+
+.stage {
+  position: relative; width: 100%; overflow: hidden; user-select: none; touch-action: none;
+  background: #fff; box-shadow: var(--shadow-sheet);
+}
+.stage .placeholder span { background: var(--paper); padding: 8px 12px; color: var(--ink-2); }
+.stage .placeholder {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px;
+  color: var(--ink-2); font-size: var(--fs-sm); text-align: left; padding: 10px; pointer-events: none;
+  background: repeating-conic-gradient(#aab3b6 0 25%, #7f8a8e 0 50%) 0 0 / 16px 16px;
+}
+.stage .placeholder .ic { width: 28px; height: 28px; stroke-width: 1.4; }
+.stage .placeholder small { color: var(--ink-2); }
+.stage #stageBg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.stage .trim { position: absolute; border: 1.5px solid var(--magenta); box-shadow: 0 0 0 9999px rgba(214, 0, 111, 0.22); pointer-events: none; z-index: 1; }
+.stage .safe { position: absolute; border: 1.5px dashed var(--cyan); pointer-events: none; z-index: 1; }
+
+/* 欄位：虛線框，選取的用洋紅實線 */
+.stage canvas.fld { position: absolute; z-index: 2; cursor: grab; touch-action: none; outline: 1px dashed rgba(0, 137, 196, 0.9); outline-offset: 1px; transition: outline-color 150ms var(--ease); }
+.stage canvas.fld:hover { outline-color: var(--magenta); }
+.stage canvas.fld.on { outline: 2px solid var(--magenta); outline-offset: 2px; box-shadow: 0 0 0 2px #fff; }
+.stage.dragging, .stage.dragging canvas.fld { cursor: grabbing; }
+
+.mini-bar {
+  position: absolute; z-index: 5; display: flex; gap: 2px; align-items: center; padding: 3px;
+  background: var(--ink); border-radius: var(--radius); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 8px 18px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -100%); white-space: nowrap;
+}
+.mini-bar button { min-height: 30px; padding: 4px 10px; background: transparent; color: #fff; border: none; border-radius: 1px; font: 700 var(--fs-sm)/1 var(--font); cursor: pointer; }
+.mini-bar button:hover { background: #2d3336; }
+.mini-bar label { display: flex; padding: 0 3px; }
+.mini-bar input[type="color"] { width: 30px; height: 26px; padding: 0; border: 1px solid #4a5357; background: transparent; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--fs-xs); color: var(--mat-ink-2); margin: 4px 0 0 40px; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend .sw { display: inline-block; width: 22px; height: 10px; }
+.sw-bleed { background: rgba(214, 0, 111, 0.45); }
+.sw-trim { border-top: 2px solid #ff4fa7; height: 0 !important; }
+.sw-safe { border-top: 2px dashed #5cc8f2; height: 0 !important; }
+
+/* ---------- 整頁預覽 ---------- */
+body.simple #pageCard:not(.open) { display: none; }
+#btnPageToggle { align-self: flex-start; }
+.sheet-preview { max-width: 1100px; width: 100%; }
+.pager { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--mat-ink); }
+.pager input { width: 60px; min-height: 30px; padding: 3px 6px; text-align: center; }
+.page-wrap { display: flex; justify-content: center; padding: 16px 0; }
+#pageCanvas { background: #fff; box-shadow: var(--shadow-sheet); max-width: 100%; }
+
+/* ---------- 拖曳圖片進來 ---------- */
+.drop-hint { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; pointer-events: none; background: rgba(214, 0, 111, 0.16); box-shadow: inset 0 0 0 4px var(--magenta); }
+.drop-hint div { display: flex; align-items: center; gap: 10px; padding: 18px 26px; background: var(--paper); color: var(--ink); font-size: var(--fs-xl); font-weight: 700; border: 1px solid var(--rule-strong); box-shadow: var(--shadow-sheet); }
+.drop-hint .ic { width: 26px; height: 26px; color: var(--magenta); }
+
+@media (max-width: 960px) {
+  .stage-wrap { margin: 12px; }
+  .legend { margin-left: 0; }
+}
+@media (max-width: 480px) {
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+  .inline-fields.range .box-field { width: calc(50% - 22px); }
+}

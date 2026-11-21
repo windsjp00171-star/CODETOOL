@@ -1,0 +1,150 @@
+/* 抽獎紀錄：獎項單、計數、黑色印張的得獎畫面、登記列、紀錄表、投影視窗。 */
+
+/* ---------- 獎項單 ---------- */
+.prize-head, .prize-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) 64px auto; gap: 6px; align-items: center; }
+.prize-head { font-size: var(--fs-xs); font-weight: 600; color: var(--ink-3); padding-bottom: 2px; border-bottom: 1px solid var(--rule-strong); }
+.prize-head span:first-child { text-align: center; }
+.prize-row { padding: 5px 0; border-bottom: 1px solid var(--rule); }
+.prize-no { text-align: center; font-weight: 700; font-size: var(--fs-sm); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.prize-row .ops { display: flex; gap: 2px; }
+.prize-row .btn-icon { min-height: 30px; width: 28px; background: transparent; color: var(--ink-2); border-color: transparent; }
+.prize-row .btn-icon:hover { background: var(--paper-2); border-color: var(--rule); color: var(--ink); }
+.prize-row .btn-icon.danger:hover { color: var(--danger); background: var(--danger-tint); border-color: var(--danger); }
+.prize-row .btn-icon .ic { width: 16px; height: 16px; }
+#btnAddPrize { align-self: flex-start; }
+
+/* 計數：三格，像工單上的數量欄 */
+.tally { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border: 1px solid var(--rule-strong); }
+.tally div { padding: 8px 10px; }
+.tally div + div { border-left: 1px solid var(--rule); }
+.tally dt { font-size: var(--fs-xs); color: var(--ink-2); font-weight: 600; }
+.tally dd { margin: 2px 0 0; font-family: var(--font-num); font-size: 1.75rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tally-note { font-size: var(--fs-xs); color: var(--ink-3); display: flex; flex-direction: column; gap: 4px; }
+.tally-note .strong { font-weight: 700; }
+.tally-note .bad { color: var(--danger); }
+
+/* ---------- 換電腦提醒 ---------- */
+#viewDraw .mat { --mat: #17271f; --mat-2: #10201a; }
+.move-tip {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+  padding: 12px 14px; background: var(--mat-2); color: var(--mat-ink); font-size: var(--fs-sm); line-height: 1.6;
+  border: 1px solid rgba(232, 244, 236, 0.22); border-top: 4px solid var(--yellow);
+}
+.move-tip b { color: var(--yellow); }
+.move-tip .btn-quiet { background: transparent; color: var(--mat-ink); border-color: rgba(232, 244, 236, 0.35); }
+.move-tip .btn-quiet:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--mat-ink); }
+.move-tip p { flex: 1 1 320px; }
+
+/* ---------- 得獎畫面：黑色印張，四邊對位記號，下緣色條 ---------- */
+.live, .log { max-width: 1100px; width: 100%; }
+.cur-prize { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--mat-ink); }
+.cur-prize select { width: auto; min-width: 180px; }
+
+.show {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
+  min-height: 320px; padding: 40px 28px 46px; text-align: center;
+  background: var(--rich-black); color: #fff; outline: 1px solid rgba(232, 244, 236, 0.18);
+}
+.show .reg { position: absolute; width: 22px; height: 22px; border: 1.5px solid rgba(255, 255, 255, 0.55); border-radius: 50%; }
+.show .reg::before, .show .reg::after { content: ""; position: absolute; background: rgba(255, 255, 255, 0.55); }
+.show .reg::before { left: 50%; top: -6px; bottom: -6px; width: 1.5px; transform: translateX(-50%); }
+.show .reg::after { top: 50%; left: -6px; right: -6px; height: 1.5px; transform: translateY(-50%); }
+.show .r-t { top: 10px; left: 50%; margin-left: -11px; }
+.show .r-b { bottom: 18px; left: 50%; margin-left: -11px; }
+.show .r-l { left: 12px; top: 50%; margin-top: -11px; }
+.show .r-r { right: 12px; top: 50%; margin-top: -11px; }
+.show-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 8px;
+  background: linear-gradient(90deg, #00a0e0 0 25%, #e6007e 25% 50%, #ffe500 50% 75%, #5b6266 75%);
+}
+.show .title { font-size: clamp(15px, 1.8vw, 20px); color: #c9d0d3; letter-spacing: 0.12em; min-height: 1.2em; }
+.show .prize { font-size: clamp(22px, 3vw, 36px); font-weight: 800; color: var(--yellow); letter-spacing: 0.06em; }
+.show .prog { font-size: var(--fs-md); color: #aab3b7; font-variant-numeric: tabular-nums; }
+.show .big {
+  font-family: var(--font-num); font-size: clamp(64px, 12vw, 176px); font-weight: 800; line-height: 1; min-height: 1em;
+  letter-spacing: 0.02em; font-variant-numeric: tabular-nums; color: #fff;
+}
+.show .big.rolling { color: #7d878c; }
+.show .big.pop { animation: pop 600ms var(--ease); }
+@keyframes pop { 0% { transform: scale(0.6); opacity: 0; filter: blur(6px); } 60% { transform: scale(1.06); opacity: 1; filter: blur(0); } 100% { transform: none; } }
+.show .name { font-size: clamp(22px, 3.2vw, 40px); font-weight: 700; min-height: 1.2em; }
+.show .code { font-size: var(--fs-xl); color: #aab3b7; min-height: 1.4em; letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
+.show .list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 90%; }
+.show .list span { font-family: var(--font-num); padding: 3px 12px; border: 1px solid rgba(255, 255, 255, 0.35); font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
+.show:fullscreen { justify-content: center; }
+.show:fullscreen .title { font-size: 2.6vw; }
+.show:fullscreen .prize { font-size: 5vw; }
+.show:fullscreen .prog { font-size: 2vw; }
+.show:fullscreen .big { font-size: 18vw; }
+.show:fullscreen .name { font-size: 5vw; }
+.show:fullscreen .code { font-size: 2.4vw; }
+.show:fullscreen .list span { font-size: 2vw; }
+
+/* ---------- 登記 ---------- */
+.entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 14px; }
+.entry.with-code { grid-template-columns: minmax(0, 1fr) 140px auto; }
+.entry input { min-height: 54px; font-size: 1.375rem; font-weight: 700; padding: 10px 14px; border: 2px solid var(--ink); font-variant-numeric: tabular-nums; }
+.entry input:focus { border-color: var(--magenta); box-shadow: 0 0 0 2px var(--magenta); }
+#entryCode { text-transform: uppercase; letter-spacing: 0.1em; }
+.entry .btn { min-height: 54px; min-width: 96px; font-size: var(--fs-xl); }
+.msg { margin-top: 10px; padding: 11px 14px; font-size: var(--fs-lg); font-weight: 700; }
+.msg.ok { background: var(--ok-tint); color: #0b4d35; box-shadow: inset 0 0 0 2px var(--ok); }
+.msg.err { background: var(--danger-tint); color: #7d1710; box-shadow: inset 0 0 0 2px var(--danger); }
+.tool-row { margin-top: 12px; }
+.tool-gap { flex: 1; }
+
+/* ---------- 紀錄表 ---------- */
+.log { background: #dde3e1; color: var(--ink); border-top: 3px solid var(--ink); padding: 14px 16px 6px; }
+.log-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.log-head h2 { font-size: var(--fs-lg); font-weight: 800; }
+.log-head .meta { font-size: var(--fs-xs); color: var(--ink-3); }
+.tbl-wrap { overflow-x: auto; }
+table.win { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+table.win th, table.win td { padding: 7px 8px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--rule); }
+table.win th { font-size: var(--fs-xs); font-weight: 700; color: var(--ink-2); border-bottom: 1.5px solid var(--rule-strong); }
+table.win td.idx, table.win td.t { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+table.win td.n { font-weight: 800; font-size: var(--fs-md); font-variant-numeric: tabular-nums; }
+table.win td.code { letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+table.win td.empty { color: var(--ink-3); padding: 18px 8px; white-space: normal; }
+table.win tbody tr:hover td { background: var(--paper-2); }
+table.win tr.absent td { color: var(--ink-3); text-decoration: line-through; }
+table.win tr.absent td:last-child, table.win tr.absent td:nth-last-child(2) { text-decoration: none; }
+.row-ops { display: flex; gap: 4px; justify-content: flex-end; }
+.badge { display: inline-block; padding: 1px 8px; font-size: var(--fs-xs); font-weight: 700; border-radius: var(--radius); }
+.badge.ok { background: var(--ok-tint); color: #0b4d35; }
+.badge.ab { background: var(--paper-3); color: var(--ink-2); }
+
+/* ---------- 相機 ---------- */
+.cam { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(11, 13, 14, 0.9); }
+.cam video { max-width: 92vw; max-height: 70vh; outline: 2px solid var(--magenta); }
+.cam p { color: #fff; font-size: var(--fs-lg); }
+
+/* ---------- 獨立投影視窗 ---------- */
+body.projector { background: var(--rich-black); overflow: hidden; }
+body.projector > :not(#show):not(.cf):not(#projHint) { display: none !important; }
+body.projector #show { position: fixed; inset: 0; min-height: 100vh; gap: 1.6vh; box-shadow: none; }
+body.projector #show .title { font-size: 3vw; }
+body.projector #show .prize { font-size: 5.5vw; }
+body.projector #show .prog { font-size: 2vw; }
+body.projector #show .big { font-size: 19vw; }
+body.projector #show .name { font-size: 5vw; }
+body.projector #show .code { font-size: 2.4vw; }
+body.projector #show .list span { font-size: 2.2vw; }
+body.projector #show .reg { width: 3vw; height: 3vw; min-width: 24px; min-height: 24px; }
+body.projector #show .show-bar { height: 1.2vh; }
+body.projector.idle, body.projector.idle * { cursor: none; }
+#projHint { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 5; padding: 8px 16px; background: rgba(255, 255, 255, 0.14); color: #fff; font-size: var(--fs-md); transition: opacity 600ms; }
+.cf { position: fixed; top: -20px; width: 10px; height: 16px; pointer-events: none; z-index: 10; animation: cf-fall linear forwards; }
+@keyframes cf-fall { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); } }
+
+@media (max-width: 960px) {
+  #viewDraw .mat { order: -1; }
+}
+@media (max-width: 640px) {
+  .entry, .entry.with-code { grid-template-columns: 1fr; }
+  .entry .btn { width: 100%; }
+  .tool-gap { display: none; }
+  .show { min-height: 260px; padding: 34px 18px 40px; }
+  .cur-prize select { min-width: 0; }
+}

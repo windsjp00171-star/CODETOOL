@@ -1,0 +1,58 @@
+/* 對話框：幫我做一張、列印提醒。都是放在切割墊上的工單紙。 */
+.sheet-dlg {
+  border: 1px solid var(--rule-strong); border-radius: var(--radius); padding: 22px 24px;
+  background: var(--paper); color: var(--ink); max-height: 92vh;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+.sheet-dlg::backdrop { background: rgba(11, 13, 14, 0.62); }
+.sheet-dlg[open] { animation: dlg-in 200ms var(--ease); }
+@keyframes dlg-in { from { opacity: 0; transform: translateY(8px); } }
+.sheet-dlg > h2 { display: flex; align-items: center; gap: 9px; font-size: var(--fs-xl); font-weight: 800; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--rule-strong); }
+.sheet-dlg > h2 .ic { color: var(--magenta); width: 22px; height: 22px; }
+.dlg-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule); }
+
+/* ---------- 幫我做一張 ---------- */
+.gen-dlg { width: min(940px, calc(100vw - 32px)); padding-bottom: 0; }
+.gen-dlg .dlg-btns { position: sticky; bottom: 0; background: var(--paper); padding-bottom: 16px; margin-bottom: 0; z-index: 1; }
+.gen-grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; }
+.gen-form { display: flex; flex-direction: column; gap: 10px; }
+.gen-preview {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 18px;
+  background-color: var(--mat);
+  background-image: linear-gradient(var(--mat-line) 1px, transparent 1px), linear-gradient(90deg, var(--mat-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.gen-preview canvas { max-width: 100%; background: #fff; box-shadow: var(--shadow-sheet); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0; padding: 0; border: none; }
+.seg legend { font-size: var(--fs-xs); font-weight: 600; color: var(--ink-2); padding: 0; margin-bottom: 3px; }
+.seg label { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; border: 1px solid var(--rule); background: #fff; font-size: var(--fs-sm); cursor: pointer; border-radius: var(--radius); }
+.seg label:has(input:checked) { border-color: var(--magenta); background: var(--magenta-tint); box-shadow: inset 0 0 0 1px var(--magenta); font-weight: 700; }
+.ai-box { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: var(--paper-2); border: 1px solid var(--rule); }
+.ai-box .box-field a { font-weight: 500; margin-left: 6px; }
+.ai-status { font-size: var(--fs-sm); min-height: 1.4em; }
+.ai-status.err { color: var(--danger); font-weight: 600; }
+.ai-status.ok { color: var(--ok); font-weight: 600; }
+.ai-status.busy { color: var(--magenta-press); }
+.ai-thumbs { display: flex; gap: 6px; flex-wrap: wrap; }
+.ai-thumbs:empty { display: none; }
+.ai-thumbs img { width: 72px; height: 34px; object-fit: cover; cursor: pointer; outline: 1px solid var(--rule); }
+.ai-thumbs img.on { outline: 2px solid var(--magenta); outline-offset: 1px; }
+
+/* ---------- 列印提醒 ---------- */
+.print-dlg { width: min(500px, calc(100vw - 32px)); }
+.print-dlg > h2 { color: var(--ok); }
+.print-dlg .big-tip { font-size: var(--fs-lg); line-height: 1.65; margin-bottom: 12px; }
+.print-dlg ul { padding-left: 20px; margin: 14px 0 0; font-size: var(--fs-sm); line-height: 1.75; color: var(--ink-2); }
+.mock { border: 1px solid var(--rule); padding: 11px 12px; background: var(--paper-2); }
+.mock-row { display: flex; gap: 8px; align-items: center; font-size: var(--fs-md); flex-wrap: wrap; }
+.mock-opt { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border: 1px solid var(--rule); background: #fff; }
+.mock-opt.bad { color: var(--ink-3); text-decoration: line-through; }
+.mock-opt.good { border: 2px solid var(--ok); color: var(--ok); font-weight: 700; }
+.mock-opt .ic { width: 16px; height: 16px; stroke-width: 2.4; }
+.mock-note { font-size: var(--fs-xs); color: var(--ink-3); margin-top: 6px; }
+
+@media (max-width: 760px) {
+  .gen-grid { grid-template-columns: 1fr; }
+  .gen-preview { order: -1; }
+  .sheet-dlg { padding: 18px 16px; }
+}
