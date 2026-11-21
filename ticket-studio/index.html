@@ -4,7 +4,46 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0d0e" />
-  <title>票券工作室</title>
+  <title>票券工作室｜免費線上摸彩券・號碼牌・入場券製作與抽獎工具</title>
+  <meta name="description" content="免費線上製作摸彩券、號碼牌、入場券、餐券與名牌：放上圖片、自動連號、排成 A4 PDF 直接列印，裁好疊起來就連號。附現場抽獎登記與投影。不用註冊，資料不上傳。" />
+  <link rel="canonical" href="https://windsjp00171-star.github.io/CODETOOL/ticket-studio/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="zh_TW" />
+  <meta property="og:title" content="票券工作室｜免費摸彩券・號碼牌製作與抽獎工具" />
+  <meta property="og:description" content="放上圖片、自動連號、下載 PDF 直接列印；附現場抽獎登記與投影。免費、不用註冊。" />
+  <meta property="og:url" content="https://windsjp00171-star.github.io/CODETOOL/ticket-studio/" />
+  <meta name="twitter:card" content="summary" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "票券工作室",
+        "url": "https://windsjp00171-star.github.io/CODETOOL/ticket-studio/",
+        "description": "免費線上製作摸彩券、號碼牌、入場券、餐券與名牌的編號印刷工具，可自動連號、拼版輸出 PDF，並附現場抽獎登記與投影。",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "任何有瀏覽器的裝置",
+        "browserRequirements": "需要支援 JavaScript 的現代瀏覽器",
+        "inLanguage": "zh-Hant",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TWD" },
+        "featureList": ["連續編號與補零", "裁好疊起來就連號的疊切排序", "A4／A3／B4／Letter 拼版輸出 PDF", "自動 3 mm 出血與裁切線", "Excel／CSV 名單套印", "QR Code 與防偽驗證碼", "現場抽獎登記與投影"]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "票券工作室要錢嗎？需要註冊或安裝嗎？", "acceptedAnswer": { "@type": "Answer", "text": "完全免費，不用註冊也不用安裝。用瀏覽器打開網頁就能做摸彩券、號碼牌、入場券、餐券和名牌，第一次開啟需要網路。" } },
+          { "@type": "Question", "name": "怎麼做連號的摸彩券？", "acceptedAnswer": { "@type": "Answer", "text": "三步驟：放上券的圖片、填從幾號到幾號、下載 PDF。號碼排法選「裁好疊起來就連號」，整疊印好的紙一起裁切，再把各疊依序疊起來，號碼就會從頭到尾連續。" } },
+          { "@type": "Question", "name": "列印 PDF 時要注意什麼？", "acceptedAnswer": { "@type": "Answer", "text": "列印時請選「實際大小」或「100%」，不要選「符合頁面」，否則券的尺寸會跑掉、裁切線也對不上。" } },
+          { "@type": "Question", "name": "什麼是出血？自己印需要嗎？", "acceptedAnswer": { "@type": "Answer", "text": "出血是背景往外多畫的一圈（通常 3 mm），因為印刷廠裁紙時刀子可能偏 1～2 mm，多畫一圈才不會露白邊。送印刷廠時選「送印刷廠」會自動加上；自己用印表機印，或背景是白色時不需要。" } },
+          { "@type": "Question", "name": "我的圖片和資料會上傳到網路嗎？", "acceptedAnswer": { "@type": "Answer", "text": "不會。圖片、號碼和設定都只存在你自己的瀏覽器裡。唯一例外是使用「AI 畫背景」時，你輸入的描述會用你自己的金鑰送到 Google Gemini 或 OpenAI 產生圖片。" } },
+          { "@type": "Question", "name": "可以用來辦現場抽獎嗎？", "acceptedAnswer": { "@type": "Answer", "text": "可以。在「抽獎紀錄」設定獎項與名額，從箱子抽出實體券後輸入號碼或掃 QR Code，系統會擋下不在範圍、已作廢、重複中獎的號碼，並可開投影視窗顯示得獎號碼。紀錄存在當天那台電腦的瀏覽器，結束後記得匯出 CSV。" } }
+        ]
+      }
+    ]
+  }
+  </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23e6007e' stroke-width='3'/%3E%3Cpath d='M16 2v28M2 16h28' stroke='%23e6007e' stroke-width='3'/%3E%3C/svg%3E" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -455,6 +494,18 @@
       </section>
     </main>
   </div>
+
+  <section class="about" aria-labelledby="aboutTitle">
+    <h2 id="aboutTitle">關於票券工作室</h2>
+    <p class="about-lead">票券工作室是免費的線上工具，用來製作摸彩券、號碼牌、入場券、餐券和名牌。放上券的圖片、填好號碼範圍，就能排成 A4、A3、B4 或 Letter 的 PDF 直接列印；活動當天還能用「抽獎紀錄」登記抽出的號碼並投影。不用註冊，圖片和資料都只存在你自己的瀏覽器。</p>
+    <h2>常見問題</h2>
+    <details><summary>票券工作室要錢嗎？需要註冊或安裝嗎？</summary><p>完全免費，不用註冊也不用安裝。用瀏覽器打開網頁就能做摸彩券、號碼牌、入場券、餐券和名牌，第一次開啟需要網路。</p></details>
+    <details><summary>怎麼做連號的摸彩券？</summary><p>三步驟：放上券的圖片、填從幾號到幾號、下載 PDF。號碼排法選「裁好疊起來就連號」，整疊印好的紙一起裁切，再把各疊依序疊起來，號碼就會從頭到尾連續。</p></details>
+    <details><summary>列印 PDF 時要注意什麼？</summary><p>列印時請選「實際大小」或「100%」，不要選「符合頁面」，否則券的尺寸會跑掉、裁切線也對不上。</p></details>
+    <details><summary>什麼是出血？自己印需要嗎？</summary><p>出血是背景往外多畫的一圈（通常 3 mm），因為印刷廠裁紙時刀子可能偏 1～2 mm，多畫一圈才不會露白邊。送印刷廠時選「送印刷廠」會自動加上；自己用印表機印，或背景是白色時不需要。</p></details>
+    <details><summary>我的圖片和資料會上傳到網路嗎？</summary><p>不會。圖片、號碼和設定都只存在你自己的瀏覽器裡。唯一例外是使用「AI 畫背景」時，你輸入的描述會用你自己的金鑰送到 Google Gemini 或 OpenAI 產生圖片。</p></details>
+    <details><summary>可以用來辦現場抽獎嗎？</summary><p>可以。在「抽獎紀錄」設定獎項與名額，從箱子抽出實體券後輸入號碼或掃 QR Code，系統會擋下不在範圍、已作廢、重複中獎的號碼，並可開投影視窗顯示得獎號碼。紀錄存在當天那台電腦的瀏覽器，結束後記得匯出 CSV。</p></details>
+  </section>
 
   <div class="drop-hint" id="dropHint" hidden><div><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>放開滑鼠，就會把這張圖片當成券的圖片</div></div>
 

@@ -97,6 +97,15 @@ body.simple #fullPanel, body:not(.simple) #simplePanel { display: none !importan
 .mat-meta b { color: #fff; }
 .mat-hint { font-size: var(--fs-sm); color: var(--mat-ink-2); line-height: 1.6; margin-top: 10px; }
 
+/* 關於與常見問題：印在切割墊上的說明，問答用工單紙 */
+.about { max-width: 820px; margin: 40px auto 56px; padding: 0 16px; color: var(--mat-ink); line-height: 1.7; }
+.about h2 { font-size: var(--fs-lg); font-weight: 800; letter-spacing: 0.04em; color: #fff; margin: 0 0 10px; }
+.about-lead { color: var(--mat-ink-2); margin-bottom: 28px; }
+.about details { background: var(--paper); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 8px; }
+.about summary { cursor: pointer; font-weight: 700; }
+.about summary:focus-visible { outline: 2px solid var(--magenta); outline-offset: 3px; }
+.about details p { margin-top: 8px; color: var(--ink-2); }
+
 /* ---------- 窄螢幕 ---------- */
 @media (max-width: 960px) {
   .workspace { grid-template-columns: 1fr; }
