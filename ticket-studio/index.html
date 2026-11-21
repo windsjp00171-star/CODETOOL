@@ -30,6 +30,11 @@
     .step.wait .step-body > *:not(h3):not(.wait-note) { opacity: .45; }
     .step.wait .step-no { background: #c7d2fe; }
     .wait-note { font-size: 12.5px; color: var(--muted); margin: -4px 0 8px; }
+    .fit-opt { display: flex; gap: 8px; align-items: flex-start; background: #fff; border: 1.5px solid #c7d2fe; border-radius: 8px; padding: 8px 10px; margin-top: 6px; cursor: pointer; color: var(--text); }
+    .fit-opt.on { border-color: var(--primary); background: #eef2ff; }
+    .fit-opt input { margin-top: 3px; }
+    .fit-opt div { display: flex; flex-direction: column; gap: 2px; }
+    .fit-opt b { font-size: 13.5px; } .fit-opt small { font-size: 12px; color: var(--muted); }
     .okbox { background: #ecfdf5; color: #065f46; font-size: 12.5px; border-radius: 6px; padding: 8px 10px; margin: 6px 0 10px; line-height: 1.5; }
     .okbox hr { border: none; border-top: 1px dashed #6ee7b7; margin: 8px 0; }
     .drop-hint { position: fixed; inset: 0; background: rgba(79,70,229,.18); border: 4px dashed var(--primary); z-index: 60; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -474,7 +479,7 @@
       <label class="check adv"><input type="checkbox" data-bind="layout.stackCut" /> 疊切排序（整疊裁切後自動連號）</label>
       <label class="check adv"><input type="checkbox" data-bind="layout.cutMarks" /> 頁緣裁切標記</label>
       <label class="check adv"><input type="checkbox" data-bind="layout.cutLines" /> 券與券之間的虛線</label>
-      <button class="btn-sm adv" id="btnAutoLayout" style="margin:4px 0 10px;">自動：原尺寸 100% 下放最多張</button>
+      <button class="btn-sm adv" id="btnAutoLayout" style="margin:4px 0 10px;">自動排版（一頁放最多張）</button>
       <div class="info" id="layoutInfo"></div>
 
       <h2>5. 下載</h2>
@@ -774,7 +779,7 @@
         defaultField({ id: "f1", name: "左編號", x: 0.28, y: 0.81, color: "#1f2937" }),
         defaultField({ id: "f2", name: "右編號", x: 0.92, y: 0.88, color: "#ffffff" }),
       ],
-      layout: { paper: "A4", orient: "portrait", cols: 1, rows: 4, margin: 5, gap: 0, stackCut: true, cutMarks: true, cutLines: true },
+      layout: { paper: "A4", orient: "portrait", cols: 1, rows: 4, margin: 5, gap: 0, stackCut: true, cutMarks: true, cutLines: true, fit: "save" },
       out: { dpi: 200, noBg: false },
       meta: { name: "摸彩券", preset: "lottery" },
       data: { mode: "seq", list: "" },
@@ -1382,6 +1387,7 @@
         if (el.type === "number" || p === "out.dpi") { const n = parseFloat(v); if (!Number.isFinite(n)) return; v = n; }
         setPath(p, v);
         // 簡易模式：換尺寸、紙張、出血時自動重新排版（原尺寸放最多張）
+        if (/^ticket\.(w|h)$/.test(p)) autoNote = null; // 自己改了尺寸，先前的自動調整說明就不適用
         if (simpleUI && /^(ticket\.(w|h|bleed)|layout\.paper)$/.test(p)) autoLayout();
         refreshAll();
       });
@@ -1465,11 +1471,11 @@
       add(`共 ${nums.length} 張${skipped ? `（已排除 ${skipped} 個）` : ""}，一頁 ${L.perPage} 張，要印 ${pages} 頁`, true);
       if (L.scale < 0.999) {
         const best = bestLayout();
-        add(`為了一頁放 ${L.perPage} 張，券會稍微縮小（${(L.scale * 100).toFixed(0)}%），印出來每張 ${L.sw.toFixed(0)}×${L.sh.toFixed(0)} mm。`);
+        add(`為了一頁放 ${L.perPage} 張，券稍微縮小（${(L.scale * 100).toFixed(0)}%），印出來每張 ${L.sw.toFixed(0)}×${L.sh.toFixed(0)} mm。`);
         if (best) {
           const b = document.createElement("button"); b.className = "btn-sm"; b.style.margin = "4px 0";
-          b.textContent = `改成原本大小（一頁 ${best.n} 張，共 ${Math.ceil(nums.length / best.n)} 頁）`;
-          b.onclick = () => { autoLayout(); syncBindings(); refreshAll(); };
+          b.textContent = `改成原尺寸（一頁 ${best.n} 張，共 ${Math.ceil(nums.length / best.n)} 頁，多用紙）`;
+          b.onclick = () => chooseFit("exact");
           info.appendChild(b);
         } else add(`券比 ${S.layout.paper} 紙還大，只能縮小印。可以在上面改用 A3 紙。`);
       } else add(`✓ 原本大小（${L.sw.toFixed(0)}×${L.sh.toFixed(0)} mm），不縮放`);
@@ -1486,26 +1492,40 @@
     }
 
     // 目前紙張下，原尺寸 100% 一頁最多可放幾張（找不到回傳 null）
-    function bestLayout() {
+    // fit："exact" 原尺寸 100% 放最多張；"save" 省紙：允許縮小到 90%，一頁放最多張
+    const SAVE_MIN_SCALE = 0.9;
+    function bestLayout(fit) {
+      const minScale = (fit || "exact") === "save" ? SAVE_MIN_SCALE : 0.999;
       let best = null;
       for (const orient of ["portrait", "landscape"])
         for (let cols = 1; cols <= 12; cols++)
           for (let rows = 1; rows <= 30; rows++) {
             const L = computeLayout({ orient, cols, rows });
-            if (L.scale < 0.999) break; // 再多列只會更擠
-            if (!best || L.perPage > best.n) best = { n: L.perPage, orient, cols, rows };
+            if (L.scale < minScale) break; // 再多列只會更擠
+            const better = !best || L.perPage > best.n || (L.perPage === best.n && L.scale > best.scale + 1e-6);
+            if (better) best = { n: L.perPage, orient, cols, rows, scale: L.scale };
           }
       return best;
     }
     function autoLayout() {
-      const best = bestLayout();
+      const best = bestLayout(S.layout.fit || "save");
       if (best) Object.assign(S.layout, { orient: best.orient, cols: best.cols, rows: best.rows });
       return !!best;
     }
     $("btnAutoLayout").onclick = () => {
-      if (!autoLayout()) { alert("這張紙在目前邊界下放不下原尺寸的券，請改用較大紙張或縮小邊界。"); return; }
+      S.layout.fit = "save";
+      if (!autoLayout()) { alert("這張紙放不下這個大小的券，請改用較大紙張或縮小邊界。"); return; }
       syncBindings(); refreshAll();
     };
+    // 「省紙」與「原尺寸」兩種排法的比較（相同就回傳 null）
+    function fitChoices() {
+      const { nums } = buildNumbers();
+      const save = bestLayout("save"), exact = bestLayout("exact");
+      if (!save || !exact || save.n === exact.n) return null;
+      const pg = (b) => Math.ceil(nums.length / b.n);
+      return { save, exact, savePages: pg(save), exactPages: pg(exact) };
+    }
+    function chooseFit(fit) { S.layout.fit = fit; autoLayout(); syncBindings(); refreshAll(); }
 
     // ---------- 用途範本 ----------
     const F_IMPACT = FONTS[5].v, F_SANS = FONTS[0].v;
@@ -2693,15 +2713,18 @@
       $("sPdf").disabled = false;
       const pages = Math.ceil(nums.length / L.perPage);
       add(`共 ${nums.length} 張，一頁 ${L.perPage} 張，要印 ${pages} 頁`, true);
-      if (L.scale < 0.999) {
-        const best = bestLayout();
-        if (best) {
-          const b = document.createElement("button"); b.className = "link-btn"; b.style.marginTop = "2px";
-          b.textContent = `想印原本大小？（一頁 ${best.n} 張，共 ${Math.ceil(nums.length / best.n)} 頁）`;
-          b.title = `目前為了一頁放 ${L.perPage} 張，券會縮小成 ${(L.scale * 100).toFixed(0)}%`;
-          b.onclick = () => { autoLayout(); syncBindings(); refreshAll(); };
-          box.appendChild(b);
-        }
+      const fc = fitChoices();
+      if (fc) {
+        const cur = L.perPage === fc.save.n && L.scale < 0.999 ? "save" : L.perPage === fc.exact.n && L.scale >= 0.999 ? "exact" : "";
+        const mk = (key, title, sub) => {
+          const lab = document.createElement("label"); lab.className = "fit-opt" + (cur === key ? " on" : "");
+          const r = document.createElement("input"); r.type = "radio"; r.name = "sFit"; r.checked = cur === key; r.onchange = () => chooseFit(key);
+          const t = document.createElement("div"); const b = document.createElement("b"); b.textContent = title; const sm = document.createElement("small"); sm.textContent = sub;
+          t.append(b, sm); lab.append(r, t); box.appendChild(lab);
+        };
+        const saved = fc.exactPages - fc.savePages;
+        mk("save", `省紙：一頁 ${fc.save.n} 張，共 ${fc.savePages} 頁（推薦）`, `券稍微縮小到 ${(fc.save.scale * 100).toFixed(0)}%，看不太出來，少印 ${saved} 頁`);
+        mk("exact", `原尺寸：一頁 ${fc.exact.n} 張，共 ${fc.exactPages} 頁`, `跟設定的大小完全一樣，紙要多用 ${saved} 頁`);
       }
       $("sPdf").textContent = `下載 PDF 去列印（${pages} 頁）`;
       // 還沒放圖：第 2、3 步先變淡
