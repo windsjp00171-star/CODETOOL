@@ -17,6 +17,23 @@
     [hidden] { display: none !important; }
     body.simple .adv { display: none !important; }
     body.simple #fullPanel, body:not(.simple) #simplePanel { display: none !important; }
+    body.simple #pageCard:not(.open) { display: none; }
+    .page-toggle { align-self: flex-start; padding: 8px 14px !important; font-size: 13.5px !important; }
+    .menu-wrap { position: relative; }
+    .menu { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; color: var(--text); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.22); padding: 6px; min-width: 220px; z-index: 30; display: flex; flex-direction: column; }
+    .menu > button, .menu > label { background: none !important; color: var(--text) !important; border: none !important; text-align: left; padding: 9px 12px !important; border-radius: 6px; font-size: 14px !important; cursor: pointer; display: flex; flex-direction: column; gap: 1px; }
+    .menu > button:hover, .menu > label:hover { background: #f3f4f6 !important; }
+    .menu > button:disabled { opacity: .4; cursor: default; }
+    .menu small { font-size: 11.5px; color: var(--muted); }
+    .menu .danger { color: #b91c1c !important; }
+    .menu hr { border: none; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+    .step.wait .step-body > *:not(h3):not(.wait-note) { opacity: .45; }
+    .step.wait .step-no { background: #c7d2fe; }
+    .wait-note { font-size: 12.5px; color: var(--muted); margin: -4px 0 8px; }
+    .okbox { background: #ecfdf5; color: #065f46; font-size: 12.5px; border-radius: 6px; padding: 8px 10px; margin: 6px 0 10px; line-height: 1.5; }
+    .okbox hr { border: none; border-top: 1px dashed #6ee7b7; margin: 8px 0; }
+    .drop-hint { position: fixed; inset: 0; background: rgba(79,70,229,.18); border: 4px dashed var(--primary); z-index: 60; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+    .drop-hint div { background: #fff; padding: 18px 26px; border-radius: 12px; font-size: 18px; font-weight: 600; color: var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,.2); }
     .simple-panel { padding: 18px 18px 14px; }
     .step { display: grid; grid-template-columns: 34px 1fr; gap: 10px; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
     .step-no { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 15px; }
@@ -230,19 +247,27 @@
 <body>
   <header>
     <div class="left">
-      <h1>票券工作室<span class="sub">摸彩券・號碼牌・入場券・名牌｜全部在本機運算，不上傳任何資料</span></h1>
+      <h1>票券工作室<span class="sub adv">摸彩券・號碼牌・入場券・名牌</span></h1>
       <nav class="tabs">
         <button data-view="design" class="on">印券設計</button>
         <button data-view="draw">抽獎紀錄</button>
       </nav>
     </div>
     <div class="actions">
-      <button id="btnMode" title="切換簡易／完整設定">⚙ 完整設定</button>
-      <button id="btnUndo" title="復原（Ctrl+Z）">↶ 復原</button>
-      <button id="btnRedo" title="重做（Ctrl+Shift+Z）">↷ 重做</button>
-      <button id="btnExportTpl" title="把所有設定、底圖、獎項存成一個檔案。換電腦或備份時使用">💾 存成檔案</button>
-      <label title="開啟之前「存成檔案」的檔案，設定會全部回來">📂 開啟檔案<input type="file" id="tplInput" accept=".json,application/json" hidden /></label>
-      <button id="btnReset">恢復預設</button>
+      <button id="btnBackSimple" hidden>← 回簡易模式</button>
+      <div class="menu-wrap">
+        <button id="btnMenu" aria-haspopup="true" aria-expanded="false">⋯ 選單</button>
+        <div class="menu" id="menuBox" hidden>
+          <button id="btnExportTpl" title="把所有設定、底圖、獎項存成一個檔案。換電腦或備份時使用">💾 存成檔案<small>換電腦、備份用</small></button>
+          <label title="開啟之前「存成檔案」的檔案，設定會全部回來">📂 開啟檔案<small>載入之前存的檔案</small><input type="file" id="tplInput" accept=".json,application/json" hidden /></label>
+          <hr />
+          <button id="btnUndo" title="復原（Ctrl+Z）">↶ 復原</button>
+          <button id="btnRedo" title="重做（Ctrl+Shift+Z）">↷ 重做</button>
+          <button id="btnMode" title="切換簡易／完整設定">⚙ 完整設定</button>
+          <hr />
+          <button id="btnReset" class="danger">恢復預設<small>清除所有設定</small></button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -270,6 +295,7 @@
         <div class="step-no">2</div>
         <div class="step-body">
           <h3>放號碼</h3>
+          <div class="wait-note" hidden>先完成第 1 步放上圖片（不用圖片、直接印白紙也可以繼續）</div>
           <div class="s-range" id="sRange">從 <input type="number" min="0" data-bind="num.start" /> 號　到 <input type="number" min="0" data-bind="num.end" /> 號</div>
           <div class="s-line" id="sListLine" hidden></div>
           <div class="hint">在右邊的預覽上：<b>拖曳</b>號碼可以移動位置，<b>點一下</b>可以放大縮小、換顏色。</div>
@@ -281,6 +307,7 @@
         <div class="step-no">3</div>
         <div class="step-body">
           <h3>下載列印</h3>
+          <div class="wait-note" hidden>先完成第 1 步放上圖片</div>
           <div class="s-range">紙張 <select data-bind="layout.paper"><option value="A4">A4</option><option value="A3">A3</option><option value="B4">B4</option><option value="Letter">Letter</option></select></div>
           <div class="s-info" id="sInfo"></div>
           <button type="button" class="btn btn-primary" id="sPdf" style="margin:8px 0 0;">下載 PDF 去列印</button>
@@ -468,7 +495,7 @@
       <section class="card">
         <div class="card-head">
           <strong>單張預覽（用滑鼠把號碼拖到想要的位置）</strong>
-          <span class="meta">預覽編號：<span id="sampleNum"></span></span>
+          <span class="meta adv">預覽編號：<span id="sampleNum"></span></span>
         </div>
         <div class="stage-wrap" id="stageWrap">
         <div class="mini-bar" id="miniBar" hidden>
@@ -491,7 +518,8 @@
         </div>
       </section>
 
-      <section class="card">
+      <button type="button" class="btn-sm simple-only page-toggle" id="btnPageToggle">📄 看整頁印出來的樣子</button>
+      <section class="card" id="pageCard">
         <div class="card-head">
           <strong>整頁預覽（印出來的樣子）</strong>
           <div class="pager">
@@ -537,7 +565,7 @@
 
     <main>
       <div class="move-tip" id="moveTip">
-        <div><b>活動當天用的不是這台電腦嗎？</b>設定只存在這台電腦的瀏覽器裡。請先在這台按「💾 存成檔案」，把檔案帶到活動用的電腦，再按右上角「📂 開啟檔案」。</div>
+        <div><b>活動當天用的不是這台電腦嗎？</b>設定只存在這台電腦的瀏覽器裡。請先在這台按「💾 存成檔案」，把檔案帶到活動用的電腦，再按右上角「⋯ 選單」裡的「📂 開啟檔案」。</div>
         <div class="move-tip-btns"><button class="btn-sm" id="btnMoveSave">💾 存成檔案</button><button class="btn-sm" id="btnMoveHide" title="我就用這台電腦">不用，就用這台</button></div>
       </div>
       <section class="card">
@@ -578,6 +606,8 @@
       </section>
     </main>
   </div>
+
+  <div class="drop-hint" id="dropHint" hidden><div>放開滑鼠，就會把這張圖片當成券的圖片</div></div>
 
   <dialog id="genDlg" class="gen-dlg">
     <h3>✨ 幫我做一張券的圖片</h3>
@@ -1080,7 +1110,7 @@
       if (res.t + res.b < img.naturalHeight * 0.004 && res.l + res.r < img.naturalWidth * 0.004) return null;
       return res;
     }
-    async function trimWhiteBorder() {
+    async function trimWhiteBorder(silent) {
       if (!bgImg || !bgBorder) return;
       const { t, b, l, r } = bgBorder;
       const w = bgImg.naturalWidth - l - r, h = bgImg.naturalHeight - t - b;
@@ -1088,6 +1118,7 @@
       c.getContext("2d").drawImage(bgImg, l, t, w, h, 0, 0, w, h);
       await setBackground(c.toDataURL("image/jpeg", 0.95));
       bgBorder = null;
+      if (silent) return;
       // 裁掉之後比例會變，直接讓券的高度配合圖片
       const tw = num(S.ticket.w, 1), ia = w / h, ta = tw / num(S.ticket.h, 1);
       if (S.ticket.bgMode !== "included" && Math.abs(ia - ta) / ta >= 0.015) S.ticket.h = +(tw / ia).toFixed(2);
@@ -1096,13 +1127,14 @@
     }
     function updateAspectWarn() { ["aspectWarn", "sWarn"].forEach((id) => renderWarn($(id))); }
     function renderWarn(box) {
-      box.innerHTML = ""; box.hidden = true;
+      box.innerHTML = ""; box.hidden = true; box.className = "warn";
       if (!bgImg) return;
+      let warned = false;
       const addMsg = (text, btnText, fn) => {
         if (box.childNodes.length) box.appendChild(document.createElement("hr"));
         const d = document.createElement("div"); d.textContent = text; box.appendChild(d);
         if (btnText) { const b = document.createElement("button"); b.className = "btn-sm"; b.style.marginTop = "6px"; b.textContent = btnText; b.onclick = fn; box.appendChild(b); }
-        box.hidden = false;
+        box.hidden = false; warned = true;
       };
       if (bgBorder && !S.gen.active) {
         const th0 = num(S.ticket.h, 1), tw0 = num(S.ticket.w, 1), ih = bgImg.naturalHeight, iw = bgImg.naturalWidth;
@@ -1111,9 +1143,16 @@
         if (bgBorder.b) parts.push(`下方約 ${((bgBorder.b / ih) * th0).toFixed(1)} mm`);
         if (bgBorder.l) parts.push(`左邊約 ${((bgBorder.l / iw) * tw0).toFixed(1)} mm`);
         if (bgBorder.r) parts.push(`右邊約 ${((bgBorder.r / iw) * tw0).toFixed(1)} mm`);
-        addMsg(`圖片邊緣有一條白邊（${parts.join("、")}），印出來每張券都會多一條白線。`, "✂ 自動裁掉白邊（建議）", trimWhiteBorder);
+        addMsg(`圖片邊緣有一條白邊（${parts.join("、")}），印出來每張券都會多一條白線。`, "✂ 自動裁掉白邊（建議）", () => trimWhiteBorder());
       }
       renderAspectMsg(addMsg);
+      if (autoNote) {
+        if (box.childNodes.length) box.appendChild(document.createElement("hr"));
+        const d = document.createElement("div"); d.textContent = autoNote.text + " ";
+        const u = document.createElement("button"); u.className = "link-btn"; u.textContent = "復原"; u.onclick = autoNote.undo;
+        d.appendChild(u); box.appendChild(d); box.hidden = false;
+        if (!warned) box.className = "okbox";
+      }
     }
     function renderAspectMsg(addMsg) {
       const inc = S.ticket.bgMode === "included" ? 2 * bleedMm() : 0;
@@ -1198,13 +1237,15 @@
       el.style.top = t.y + f.y * t.h + +el.dataset.oy + "px";
     }
     function startDrag(e, f, el) {
-      e.preventDefault();
+      e.preventDefault(); miniArmed = true;
       selectField(f.id);
       el.setPointerCapture(e.pointerId);
       const sr = stage.getBoundingClientRect(), t = trimRect();
       const r = { left: sr.left + t.x, top: sr.top + t.y, width: t.w, height: t.h };
       drag = { f, el, r, dx: e.clientX - (r.left + f.x * r.width), dy: e.clientY - (r.top + f.y * r.height) };
     }
+    // 點到空白處就收起小工具列
+    stage.addEventListener("pointerdown", (e) => { if (!e.target.classList.contains("fld")) { miniArmed = false; $("miniBar").hidden = true; } });
     stage.addEventListener("pointermove", (e) => {
       if (!drag) return;
       const { f, el, r, dx, dy } = drag;
@@ -1251,9 +1292,10 @@
       renderChips(); fillFieldForm(); placeMiniBar();
     }
     // 在選取的文字上方顯示「放大／縮小／顏色」
+    let miniArmed = false; // 使用者點過號碼才顯示
     function placeMiniBar() {
       const bar = $("miniBar"), f = S.fields.find((x) => x.id === selId), el = f && fieldEls.get(f.id);
-      if (!el || drag) { bar.hidden = true; return; }
+      if (!el || drag || !miniArmed) { bar.hidden = true; return; }
       bar.hidden = false;
       $("mbColor").value = f.color;
       $("mbSmaller").title = f.type === "qr" ? "QR 縮小" : "字縮小";
@@ -1528,7 +1570,7 @@
       S.fields.forEach((f) => (f.id = "f" + Math.random().toString(36).slice(2, 8)));
       Object.assign(S.layout, { margin: 5, stackCut: true, cutMarks: true, cutLines: true }, p.layout);
       if (p.auto !== false) autoLayout();
-      bgImg = null; bgDataURL = null; $("bgInput").value = ""; S.gen.active = false; setBgName(null);
+      bgImg = null; bgDataURL = null; $("bgInput").value = ""; S.gen.active = false; autoNote = null; setBgName(null);
       selId = S.fields[0].id; page = 0;
       syncBindings(); refreshAll();
       $("statusText").textContent = `已換成「${p.name}」，接著可以選擇券的圖片。`;
@@ -2166,6 +2208,7 @@
     try { const g = localStorage.getItem("ticketStudio.genAi"); if (g) { setGenAi(g).then(() => genAiHistory.push(g)); } } catch (e) {}
 
     async function useGenerated() {
+      autoNote = null;
       const tw = num(S.ticket.w, 100), th = num(S.ticket.h, 50), b = bleedMm();
       const { canvas, slots } = genBackground(S.gen, tw, th, b, 300 / 25.4);
       S.ticket.bgMode = b > 0 ? "included" : "extend";
@@ -2216,19 +2259,54 @@
       return changed;
     }
 
-    $("bgInput").addEventListener("change", (e) => {
-      const file = e.target.files[0]; if (!file) return;
+    // 上傳後自動處理白邊、比例；事後告知並可復原
+    let autoNote = null; // { text, undo }
+    function handleImageFile(file) {
+      if (!file || !/^image\//.test(file.type)) { alert("請選擇圖片檔（JPG、PNG…）。"); return; }
       const reader = new FileReader();
       reader.onload = async (ev) => {
-        const wasGen = S.gen.active; S.gen.active = false;
+        const before = { url: ev.target.result, h: S.ticket.h };
+        const wasGen = S.gen.active; S.gen.active = false; autoNote = null;
         const ok = await setBackground(ev.target.result);
-        if (!ok) S.gen.active = wasGen;
-        if (!ok) { alert("無法讀取這張圖片。"); return; }
+        if (!ok) { S.gen.active = wasGen; alert("無法讀取這張圖片。"); return; }
         setBgName(file.name);
+        const notes = [];
+        if (bgBorder) {
+          const th0 = num(S.ticket.h, 1), ih = bgImg.naturalHeight, iw = bgImg.naturalWidth, tw0 = num(S.ticket.w, 1), bb = bgBorder, parts = [];
+          if (bb.t) parts.push("上方"); if (bb.b) parts.push("下方"); if (bb.l) parts.push("左邊"); if (bb.r) parts.push("右邊");
+          await trimWhiteBorder(true);
+          notes.push(`已自動裁掉${parts.join("、")}多出來的白邊`);
+        }
+        // 比例差一點點：直接讓券的高度配合圖片（差太多才問）
+        const tw = num(S.ticket.w, 1), ia = bgImg.naturalWidth / bgImg.naturalHeight, ta = tw / num(S.ticket.h, 1);
+        if (S.ticket.bgMode !== "included" && Math.abs(ia - ta) / ta >= 0.015 && Math.abs(ia - ta) / ta < 0.2) {
+          S.ticket.h = +(tw / ia).toFixed(2);
+          notes.push(`券的高度改成 ${S.ticket.h} mm，配合圖片比例`);
+        }
         const changed = autoContrast();
+        if (notes.length) {
+          autoNote = { text: "✓ " + notes.join("；") + "。", undo: async () => {
+            S.gen.active = false; autoNote = null; S.ticket.h = before.h;
+            await setBackground(before.url); syncBindings(); refreshAll();
+          } };
+        }
+        syncBindings(); refreshAll();
         $("statusText").textContent = `已載入圖片。${changed ? "已依圖片深淺自動調整文字顏色。" : ""}`;
       };
       reader.readAsDataURL(file);
+    }
+    $("bgInput").addEventListener("change", (e) => { const f = e.target.files[0]; e.target.value = ""; handleImageFile(f); });
+    // 直接把圖片拖進網頁
+    let dragDepth = 0;
+    const hasFile = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+    window.addEventListener("dragenter", (e) => { if (!hasFile(e) || $("viewDesign").hidden) return; dragDepth++; $("dropHint").hidden = false; });
+    window.addEventListener("dragleave", (e) => { if (!hasFile(e)) return; if (--dragDepth <= 0) { dragDepth = 0; $("dropHint").hidden = true; } });
+    window.addEventListener("dragover", (e) => { if (hasFile(e)) e.preventDefault(); });
+    window.addEventListener("drop", (e) => {
+      if (!hasFile(e)) return;
+      e.preventDefault(); dragDepth = 0; $("dropHint").hidden = true;
+      if ($("viewDesign").hidden) return;
+      handleImageFile(e.dataTransfer.files[0]);
     });
 
     // ---------- 驗證碼對照表 ----------
@@ -2256,6 +2334,7 @@
       document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("on", b.dataset.view === v));
       $("viewDesign").hidden = v !== "design"; $("viewDraw").hidden = v !== "draw";
       $("btnUndo").hidden = $("btnRedo").hidden = $("btnMode").hidden = v !== "design";
+      if (typeof simpleUI !== "undefined") $("btnBackSimple").hidden = simpleUI || v !== "design";
       try { localStorage.setItem("ticketStudio.view", v); } catch (e) {}
       if (v === "draw") { renderDraw(); $("entryNum").focus(); } else schedulePreview();
     }
@@ -2580,6 +2659,11 @@
     $("btnMoveHide").onclick = () => { $("moveTip").hidden = true; try { localStorage.setItem("ticketStudio.moveTipHidden", "1"); } catch (e) {} };
 
     // ---------- 三步驟面板（簡易模式） ----------
+    $("btnPageToggle").onclick = () => {
+      const open = $("pageCard").classList.toggle("open");
+      $("btnPageToggle").textContent = open ? "收起整頁預覽" : "📄 看整頁印出來的樣子";
+      if (open) { schedulePreview(); setTimeout(() => $("pageCard").scrollIntoView({ behavior: "smooth", block: "start" }), 50); }
+    };
     Object.entries(PRESETS).forEach(([k, p]) => { const o = document.createElement("option"); o.value = k; o.textContent = p.name; $("sPreset").appendChild(o); });
     $("sPreset").onchange = () => {
       $("presetSelect").value = $("sPreset").value;
@@ -2610,17 +2694,32 @@
       const pages = Math.ceil(nums.length / L.perPage);
       add(`共 ${nums.length} 張，一頁 ${L.perPage} 張，要印 ${pages} 頁`, true);
       if (L.scale < 0.999) {
-        add(`為了一頁放 ${L.perPage} 張，券會稍微縮小（${(L.scale * 100).toFixed(0)}%）。`);
         const best = bestLayout();
         if (best) {
-          const b = document.createElement("button"); b.className = "btn-sm"; b.style.margin = "4px 0 0";
-          b.textContent = `改成原本大小（一頁 ${best.n} 張，共 ${Math.ceil(nums.length / best.n)} 頁）`;
+          const b = document.createElement("button"); b.className = "link-btn"; b.style.marginTop = "2px";
+          b.textContent = `想印原本大小？（一頁 ${best.n} 張，共 ${Math.ceil(nums.length / best.n)} 頁）`;
+          b.title = `目前為了一頁放 ${L.perPage} 張，券會縮小成 ${(L.scale * 100).toFixed(0)}%`;
           b.onclick = () => { autoLayout(); syncBindings(); refreshAll(); };
           box.appendChild(b);
         }
-      } else add("✓ 原本大小，不縮放");
+      }
       $("sPdf").textContent = `下載 PDF 去列印（${pages} 頁）`;
+      // 還沒放圖：第 2、3 步先變淡
+      const waiting = !bgImg;
+      document.querySelectorAll("#simplePanel .step").forEach((st, i) => {
+        if (i === 0) return;
+        st.classList.toggle("wait", waiting);
+        const n = st.querySelector(".wait-note"); if (n) n.hidden = !waiting;
+      });
     }
+
+    // ---------- ⋯ 選單 ----------
+    const closeMenu = () => { $("menuBox").hidden = true; $("btnMenu").setAttribute("aria-expanded", "false"); };
+    $("btnMenu").onclick = (e) => { e.stopPropagation(); const open = $("menuBox").hidden; $("menuBox").hidden = !open; $("btnMenu").setAttribute("aria-expanded", String(open)); };
+    document.addEventListener("click", (e) => { if (!$("menuBox").hidden && !e.target.closest(".menu-wrap")) closeMenu(); });
+    $("menuBox").querySelectorAll("button, label").forEach((el) => el.addEventListener("click", () => setTimeout(closeMenu, 0)));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+    $("btnBackSimple").onclick = () => $("btnMode").click();
 
     // ---------- 簡易／完整設定 ----------
     let simpleUI = true;
@@ -2629,6 +2728,7 @@
       document.body.classList.toggle("simple", simpleUI);
       $("btnMode").textContent = simpleUI ? "⚙ 完整設定" : "← 回簡易模式";
       $("btnMode").classList.toggle("mode-on", !simpleUI);
+      $("btnBackSimple").hidden = simpleUI || $("viewDesign").hidden;
     }
     $("btnMode").onclick = () => {
       simpleUI = !simpleUI;
