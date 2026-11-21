@@ -149,3 +149,7 @@ body.simple #pageCard:not(.open) { display: none; }
   .grid-3 { grid-template-columns: 1fr 1fr; }
   .inline-fields.range .box-field { width: calc(50% - 22px); }
 }
+
+/* 號碼排列（疊切／每頁依序） */
+.s-order { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; border: none; }
+.s-order legend { font-size: var(--fs-sm); font-weight: 700; color: var(--ink); padding: 0; margin-bottom: 4px; }

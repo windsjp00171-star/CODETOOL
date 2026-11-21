@@ -82,3 +82,16 @@ export function fitChoices() {
   const pg = (b) => Math.ceil(nums.length / b.n);
   return { save, exact, savePages: pg(save), exactPages: pg(exact) };
 }
+
+// 疊切時，每一疊的號碼範圍（只有一頁多張且疊切才回傳）
+export function stackInfo(nums, L) {
+  if (!app.S.layout.stackCut || L.perPage < 2 || !nums.length) return null;
+  const pages = Math.ceil(nums.length / L.perPage), out = [];
+  const pos = (s) => L.cols === 1 ? `由上數來第 ${s + 1} 張` : L.rows === 1 ? `由左數來第 ${s + 1} 張` : `第 ${Math.floor(s / L.cols) + 1} 排第 ${(s % L.cols) + 1} 張`;
+  for (let s = 0; s < L.perPage; s++) {
+    const a = s * pages, z = Math.min((s + 1) * pages, nums.length) - 1;
+    if (a > z) break;
+    out.push(`第 ${s + 1} 疊（${pos(s)}）：${nums[a]}～${nums[z]}`);
+  }
+  return out;
+}

@@ -3,8 +3,8 @@ import { PRESETS } from "./constants.js";
 import { $, num, el, infoLine } from "./util.js";
 import { app, defaultField } from "./state.js";
 import { buildNumbers, isList, parseList } from "./numbers.js";
-import { computeLayout, fitChoices } from "./geometry.js";
-import { applyPreset, chooseFit } from "./settings.js";
+import { computeLayout, fitChoices, ticketIndex } from "./geometry.js";
+import { applyPreset, chooseFit, syncBindings } from "./settings.js";
 import { refreshAll } from "./refresh.js";
 import { autoContrast } from "./background.js";
 import { schedulePreview } from "./preview.js";
@@ -42,6 +42,21 @@ export function updateSimpleUI() {
   }
   $("sPdf").lastChild.textContent = `下載 PDF 去列印（${pages} 頁）`;
 
+  // 號碼排列：疊切（裁好疊起來就連號）或每頁依序
+  $("sOrder").hidden = L.perPage < 2 || nums.length <= L.perPage;
+  if (!$("sOrder").hidden) {
+    const first = L.slots.map((_, s) => ticketIndex(L, 0, s, pages)).filter((i) => i < nums.length).map((i) => nums[i]);
+    const pageFirst = nums.slice(0, L.perPage);
+    $("sOrderStackHint").textContent = S.layout.stackCut
+      ? `第 1 頁是 ${first.join("、")}。整疊一起裁，再把 ${Math.min(L.perPage, nums.length)} 疊依序疊好，就是 ${nums[0]}～${nums[nums.length - 1]} 連號，不用一張張整理。`
+      : "整疊一起裁，再把各疊依序疊好就是連號，不用一張張整理。";
+    $("sOrderPageHint").textContent = `第 1 頁是 ${pageFirst.join("、")}。裁好後要一張一張整理順序。`;
+    document.querySelectorAll("#sOrder .fit-opt").forEach((lab) => {
+      const on = (lab.dataset.order === "stack") === !!S.layout.stackCut;
+      lab.classList.toggle("on", on); lab.querySelector("input").checked = on;
+    });
+  }
+
   // 還沒放圖：第 2、3 步先變淡；放了圖：第 1 步蓋上完成章
   const waiting = !app.bgImg;
   document.querySelectorAll("#simplePanel .step").forEach((st, i) => {
@@ -62,6 +77,9 @@ export function initSimple() {
   Object.entries(PRESETS).forEach(([k, p]) => sel.append(el("option", { value: k }, p.name)));
   sel.onchange = () => { if (!applyPreset(sel.value)) sel.value = currentPreset(); updateSimpleUI(); };
   $("sGen").onclick = () => openGenerator();
+  document.querySelectorAll('#sOrder input[name="sOrder"]').forEach((r) => r.addEventListener("change", () => {
+    app.S.layout.stackCut = r.value === "stack"; syncBindings(); refreshAll();
+  }));
   $("sPdf").onclick = () => exportPdf();
   $("sFull").onclick = () => toggleUIMode();
   $("sSizeToggle").onclick = () => {

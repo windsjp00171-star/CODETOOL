@@ -133,6 +133,11 @@
             <label class="box-field paper-field"><span>紙張</span><select data-bind="layout.paper"><option value="A4">A4</option><option value="A3">A3</option><option value="B4">B4</option><option value="Letter">Letter</option></select></label>
           </div>
           <div class="s-info" id="sInfo"></div>
+          <fieldset class="s-order" id="sOrder">
+            <legend>號碼怎麼排</legend>
+            <label class="fit-opt" data-order="stack"><input type="radio" name="sOrder" value="stack" /><span class="fit-text"><b>裁好疊起來就連號（推薦）</b><small id="sOrderStackHint"></small></span></label>
+            <label class="fit-opt" data-order="page"><input type="radio" name="sOrder" value="page" /><span class="fit-text"><b>每頁依序排</b><small id="sOrderPageHint"></small></span></label>
+          </fieldset>
           <button type="button" class="btn btn-primary btn-block" id="sPdf"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg><span>下載 PDF 去列印</span></button>
           <p class="status" id="sStatus" role="status"></p>
         </div>
@@ -363,32 +368,29 @@
   <div class="workspace" id="viewDraw" hidden>
     <aside class="ticket-sheet" aria-label="抽獎設定">
       <section class="block">
-        <h2>投影畫面標題</h2>
-        <input type="text" id="drawTitle" placeholder="例：2026 尾牙摸彩" aria-label="投影畫面標題" />
-      </section>
-
-      <section class="block">
         <h2><span class="block-no">1</span>獎項（依抽獎順序排列）</h2>
-        <div class="prize-head" aria-hidden="true"><span>順序</span><span>獎項</span><span>名額</span><span></span></div>
+        <div class="prize-head" id="prizeHead" aria-hidden="true"><span>順序</span><span>獎項</span><span>名額</span><span></span></div>
         <div id="prizeList"></div>
         <button type="button" class="btn btn-quiet btn-small" id="btnAddPrize"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>新增獎項</span></button>
         <p class="hint">登記時會自動填入第一個還沒抽滿的獎項，也可以在右邊手動切換。</p>
       </section>
 
       <section class="block">
-        <h2><span class="block-no">2</span>不參加抽獎的編號</h2>
-        <input type="text" id="voidList" placeholder="未發出／作廢，例：201-250, 77" aria-label="不參加抽獎的編號" />
-        <p class="hint">發出範圍沿用「印券設計」的編號設定，這裡再扣掉沒發出去或作廢的券。</p>
+        <h2><span class="block-no">2</span>投影畫面標題</h2>
+        <input type="text" id="drawTitle" placeholder="例：2026 尾牙摸彩" aria-label="投影畫面標題" />
+        <details class="explain" id="drawMore">
+          <summary>其他設定（通常不用改）</summary>
+          <div class="more-body">
+            <label class="box-field"><span>不參加抽獎的編號</span><input type="text" id="voidList" placeholder="未發出／作廢，例：201-250, 77" /></label>
+            <p class="hint">發出範圍沿用「印券設計」的編號設定，這裡再扣掉沒發出去或作廢的券。</p>
+            <label class="check"><input type="checkbox" id="verifyCode" /> 登記時核對券上的驗證碼（防偽）</label>
+            <p class="hint">需在印券時加上 <code>{code}</code> 欄位。驗證碼不符的券會被擋下。</p>
+          </div>
+        </details>
       </section>
 
       <section class="block">
-        <h2><span class="block-no">3</span>防偽</h2>
-        <label class="check"><input type="checkbox" id="verifyCode" /> 登記時核對券上的驗證碼</label>
-        <p class="hint">需在印券時加上 <code>{code}</code> 欄位。驗證碼不符的券會被擋下。</p>
-      </section>
-
-      <section class="block">
-        <h2><span class="block-no">4</span>統計與匯出</h2>
+        <h2><span class="block-no">3</span>統計與匯出</h2>
         <dl class="tally">
           <div><dt>發出</dt><dd id="statIssued" class="num">0</dd></div>
           <div><dt>已得獎</dt><dd id="statWon" class="num">0</dd></div>
@@ -405,10 +407,10 @@
 
     <main class="mat" aria-label="現場登記">
       <div class="move-tip" id="moveTip">
-        <p><b>活動當天用的不是這台電腦嗎？</b>設定只存在這台電腦的瀏覽器裡。請先在這台按「存成檔案」，把檔案帶到活動用的電腦，再按右上角「選單」裡的「開啟檔案」。</p>
+        <p><b>當天換電腦？</b>先在這台按「存成檔案」，到那台用「選單 → 開啟檔案」。</p>
         <div class="btn-row">
           <button type="button" class="btn btn-ink btn-small" id="btnMoveSave"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg><span>存成檔案</span></button>
-          <button type="button" class="btn btn-quiet btn-small" id="btnMoveHide" title="我就用這台電腦">不用，就用這台</button>
+          <button type="button" class="btn btn-quiet btn-small" id="btnMoveHide" title="我就用這台電腦">不用</button>
         </div>
       </div>
 
@@ -512,6 +514,7 @@
     <ul>
       <li>選錯的話，印出來會變小，跟設定的尺寸不一樣。</li>
       <li>自己裁切時，沿著紙張四周的<b>黑色短線</b>對齊裁下。</li>
+      <li id="printDlgStack" hidden></li>
       <li id="printDlgDraw">活動當天，到上方「<b>抽獎紀錄</b>」分頁登記中獎號碼。</li>
     </ul>
     <form method="dialog" class="dlg-btns"><button class="btn btn-primary">知道了</button></form>

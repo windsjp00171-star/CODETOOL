@@ -56,3 +56,5 @@
   .gen-preview { order: -1; }
   .sheet-dlg { padding: 18px 16px; }
 }
+
+.stack-list { margin: 4px 0 0; padding-left: 18px; font-size: var(--fs-sm); color: var(--ink-2); }

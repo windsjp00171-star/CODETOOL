@@ -60,9 +60,18 @@ function iconBtn(name, title, onclick, cls) {
   return el("button", { type: "button", className: "btn btn-icon" + (cls ? " " + cls : ""), title, ariaLabel: title, onclick }, icon(name));
 }
 
+let prizeEditing = false; // 已開始登記後，獎項預設收成摘要
+const isCompact = () => D.winners.length > 0 && !prizeEditing;
+
 export function renderDraw() {
-  // 獎項清單
-  $("prizeList").replaceChildren(...D.prizes.map((p, i) => {
+  // 獎項清單：開始登記後收成摘要（即時顯示已抽數量）
+  const compact = isCompact();
+  $("btnAddPrize").hidden = $("prizeHead").hidden = compact;
+  if (compact) {
+    const edit = el("button", { type: "button", className: "btn btn-quiet btn-small", onclick: () => { prizeEditing = true; renderDraw(); } }, "編輯獎項");
+    $("prizeList").replaceChildren(el("div", { className: "prize-sum" }, ...D.prizes.map((p) =>
+      el("div", null, el("span", null, p.name), el("span", { className: "q" }, `${okCount(p.id)} / ${p.qty}`)))), edit);
+  } else $("prizeList").replaceChildren(...D.prizes.map((p, i) => {
     const name = el("input", { type: "text", value: p.name, ariaLabel: "獎項名稱" });
     name.oninput = () => { p.name = name.value; saveDraw(); renderDrawStatus(); };
     const qty = el("input", { type: "number", min: 1, value: p.qty, title: "名額", ariaLabel: "名額" });
@@ -78,6 +87,7 @@ export function renderDraw() {
     return el("div", { className: "prize-row" }, el("span", { className: "prize-no" }, String(i + 1)), name, qty, ops);
   }));
   $("voidList").value = D.voidList;
+  if (D.verify || String(D.voidList || "").trim()) $("drawMore").open = true; // 有設定就展開，免得被忽略
   $("drawTitle").value = D.title || "";
   $("verifyCode").checked = !!D.verify;
   $("entryCode").hidden = !D.verify;
@@ -86,6 +96,12 @@ export function renderDraw() {
 }
 
 function renderDrawStatus() {
+  // 第一次登記後，獎項改成摘要；摘要裡的已抽數量即時更新
+  const sum = $("prizeList").querySelector(".prize-sum");
+  if (isCompact()) {
+    if (!sum || sum.children.length !== D.prizes.length) return renderDraw();
+    D.prizes.forEach((p, i) => { sum.children[i].querySelector(".q").textContent = `${okCount(p.id)} / ${p.qty}`; });
+  } else if (sum) return renderDraw();
   $("showTitle").textContent = D.title || "";
   // 目前獎項下拉
   const cur = currentPrize();

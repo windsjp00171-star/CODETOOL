@@ -1,8 +1,8 @@
 // 輸出：拼版 PDF、單張圖片 ZIP、驗證碼對照表。
-import { $, num, tick, downloadBlob, downloadCSV, setStatus } from "./util.js";
+import { $, num, el, tick, downloadBlob, downloadCSV, setStatus } from "./util.js";
 import { app, newSeed } from "./state.js";
 import { buildNumbers, fieldText, outName, codeFor } from "./numbers.js";
-import { computeLayout, ticketIndex, cutGeometry, ticketSize } from "./geometry.js";
+import { computeLayout, ticketIndex, cutGeometry, ticketSize, stackInfo } from "./geometry.js";
 import { renderField, makeBgFull, bgCrop, cropCanvas } from "./render.js";
 import { refreshAll } from "./refresh.js";
 
@@ -79,6 +79,10 @@ export async function exportPdf() {
     doc.save(`${outName()}_${fileRange(nums)}.pdf`);
     setBusy(false, `已下載 PDF：${pages} 頁、${nums.length} 張。列印時請選「實際大小 / 100%」。`);
     $("printDlgTitle").textContent = `PDF 已下載（${pages} 頁、${nums.length} 張）`;
+    const stk = stackInfo(nums, L), li = $("printDlgStack");
+    li.hidden = !stk;
+    if (stk) li.replaceChildren(el("b", null, `裁好後會有 ${stk.length} 疊`), "（每頁同一個位置的券疊成一疊）。依序疊起來就是連號：",
+      el("ol", { className: "stack-list" }, ...stk.map((t) => el("li", null, t))));
     try { $("printDlg").showModal(); } catch (e) { /* 已開啟 */ }
   } catch (e) {
     console.error(e); setBusy(false, "產生 PDF 時發生錯誤：" + e.message);
