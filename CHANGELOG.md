@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — 2026-11-22
+
+### Added
+- 票券工作室的「關於」段落加上講師與 Vibe Coding 實戰課的連結
+
 ## [Unreleased] — 2026-11-21
 
 ### Added
