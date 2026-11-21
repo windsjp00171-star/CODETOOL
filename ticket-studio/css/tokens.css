@@ -1,0 +1,60 @@
+/* 票券工作室：印刷廠打樣單的色彩與尺寸
+   紙（工單）＋ 切割墊（預覽）＋ 四色印刷油墨。
+   顏色只在這裡定義，其他檔案一律用變數。 */
+:root {
+  /* 工單紙 */
+  --paper: #fbfcfc;
+  --paper-2: #f0f3f3;      /* 欄位底、表頭 */
+  --paper-3: #e3e8e8;      /* 按下、分隔 */
+  --rule: #c5ced0;         /* 細線 */
+  --rule-strong: #15181a;  /* 欄框粗線 */
+
+  /* 油墨 */
+  --ink: #15181a;          /* K：主要文字、主色按鈕 */
+  --ink-2: #3b4246;        /* 次要文字 */
+  --ink-3: #5c666b;        /* 提示文字（紙上 5.6:1） */
+  --rich-black: #0b0d0e;   /* 報頭、投影 */
+
+  /* 製程色 */
+  --magenta: #d6006f;      /* 選取、主要路徑 */
+  --magenta-press: #b0005b;
+  --magenta-tint: #fde6f1;
+  --cyan: #0089c4;         /* 參考線（非印刷色） */
+  --cyan-ink: #006a97;     /* 青色文字 */
+  --cyan-tint: #e2f2f9;
+  --yellow: #ffe500;
+  --yellow-tint: #fff7bf;
+  --yellow-ink: #5c4b00;
+  --ok: #0a7a52;
+  --ok-tint: #e1f3ea;
+  --danger: #b4231a;
+  --danger-tint: #fbe7e5;
+
+  /* 切割墊 */
+  --mat: #2c6249;
+  --mat-2: #24553e;        /* 墊上的區塊底 */
+  --mat-line: rgba(232, 244, 236, 0.10);
+  --mat-line-major: rgba(232, 244, 236, 0.22);
+  --mat-ink: #e8f4ec;
+  --mat-ink-2: #b9d4c4;
+  --ruler: #f4f6f2;
+  --ruler-ink: #1b1f21;
+
+  /* 字 */
+  --font-num: "Barlow Semi Condensed", "Noto Sans TC", system-ui, sans-serif; /* 得獎號碼、計數 */
+  --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --fs-xs: 0.75rem;   /* 12 */
+  --fs-sm: 0.8125rem; /* 13 */
+  --fs-md: 0.875rem;  /* 14 */
+  --fs-lg: 1rem;      /* 16 */
+  --fs-xl: 1.125rem;  /* 18 */
+
+  /* 尺寸 */
+  --head-h: 56px;
+  --slug-h: 6px;
+  --sheet-w: 392px;
+  --radius: 2px;
+  --gap: 12px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-sheet: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.28);
+}

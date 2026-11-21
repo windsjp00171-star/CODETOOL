@@ -2,7 +2,7 @@
 
 摸彩券、號碼牌、入場券、餐券、名牌／座位卡的編號印刷工具，附現場抽獎登記與投影。
 
-單一 HTML 檔、直接用瀏覽器開啟即可使用（首次開啟需要網路載入 jsPDF / JSZip，圖片本身不會上傳）。
+純靜態網頁，放在任何網站空間（例如 GitHub Pages）就能用，不需要建置步驟（首次開啟需要網路載入 jsPDF / JSZip，圖片本身不會上傳）。程式使用 ES modules，必須透過 http(s) 開啟，直接雙擊 `index.html`（file://）無法執行。
 
 ## 功能
 - 號碼排列可選「裁好疊起來就連號（疊切，推薦）」或「每頁依序排」並附說明；下載後的列印提醒會列出每一疊的號碼範圍
@@ -44,3 +44,45 @@
 
 ## 列印提醒
 列印 PDF 時請選「實際大小 / 100%」，不要選「符合頁面」，否則尺寸會跑掉。
+
+## 程式結構
+
+本機測試：在這個資料夾執行 `python3 -m http.server`，再開 `http://localhost:8000/`。
+
+```
+index.html        畫面（兩個分頁、對話框、圖示 sprite）
+css/
+  tokens.css      顏色與尺寸變數（所有顏色只在這裡定義）
+  base.css        表單、按鈕、提示框
+  shell.css       報頭、工作區（左工單＋右切割墊）、選單
+  design.css      印券設計：三步驟、完整設定、量尺、整頁預覽
+  draw.css        抽獎紀錄、得獎畫面、投影視窗
+  dialogs.css     幫我做一張、列印提醒
+js/
+  main.js         啟動（投影視窗只跑 projector.js）
+  constants.js    紙張、字型、用途範本、主題、localStorage 鍵名
+  state.js        設定資料、復原／重做、存到瀏覽器
+  numbers.js      編號、名單、驗證碼、欄位文字
+  geometry.js     拼版幾何、自動排版
+  render.js       欄位、底圖、QR 繪製（編輯器／預覽／PDF／ZIP 共用）
+  background.js   底圖載入、白邊裁切、比例提醒
+  editor.js       單張編輯器、拖曳、量尺、小工具列
+  fields.js       文字欄位表單
+  settings.js     設定綁定、範本、尺寸、出血、名單
+  preview.js      整頁預覽
+  info.js         排版摘要
+  simple.js       三步驟面板
+  refresh.js      設定改變後的整體重繪
+  output.js       PDF、ZIP、驗證碼對照表
+  files.js        存成檔案／開啟檔案／恢復預設
+  generator.js    幫我做一張
+  ai.js           AI 畫背景
+  draw.js         抽獎登記
+  show.js         同步到投影視窗
+  projector.js    投影視窗
+  shell.js        分頁、選單、簡易／完整模式
+  icons.js        SVG 圖示
+  util.js         共用小工具
+```
+
+localStorage 鍵名與「存成檔案」的格式（`app: "ticket-studio", version: 2`）不可更動，否則使用者既有的資料會讀不到。
