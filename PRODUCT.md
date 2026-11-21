@@ -24,6 +24,7 @@ One tool covers both ends of a raffle: design-and-print the numbered tickets, th
 
 ## Operating Context
 
+- Used mainly on a desktop or laptop browser (confirmed 2026-11-21). Phone layouts only need to stay usable; no phone-specific design work is wanted.
 - Ticket making happens at a desk on a laptop or office PC, days before the event, often with a Canva export or a phone photo as the ticket image.
 - Printing is either on an office printer (no bleed) or sent to a print shop (3 mm bleed).
 - The draw happens live: one operator at a laptop types or scans drawn ticket numbers while a host calls winners. Sometimes a second window is dragged onto a projector in a dim hall; sometimes there is no projector and the tool is only the record that prevents duplicates.
