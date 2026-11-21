@@ -156,3 +156,7 @@ body.projector.idle, body.projector.idle * { cursor: none; }
 .prize-sum .q { font-family: var(--font-num); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-2); }
 #prizeList > .btn { margin-top: 8px; }
 #drawMore .more-body { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+
+.show-frame { margin-top: 4px; }
+.live .entry { margin-top: 30px; }
+@media (max-width: 640px) { .cropped::before { inset: -10px; } }

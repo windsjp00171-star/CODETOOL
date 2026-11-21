@@ -117,3 +117,23 @@ body:not(.simple) .simple-only { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* 狀態訊息裡的 ✓ ⚠ ✗：畫好的圖示，跟著文字大小與顏色 */
+.ic.mark { width: 1.1em; height: 1.1em; vertical-align: -0.18em; margin-right: 0.3em; stroke-width: 2.3; }
+.ic.mark + .ic.mark { margin-left: 0; }
+
+/* 裁切記號：四個角外側各兩條短線，取代陰影來界定一張紙 */
+.cropped { position: relative; }
+.cropped::before {
+  content: ""; position: absolute; inset: -16px; pointer-events: none; z-index: 0;
+  --crop: var(--mat-ink-2);
+  background:
+    linear-gradient(var(--crop), var(--crop)) left 0 top 16px / 11px 1px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) left 16px top 0 / 1px 11px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) right 0 top 16px / 11px 1px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) right 16px top 0 / 1px 11px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) left 0 bottom 16px / 11px 1px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) left 16px bottom 0 / 1px 11px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) right 0 bottom 16px / 11px 1px no-repeat,
+    linear-gradient(var(--crop), var(--crop)) right 16px bottom 0 / 1px 11px no-repeat;
+}

@@ -1,6 +1,6 @@
 // 券的底圖：載入、白邊偵測與裁切、比例提醒、依深淺自動選字色、拖曳上傳。
 import { PT_MM } from "./constants.js";
-import { $, clamp, num, el, setStatus } from "./util.js";
+import { $, clamp, num, el, setStatus, setMarked, marked } from "./util.js";
 import { app } from "./state.js";
 import { bleedMm, ticketSize } from "./geometry.js";
 import { makeBgFull } from "./render.js";
@@ -26,9 +26,10 @@ export function clearBackground() {
 }
 
 export function setBgName(name) {
-  $("bgName").textContent = $("sBgName").textContent = name
+  const text = name
     ? (name.startsWith("✨") ? name.replace(/^✨\s*/, "") : `✓ ${name}`)
     : app.bgImg ? "✓ 已載入（上次的圖片）" : "還沒選擇（也可以不用圖片，直接印在白紙上）";
+  setMarked($("bgName"), text); setMarked($("sBgName"), text);
 }
 
 // ---------- 白邊偵測：圖片某一兩邊有整條白色（常見於截圖或匯出時多留的邊） ----------
@@ -96,7 +97,7 @@ function renderWarn(box) {
   }
   renderAspectMsg(addMsg);
   if (app.autoNote) {
-    const p = el("p", null, app.autoNote.text + " ", el("button", { type: "button", className: "link-btn", onclick: app.autoNote.undo }, "復原"));
+    const p = el("p", null, ...marked(app.autoNote.text + " "), el("button", { type: "button", className: "link-btn", onclick: app.autoNote.undo }, "復原"));
     box.append(p); box.hidden = false;
     if (!warned) box.className = "note note-ok";
   }

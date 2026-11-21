@@ -1,6 +1,6 @@
 // 抽獎紀錄：現場實體抽出 → 輸入／掃描券號 → 檢查 → 登記，並同步到投影視窗。
 import { LS } from "./constants.js";
-import { $, num, el, ls, randomId, downloadCSV, infoLine } from "./util.js";
+import { $, num, el, ls, randomId, downloadCSV, infoLine, setMarked } from "./util.js";
 import { buildNumbers, parseRanges, codeFor, usesCode, recordLabel, isList, padNumber } from "./numbers.js";
 import { pushShow, initShowChannel, openProjector } from "./show.js";
 import { icon } from "./icons.js";
@@ -42,7 +42,7 @@ function pool() {
   const issued = nums.filter((n) => { const v = +n; return !voids.some(([a, b]) => v >= a && v <= b); });
   return { all: nums, issued, avail: issued.filter((n) => !used.has(n)) };
 }
-function msg(type, text) { const m = $("entryMsg"); m.className = "msg " + type; m.textContent = text; m.hidden = false; }
+function msg(type, text) { const m = $("entryMsg"); m.className = "msg " + type; setMarked(m, text); m.hidden = false; }
 const fmtTime = (t) => new Date(t).toLocaleTimeString("zh-TW", { hour12: false });
 const showCodes = () => D.verify || usesCode();
 

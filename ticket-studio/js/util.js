@@ -1,4 +1,5 @@
 // 共用的小工具：DOM、數字、下載、localStorage。
+import { icon } from "./icons.js";
 
 export const $ = (id) => document.getElementById(id);
 export const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -21,9 +22,19 @@ export function el(tag, props, ...children) {
   return node;
 }
 
+// 文字裡的 ✓ ⚠ ✗ 換成畫好的圖示（文字本身不變）
+const MARKS = { "✓": "check", "⚠": "warn", "✗": "x" };
+export function marked(text) {
+  return String(text ?? "").split(/([✓⚠✗])\s*/).filter((t) => t !== "").map((t) => {
+    if (!MARKS[t]) return t;
+    const svg = icon(MARKS[t]); svg.classList.add("mark", "mark-" + MARKS[t]); return svg;
+  });
+}
+export const setMarked = (node, text) => node.replaceChildren(...marked(text));
+
 // 一行一行的說明文字（第一行或指定行加粗）
 export function infoLine(box, text, strong, cls) {
-  const d = el("div", { className: [strong ? "strong" : "", cls || ""].join(" ").trim() || null }, text);
+  const d = el("div", { className: [strong ? "strong" : "", cls || ""].join(" ").trim() || null }, ...marked(text));
   box.appendChild(d);
   return d;
 }
@@ -53,6 +64,6 @@ export function loadImage(src) {
 
 // 狀態列：完整面板與三步驟面板各有一個
 export function setStatus(text, both) {
-  $("statusText").textContent = text;
-  if (both) $("sStatus").textContent = text;
+  setMarked($("statusText"), text);
+  if (both) setMarked($("sStatus"), text);
 }

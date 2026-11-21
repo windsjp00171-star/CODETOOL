@@ -1,7 +1,7 @@
 // AI 畫背景：使用者自己的金鑰，由瀏覽器直接呼叫 Gemini 或 OpenAI。
 // 金鑰只存在這台電腦的瀏覽器（使用者勾選時），不會寫進「存成檔案」。
 import { AI_MODELS, AI_KEY_HELP, AI_IDEAS, LS } from "./constants.js";
-import { $, clamp, el, ls, loadImage } from "./util.js";
+import { $, clamp, el, ls, loadImage, setMarked } from "./util.js";
 import { bleedMm, ticketSize } from "./geometry.js";
 import { drawGenPreview } from "./generator.js";
 
@@ -27,7 +27,7 @@ export function updateGenSrcUI() {
   const ai = (document.querySelector('input[name="genSrc"]:checked')?.value || "theme") === "ai";
   $("genAiBox").hidden = !ai; $("genThemeRow").hidden = ai;
 }
-export function setAiStatus(type, text) { const node = $("genAiStatus"); node.className = "ai-status " + type; node.textContent = text; }
+export function setAiStatus(type, text) { const node = $("genAiStatus"); node.className = "ai-status " + type; setMarked(node, text); }
 
 function renderAiThumbs() {
   $("genAiThumbs").replaceChildren(...genAi.history.map((u) => {

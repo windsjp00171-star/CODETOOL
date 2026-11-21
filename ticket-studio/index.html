@@ -49,6 +49,7 @@
       <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 8.5v-4h10v4M7 16.5H4.5v-7a1 1 0 0 1 1-1h13a1 1 0 0 1 1 1v7H17"/><path d="M7 13.5h10v6H7z"/></symbol>
       <symbol id="i-table" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="1"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></symbol>
       <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6.5" cy="7" r="2.5"/><circle cx="6.5" cy="17" r="2.5"/><path d="M8.6 8.4 19.5 17M8.6 15.6 19.5 7"/></symbol>
+      <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 21 19.5H3Z"/><path d="M12 10v4.5M12 17h.01"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
     </defs>
   </svg>
@@ -419,6 +420,7 @@
           <h2 id="liveTitle">現場登記</h2>
           <label class="cur-prize">目前獎項 <select id="curPrize"></select></label>
         </div>
+        <div class="cropped show-frame">
         <div class="show" id="show">
           <i class="reg r-t" aria-hidden="true"></i><i class="reg r-b" aria-hidden="true"></i><i class="reg r-l" aria-hidden="true"></i><i class="reg r-r" aria-hidden="true"></i>
           <div class="title" id="showTitle"></div>
@@ -429,6 +431,7 @@
           <div class="code" id="showCode"></div>
           <div class="list" id="showList"></div>
           <div class="show-bar" aria-hidden="true"></div>
+        </div>
         </div>
         <form class="entry" id="entryForm" autocomplete="off">
           <input type="text" id="entryNum" inputmode="numeric" placeholder="輸入或掃描抽出的券號，按 Enter 登記" aria-label="券號" />
@@ -446,7 +449,7 @@
         </div>
       </section>
 
-      <section class="log" aria-labelledby="logTitle">
+      <section class="log cropped" aria-labelledby="logTitle">
         <div class="log-head"><h2 id="logTitle">抽獎紀錄</h2><span class="meta" id="winMeta"></span></div>
         <div class="tbl-wrap"><table class="win" id="winTable"></table></div>
       </section>
