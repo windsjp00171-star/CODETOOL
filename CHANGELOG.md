@@ -3,6 +3,7 @@
 ## [Unreleased] — 2026-11-22
 
 ### Added
+- 加上 Google Search Console 的網站驗證標記
 - 票券工作室加上分享預覽圖（1200×630）：貼到 Facebook、LINE 時會顯示大圖，而不是只有文字
 - 票券工作室的「關於」段落加上講師與 Vibe Coding 實戰課的連結
 
