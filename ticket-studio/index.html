@@ -138,6 +138,7 @@
           <div class="btn-row">
             <label class="btn btn-ink" for="bgInput"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg><span>選擇圖片</span></label>
             <button type="button" class="btn btn-quiet" id="sGen"><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg><span>沒有圖？幫我做一張</span></button>
+            <button type="button" class="btn btn-quiet btn-remove-bg" id="sRemoveBg" hidden><span>移除圖片</span></button>
           </div>
           <p class="file-name" id="sBgName"></p>
           <div id="sWarn" class="note note-warn" hidden></div>
@@ -214,6 +215,7 @@
             <input type="file" id="bgInput" accept="image/*" hidden />
           </label>
           <button type="button" class="btn btn-quiet" id="btnGen"><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg><span>沒有圖？幫我做一張</span></button>
+          <button type="button" class="btn btn-quiet btn-remove-bg" id="btnRemoveBg" hidden><span>移除圖片</span></button>
         </div>
         <p class="file-name" id="bgName">還沒選擇（也可以不用圖片，直接印在白紙上）</p>
         <label class="box-field"><span>券的大小（裁好之後）</span><select id="sizePreset"></select></label>

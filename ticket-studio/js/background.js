@@ -74,7 +74,35 @@ async function trimWhiteBorder(silent) {
 }
 
 // ---------- 底圖提醒（完整面板與三步驟面板各一份） ----------
-export function updateAspectWarn() { ["aspectWarn", "sWarn"].forEach((id) => renderWarn($(id))); }
+export function updateAspectWarn() {
+  ["aspectWarn", "sWarn"].forEach((id) => renderWarn($(id)));
+  ["sRemoveBg", "btnRemoveBg"].forEach((id) => { const b = $(id); if (b) b.hidden = !app.bgImg; });
+}
+
+// 移除目前的底圖（自己上傳的或「幫我做一張」產生的），文字欄位保留；可以馬上復原
+let lastRemoved = null;
+export function removeBackground() {
+  if (!app.bgImg) return;
+  const S = app.S;
+  lastRemoved = { url: app.bgDataURL, gen: S.gen.active, turned: S.ticket.turned };
+  clearBackground(); app.bgBorder = null; app.autoNote = null;
+  S.gen.active = false; S.ticket.turned = false;
+  $("bgInput").value = "";
+  setBgName(null); refreshAll();
+  const msg = "已移除圖片，文字和號碼都還在。可以重新「選擇圖片」，或按「幫我做一張」。";
+  ["statusText", "sStatus"].forEach((id) => {
+    const node = $(id); if (!node) return;
+    node.replaceChildren(msg + " ", el("button", { type: "button", className: "link-btn", onclick: undoRemoveBackground }, "復原"));
+  });
+}
+async function undoRemoveBackground() {
+  if (!lastRemoved) return;
+  const r = lastRemoved; lastRemoved = null;
+  app.S.gen.active = r.gen; app.S.ticket.turned = r.turned;
+  await setBackground(r.url);
+  setBgName(r.gen ? "✨ 用「幫我做一張」產生的圖片" : null);
+  setStatus("已把圖片放回來。", true);
+}
 
 function renderWarn(box) {
   box.replaceChildren(); box.hidden = true; box.className = "note note-warn";
@@ -223,6 +251,7 @@ export function handleImageFile(file) {
 
 export function initBackground() {
   $("bgInput").addEventListener("change", (e) => { const f = e.target.files[0]; e.target.value = ""; handleImageFile(f); });
+  ["sRemoveBg", "btnRemoveBg"].forEach((id) => { $(id).onclick = () => removeBackground(); });
   // 直接把圖片拖進網頁
   let dragDepth = 0;
   const hasFile = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
