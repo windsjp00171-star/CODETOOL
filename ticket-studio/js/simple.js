@@ -2,7 +2,8 @@
 import { PRESETS } from "./constants.js";
 import { $, num, el, infoLine } from "./util.js";
 import { app, defaultField } from "./state.js";
-import { buildNumbers, isList, parseList, namesToTable, tableToTSV, tableToNames } from "./numbers.js";
+import { buildNumbers, isList, parseList, tableToTSV } from "./numbers.js";
+import { syncNameGrid, initNameGrid } from "./namegrid.js";
 import { computeLayout, fitChoices, ticketIndex } from "./geometry.js";
 import { applyPreset, chooseFit, syncBindings } from "./settings.js";
 import { refreshAll } from "./refresh.js";
@@ -39,7 +40,7 @@ export function updateSimpleUI() {
     $("sListLine").textContent = records.length
       ? `共 ${records.length} 人，每人印一張${groups ? `（${groups} 個小組）` : ""}。`
       : "還沒有名單。";
-    if (document.activeElement !== $("sNames")) $("sNames").value = S.data.names || tableToNames(S.data.list);
+    syncNameGrid();
   }
 
   // 排版摘要（和完整面板同一套說法）
@@ -87,6 +88,7 @@ export function updateSimpleUI() {
 }
 
 export function initSimple() {
+  initNameGrid();
   $("btnPageToggle").onclick = () => {
     const open = $("pageCard").classList.toggle("open");
     $("btnPageToggle").setAttribute("aria-expanded", String(open));
@@ -107,19 +109,6 @@ export function initSimple() {
     $("sSizeToggle").textContent = box.hidden ? "改大小" : "收起";
     $("sSizeToggle").setAttribute("aria-expanded", String(!box.hidden));
   };
-  // 名單：照平常習慣打 → 轉成表格，名字（和小組）自動放到券上
-  let namesTimer = null;
-  $("sNames").addEventListener("input", () => {
-    clearTimeout(namesTimer);
-    namesTimer = setTimeout(() => {
-      const S = app.S, { headers, rows } = namesToTable($("sNames").value);
-      S.data.names = $("sNames").value;
-      S.data.list = tableToTSV(headers, rows);
-      S.data.mode = "list";
-      ensureNameFields(headers);
-      refreshAll();
-    }, 250);
-  });
   document.querySelectorAll('input[name="sMode"]').forEach((r) => r.addEventListener("change", () => {
     const S = app.S;
     if (r.value === "list") {
@@ -127,7 +116,7 @@ export function initSimple() {
       if (!String(S.data.list || "").trim()) { S.data.names = ""; S.data.list = tableToTSV(["姓名"], []); }
       ensureNameFields(parseList(S.data.list).headers);
       refreshAll();
-      setTimeout(() => $("sNames").focus(), 50);
+      setTimeout(() => { const f = document.querySelector("#ngBody .ng-name"); if (f) f.focus(); }, 50);
     } else { S.data.mode = "seq"; refreshAll(); }
   }));
   $("sAddBlank").onclick = () => {
