@@ -42,6 +42,61 @@ export function parseList(text) {
   return val;
 }
 
+// ---------- 照平常習慣打的名單 → 表格 ----------
+// 支援：「小組：名字、名字」、一行一個名字、從 Excel 貼上的一欄或兩欄（小組、姓名）
+// 標題列：整格剛好是這些字才算（「腓立比小組」不是標題）
+const HEAD_RE = /^(姓名|名字|名稱|小組|組別|組名|單位|部門|班級|name|group)$/i;
+// 常見的欄名統一成「姓名」「小組」，券上的 {姓名}、{小組} 才對得上
+const canonHead = (h) => /^(姓名|名字|名稱|name)$/i.test(h) ? "姓名" : /^(小組|組別|組名|單位|部門|班級|group)$/i.test(h) ? "小組" : h;
+export function namesToTable(text) {
+  const lines = String(text || "").replace(/\r\n?/g, "\n").split("\n").map((l) => l.trim()).filter(Boolean);
+  const rows = []; let headers = null, grouped = false;
+  lines.forEach((line, i) => {
+    if (line.includes("\t")) {
+      const cells = line.split("\t").map((c) => c.trim());
+      if (i === 0 && cells.some((c) => HEAD_RE.test(c))) { headers = cells.map((h, k) => canonHead(h) || `欄${k + 1}`); return; }
+      if (cells.length >= 2) grouped = true;
+      rows.push(cells);
+      return;
+    }
+    const m = line.match(/^([^：:]+)[：:](.*)$/);
+    if (m) {
+      grouped = true;
+      m[2].split(/[、,，;；\s]+/).filter(Boolean).forEach((n) => rows.push([m[1].trim(), n]));
+      return;
+    }
+    line.split(/[、,，;；]+/).map((n) => n.trim()).filter(Boolean).forEach((n) => rows.push(["", n]));
+  });
+  if (!headers) {
+    const width = Math.max(1, ...rows.map((r) => r.length));
+    headers = width <= 2 ? (grouped ? ["小組", "姓名"] : ["姓名"]) : [...Array(width - 2).keys()].map((k) => `欄${k + 1}`).concat(["小組", "姓名"]);
+  }
+  // 一行一個名字的列是 ["", 名字]；只有一欄（姓名）時只留名字
+  const fixed = rows.map((r) => {
+    if (headers.length === 1) return [r[r.length - 1]];
+    if (r.length === 2 && headers.length > 2) return [...Array(headers.length - 2).fill(""), ...r];
+    return r;
+  });
+  return { headers, rows: fixed };
+}
+const cleanCell = (v) => String(v ?? "").replace(/[\t\n]+/g, " ").trim();
+export const tableToTSV = (headers, rows) => [headers, ...rows].map((r) => headers.map((_, i) => cleanCell(r[i])).join("\t")).join("\n");
+// 表格 → 平常的寫法（有「小組、姓名」時寫成「小組：名字、名字」）
+export function tableToNames(list) {
+  const { headers, records } = parseList(list);
+  if (!records.length) return "";
+  const nameKey = headers.find((h) => /姓名|名字|name/i.test(h)) || headers[headers.length - 1];
+  const groupKey = headers.find((h) => /小組|組別|單位|部門|班級/.test(h));
+  if (!groupKey) return records.map((r) => r[nameKey]).join("\n");
+  const out = []; let cur = null;
+  records.forEach((r) => {
+    const g = r[groupKey] || "";
+    if (!cur || cur.g !== g) { cur = { g, names: [] }; out.push(cur); }
+    cur.names.push(r[nameKey]);
+  });
+  return out.map((x) => (x.g ? `${x.g}：${x.names.join("、")}` : x.names.join("\n"))).join("\n");
+}
+
 const digits = () => clamp(Math.floor(num(app.S.num.digits, 1)), 1, 12);
 
 let recCache = { key: null, map: null };

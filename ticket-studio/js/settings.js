@@ -43,7 +43,7 @@ export function applyPreset(key) {
   S.meta.preset = key;
   Object.assign(S.ticket, p.ticket, { bleed: 0, bgMode: "extend", printMode: "home" });
   Object.assign(S.num, { start: 1, exDigits: "", exList: "" }, p.num);
-  S.data.mode = p.data; if (p.list && (!S.data.list.trim() || p.replaceList)) S.data.list = p.list;
+  S.data.mode = p.data; if (p.list && (!S.data.list.trim() || p.replaceList)) { S.data.list = p.list; S.data.names = ""; }
   S.meta.name = p.name;
   S.fields = p.fields.map((f) => Object.assign(defaultField(f), { id: fieldId(), fromPreset: true }));
   Object.assign(S.layout, { margin: 5, stackCut: true, cutMarks: true, cutLines: true }, p.layout);
@@ -134,7 +134,7 @@ function initSize() {
 }
 
 function initList() {
-  $("listText").addEventListener("input", () => { app.S.data.list = $("listText").value; refreshAll(); });
+  $("listText").addEventListener("input", () => { app.S.data.list = $("listText").value; app.S.data.names = ""; refreshAll(); });
   $("listFile").addEventListener("change", async (e) => {
     const file = e.target.files[0]; e.target.value = ""; if (!file) return;
     const buf = await file.arrayBuffer();

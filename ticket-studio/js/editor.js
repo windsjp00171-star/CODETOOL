@@ -1,5 +1,6 @@
 // 單張編輯器：在切割墊上顯示一張券，拖曳欄位、量尺、小工具列、方向鍵微調。
-import { SAFE_MM } from "./constants.js";
+import { SAFE_MM, FONTS } from "./constants.js";
+import { ensureFieldFonts } from "./fonts.js";
 import { $, clamp, num, isTyping } from "./util.js";
 import { app, save, selectedField } from "./state.js";
 import { bleedMm, ticketSize } from "./geometry.js";
@@ -159,6 +160,11 @@ export function placeMiniBar() {
   $("mbText").hidden = !editable;
   if (editable && document.activeElement !== $("mbText")) $("mbText").value = f.tpl || "";
   $("mbShorter").hidden = $("mbLonger").hidden = f.type !== "blank";
+  $("mbFont").hidden = f.type === "qr";
+  if (f.type !== "qr") {
+    if (![...$("mbFont").options].some((o) => o.value === f.font)) $("mbFont").append(new Option(f.font.split(",")[0].replace(/"/g, ""), f.font));
+    $("mbFont").value = f.font;
+  }
   const top = node.offsetTop - 6, left = node.offsetLeft + node.offsetWidth / 2;
   const bw = bar.offsetWidth, W = $("stageWrap").clientWidth;
   bar.style.left = clamp(left, bw / 2, W - bw / 2) + "px";
@@ -231,6 +237,13 @@ export function initEditor() {
     const S = app.S, i = S.fields.findIndex((x) => x.id === app.selId); if (i < 0) return;
     S.fields.splice(i, 1); app.selId = null; miniArmed = false; $("miniBar").hidden = true; refreshAll();
   };
+  FONTS.forEach((ft) => $("mbFont").append(new Option(ft.t, ft.v)));
+  $("mbFont").addEventListener("change", async () => {
+    const f = selectedField(); if (!f) return;
+    f.font = $("mbFont").value;
+    fillFieldForm(); renderEditor(); schedulePreview(); save();
+    if (await ensureFieldFonts(true)) { renderEditor(); schedulePreview(); }
+  });
   $("mbBigger").onclick = () => bump(1);
   $("mbSmaller").onclick = () => bump(-1);
   $("mbColor").oninput = () => { const f = selectedField(); if (!f) return; f.color = $("mbColor").value; fillFieldForm(); renderEditor(); schedulePreview(); save(); };

@@ -1,4 +1,5 @@
 // 輸出：拼版 PDF、單張圖片 ZIP、驗證碼對照表。
+import { ensureFieldFonts } from "./fonts.js";
 import { $, num, el, tick, downloadBlob, downloadCSV, setStatus } from "./util.js";
 import { app, newSeed } from "./state.js";
 import { buildNumbers, fieldText, outName, codeFor } from "./numbers.js";
@@ -32,7 +33,7 @@ export async function exportPdf() {
   const dpi = num(S.out.dpi, 200), pxmm = dpi / 25.4;
   setBusy(true, "正在產生 PDF…"); setProgress(0);
   try {
-    await document.fonts?.ready;
+    await ensureFieldFonts(true); await document.fonts?.ready;
     const orientation = L.pw > L.ph ? "landscape" : "portrait";
     const doc = new window.jspdf.jsPDF({ orientation, unit: "mm", format: [L.pw, L.ph], compress: true });
     const tppm = pxmm * L.scale;
@@ -96,7 +97,7 @@ async function exportZip() {
   const { tw, th } = ticketSize();
   setBusy(true, "正在產生圖片…"); setProgress(0);
   try {
-    await document.fonts?.ready;
+    await ensureFieldFonts(true); await document.fonts?.ready;
     const zip = new window.JSZip();
     // 單張圖片輸出成品尺寸（不含出血）
     const fullBg = app.bgImg && !S.out.noBg ? makeBgFull(pxmm) : null;

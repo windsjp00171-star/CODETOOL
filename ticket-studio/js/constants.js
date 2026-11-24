@@ -6,9 +6,17 @@ export const SAFE_MM = 3;
 // 省紙：允許縮小到 90%，一頁放最多張
 export const SAVE_MIN_SCALE = 0.9;
 
+// css：Google Fonts 的字型名稱，用到時才下載（使用者不用自己安裝）。v 已存在使用者的設定裡，不要改舊的值。
 export const FONTS = [
-  { v: '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif', t: "黑體（系統預設）" },
-  { v: '"Noto Serif TC", "PMingLiU", "Songti TC", serif', t: "明體" },
+  { v: '"Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif', t: "黑體（思源黑體）", css: "Noto+Sans+TC:wght@400;700;900" },
+  { v: '"Noto Serif TC", "PMingLiU", "Songti TC", serif', t: "明體（思源宋體）", css: "Noto+Serif+TC:wght@400;700;900" },
+  { v: '"LXGW WenKai TC", "DFKai-SB", "BiauKai", "Kaiti TC", serif', t: "楷書（霞鶩文楷）", css: "LXGW+WenKai+TC:wght@400;700" },
+  { v: '"DFKai-SB", "BiauKai", "標楷體", "Kaiti TC", serif', t: "標楷體（Windows／Mac 內建）" },
+  { v: '"Chiron Hei HK", "Noto Sans TC", sans-serif', t: "昭源黑體（俐落）", css: "Chiron+Hei+HK:wght@400;700;900" },
+  { v: '"Huninn", "Noto Sans TC", sans-serif', t: "粉圓體（圓圓可愛）", css: "Huninn" },
+  { v: '"Iansui", "Noto Sans TC", sans-serif', t: "芫荽（手寫感）", css: "Iansui" },
+  { v: '"Chocolate Classical Sans", "Noto Sans TC", sans-serif', t: "朱古力黑體（古典）", css: "Chocolate+Classical+Sans" },
+  { v: '"Cactus Classical Serif", "Noto Serif TC", serif', t: "仙人掌明體（古典）", css: "Cactus+Classical+Serif" },
   { v: "Arial, Helvetica, sans-serif", t: "Arial" },
   { v: '"Courier New", Courier, monospace', t: "Courier（等寬）" },
   { v: 'Consolas, "Roboto Mono", monospace', t: "Consolas（等寬）" },
@@ -42,7 +50,7 @@ export const SIZES = [
 ];
 
 // 用途範本
-const F_IMPACT = FONTS[5].v;
+const F_IMPACT = FONTS.find((f) => f.t.startsWith("Impact")).v;
 export const PRESETS = {
   lottery: {
     label: "摸彩券（長條、左右各一個編號）", name: "摸彩券", ticket: { w: 215.9, h: 69.5 }, num: { digits: 6, end: 250 }, data: "seq",

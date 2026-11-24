@@ -30,7 +30,7 @@ export const defaultState = () => ({
   layout: { paper: "A4", orient: "portrait", cols: 1, rows: 4, margin: 5, gap: 0, stackCut: true, cutMarks: true, cutLines: true, fit: "save" },
   out: { dpi: 200, noBg: false },
   meta: { name: "摸彩券", preset: "lottery" },
-  data: { mode: "seq", list: "" },
+  data: { mode: "seq", list: "", names: "" }, // names：簡易模式裡照平常習慣打的名單（會轉成 list）
   gen: { title: "年終尾牙摸彩", sub: "", note: "", theme: "red", stub: true, name: true, phone: false, active: false,
          layout: "", stubTitle: "存根", number: true,
          src: "theme", aiPrompt: "", aiProvider: "gemini", aiModel: "", panel: true },
