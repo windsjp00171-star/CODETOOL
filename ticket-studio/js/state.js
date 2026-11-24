@@ -32,7 +32,7 @@ export const defaultState = () => ({
   meta: { name: "摸彩券", preset: "lottery" },
   data: { mode: "seq", list: "" },
   gen: { title: "年終尾牙摸彩", sub: "", note: "", theme: "red", stub: true, name: true, phone: false, active: false,
-         layout: "", stubTitle: "存根",
+         layout: "", stubTitle: "存根", number: true,
          src: "theme", aiPrompt: "", aiProvider: "gemini", aiModel: "", panel: true },
 });
 

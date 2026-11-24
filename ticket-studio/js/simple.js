@@ -22,6 +22,13 @@ export function updateSimpleUI() {
   const list = isList();
   $("sRange").hidden = list; $("sListLine").hidden = !list;
   $("sListBox").hidden = !list;
+  // 券上有沒有號碼（{n}）
+  const hasNum = S.fields.some((f) => /\{n\}/.test(f.tpl || ""));
+  $("sStep2Title").textContent = list ? "放名單" : hasNum ? "放號碼" : "要印幾張";
+  $("sFromLabel").textContent = hasNum ? "從幾號" : "從";
+  $("sToLabel").textContent = hasNum ? "到幾號" : "到";
+  $("sNoNumHint").hidden = list || hasNum;
+  $("sAddNum").lastChild.textContent = hasNum ? "再加一個號碼（例如存根）" : "加一個號碼";
   if (list) {
     const { headers, records } = parseList(S.data.list);
     $("sListLine").textContent = `名單共 ${records.length} 人，每人印一張。欄位：${headers.map((h) => `{${h}}`).join("、") || "（還沒有）"}`;

@@ -156,17 +156,18 @@
       <section class="step">
         <div class="step-no" aria-hidden="true"><span>2</span></div>
         <div class="step-body">
-          <h2>放號碼</h2>
+          <h2 id="sStep2Title">放號碼</h2>
           <p class="wait-note" hidden>先完成第 1 步放上圖片（不用圖片、直接印白紙也可以繼續）</p>
           <div class="inline-fields range" id="sRange">
-            <label class="box-field"><span>從幾號</span><input type="number" min="0" data-bind="num.start" /></label>
+            <label class="box-field"><span id="sFromLabel">從幾號</span><input type="number" min="0" data-bind="num.start" /></label>
             <span class="range-dash" aria-hidden="true">→</span>
-            <label class="box-field"><span>到幾號</span><input type="number" min="0" data-bind="num.end" /></label>
+            <label class="box-field"><span id="sToLabel">到幾號</span><input type="number" min="0" data-bind="num.end" /></label>
           </div>
           <p class="s-line" id="sListLine" hidden></p>
           <label class="box-field" id="sListBox" hidden><span>名單（從 Excel 複製貼上，第一列是欄位名稱）</span>
             <textarea id="sListText" rows="5" spellcheck="false"></textarea>
           </label>
+          <p class="hint" id="sNoNumHint" hidden>這次的券<b>沒有印號碼</b>，上面只是決定要印幾張（例如 1 → 300 就是印 300 張）。要號碼的話按下面「加一個號碼」。<br />沒有號碼的券，抽獎當天就不能用「抽獎紀錄」核對號碼。</p>
           <p class="hint">在右邊的預覽上：<b>拖曳</b>號碼可以移動位置，<b>點一下</b>可以放大縮小、換顏色。</p>
           <div class="s-adds">
             <button type="button" class="btn btn-quiet btn-small" id="sAddNum"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>再加一個號碼（例如存根）</span></button>
@@ -579,6 +580,7 @@
         </div>
         <label class="box-field" id="genStubTitleRow"><span>存根上的字</span><input type="text" id="genStubTitle" maxlength="10" placeholder="存根" /></label>
         <div class="checks" id="genInfoRow">
+          <label class="check"><input type="checkbox" id="genNumber" /> 印號碼（No. 線＋每張不同的號碼）</label>
           <label class="check"><input type="checkbox" id="genName" /> 姓名欄</label>
           <label class="check"><input type="checkbox" id="genPhone" /> 電話欄</label>
         </div>
