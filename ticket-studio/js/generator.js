@@ -1,9 +1,9 @@
 // 幫我做一張：用文字＋風格（或 AI 背景）直接產生券的底圖，並把號碼放到「No.」線上。
-import { FONTS, PT_MM, THEMES } from "./constants.js";
-import { $, clamp, num, el, setStatus } from "./util.js";
+import { FONTS, PT_MM, THEMES, SIZES } from "./constants.js";
+import { $, clamp, num, el, setStatus, measureCtx } from "./util.js";
 import { app, defaultField } from "./state.js";
-import { bleedMm, ticketSize } from "./geometry.js";
-import { isList, sampleNumber } from "./numbers.js";
+import { bleedMm, ticketSize, autoLayout, bestLayout } from "./geometry.js";
+import { isList, sampleNumber, parseList } from "./numbers.js";
 import { renderField } from "./render.js";
 import { setBackground, setBgName } from "./background.js";
 import { syncBindings } from "./settings.js";
@@ -15,18 +15,37 @@ const GEN_FONT = FONTS[0].v;
 function rng(seed) {
   return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
-// 找出放得進 maxW×maxH（px）的最大字級
-function fitFont(ctx, text, weight, maxW, maxH) {
-  let size = Math.max(4, maxH);
-  ctx.font = `${weight} ${size}px ${GEN_FONT}`;
-  const w = ctx.measureText(text).width;
-  if (w > maxW) size = Math.max(4, size * (maxW / w));
-  return size;
+// 名單券的範例名單（使用者還沒匯入名單時用）
+const SAMPLE_LIST = "小組\t姓名\n腓立比小組\t進發\n腓立比小組\t建志\n毘努伊勒小組\t淑閔\n加利利小組\t阿蘭\n伯特利小組\t惠子\n多加小組\t淑如";
+
+// 版型：沒設定過時，依舊設定推算
+export function genLayout(o) {
+  if (o.layout === "stub" || o.layout === "single" || o.layout === "list") return o.layout;
+  if (isList()) return "list";
+  return o.stub === false ? "single" : "stub";
 }
 
-// o：gen 設定；回傳 { canvas, slots }，slots 為號碼位置（成品比例 0~1）與字級（pt）、顏色
+// 量文字寬度（mm）
+function textMm(text, sizeMm, bold) {
+  measureCtx.font = `${bold ? 700 : 400} 100px ${GEN_FONT}`;
+  return (measureCtx.measureText(text || " ").width / 100) * sizeMm;
+}
+// 放得進 maxW×maxH（mm）的最大字級（mm）
+function fitMm(text, bold, maxW, maxH) {
+  const w = textMm(text, maxH, bold);
+  return w > maxW ? Math.max(1.5, maxH * (maxW / w)) : maxH;
+}
+// 名單裡「名字」那一欄：欄名有姓名／名字就用它，否則用最後一欄
+function nameColumn(headers) {
+  return headers.find((h) => /姓名|名字|名稱|name/i.test(h)) || headers[headers.length - 1];
+}
+
+// o：gen 設定。圖片只畫背景、花紋、存根底色、撕線、外框；
+// 標題、填寫欄、No. 線、存根上的字都回傳成「欄位」（items），之後可以拖動、改字。
+// slots：號碼要放的位置。所有位置都是成品比例 0~1，字級為 pt。
 function genBackground(o, tw, th, b, ppm) {
   let T = THEMES[o.theme] || THEMES.red;
+  const layout = genLayout(o);
   const W = Math.round((tw + 2 * b) * ppm), H = Math.round((th + 2 * b) * ppm);
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const ctx = c.getContext("2d");
@@ -35,7 +54,7 @@ function genBackground(o, tw, th, b, ppm) {
   const X = (mm) => (b + mm) * ppm, Y = (mm) => (b + mm) * ppm, M = (mm) => mm * ppm;
   const portrait = th > tw * 1.1;
   const main = { x: 0, y: 0, w: tw, h: th }; let stub = null;
-  if (o.stub) {
+  if (layout === "stub") {
     if (!portrait) { const sw = clamp(tw * 0.25, Math.min(28, tw * 0.4), 60); stub = { x: tw - sw, y: 0, w: sw, h: th }; main.w = tw - sw; }
     else { const sh = clamp(th * 0.24, Math.min(25, th * 0.4), 55); stub = { x: 0, y: th - sh, w: tw, h: sh }; main.h = th - sh; }
   }
@@ -49,7 +68,7 @@ function genBackground(o, tw, th, b, ppm) {
     for (let i = 0; i < d.length; i += 4 * 9) { sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; n++; }
     const dark = sum / n < 140;
     T = dark
-      ? { ink: "#ffffff", sub: "#f8fafc", line: "rgba(255,255,255,.9)", stubBg: "rgba(255,255,255,.9)", stubInk: "#111827", stubLine: "#374151", pattern: "none", panel: "rgba(15,23,42,.42)" }
+      ? { ink: "#ffffff", sub: "#f8fafc", line: "#ffffff", stubBg: "rgba(255,255,255,.9)", stubInk: "#111827", stubLine: "#374151", pattern: "none", panel: "rgba(15,23,42,.42)" }
       : { ink: "#111827", sub: "#1f2937", line: "#111827", stubBg: "rgba(255,255,255,.9)", stubInk: "#111827", stubLine: "#374151", pattern: "none", panel: "rgba(255,255,255,.62)" };
   } else {
     const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, T.bg[0]); g.addColorStop(1, T.bg[1]);
@@ -96,18 +115,7 @@ function genBackground(o, tw, th, b, ppm) {
     ctx.fillStyle = ctx.strokeStyle; ctx.font = `${M(3.2)}px ${GEN_FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     if (!portrait) ctx.fillText("✂", X(stub.x), Y(Math.min(4.5, th * 0.12))); else ctx.fillText("✂", X(Math.min(4.5, tw * 0.08)), Y(stub.y));
   }
-
-  // 「標籤＋底線」，回傳底線在 x 方向的起訖（mm）
-  const labelLine = (label, x, yLine, w, sizeMm, color, lineColor) => {
-    ctx.font = `500 ${M(sizeMm)}px ${GEN_FONT}`; ctx.fillStyle = color; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-    ctx.fillText(label, X(x), Y(yLine) - M(sizeMm * 0.12));
-    const lw = ctx.measureText(label).width / ppm + sizeMm * 0.4;
-    ctx.strokeStyle = lineColor; ctx.lineWidth = M(Math.max(0.25, sizeMm * 0.07));
-    ctx.beginPath(); ctx.moveTo(X(x + lw), Y(yLine)); ctx.lineTo(X(x + w), Y(yLine)); ctx.stroke();
-    return [x + lw, x + w];
-  };
-
-  // 主券內容
+  // 主券區的留白
   const P = Math.min(main.w, main.h) * 0.11;
   const L = { x: main.x + P, y: main.y + P * 0.95, w: main.w - 2 * P, h: main.h - 2 * P };
   if (useAi && o.panel) {
@@ -116,17 +124,55 @@ function genBackground(o, tw, th, b, ppm) {
     if (ctx.roundRect) ctx.roundRect(X(L.x - pad), Y(L.y - pad), M(L.w + 2 * pad), M(L.h + 2 * pad), M(2.5)); else ctx.rect(X(L.x - pad), Y(L.y - pad), M(L.w + 2 * pad), M(L.h + 2 * pad));
     ctx.fill();
   }
+
+  // ---------- 欄位（可拖動、可改字） ----------
+  const items = [], slots = {};
+  const fx = (mm) => mm / tw, fy = (mm) => mm / th, pt = (mm) => +(mm / PT_MM).toFixed(1);
+  const text = (name, tpl, xMm, yMm, sizeMm, color, opt = {}) =>
+    items.push(Object.assign({ name, tpl, x: fx(xMm), y: fy(yMm), size: pt(sizeMm), color, align: "left", bold: false }, opt));
+  // 填寫欄：label 在 x、底線在 yLine；回傳底線起訖（mm）
+  const blank = (name, label, x, yLine, w, sizeMm, color) => {
+    const lw = textMm(label, sizeMm, false) + (label ? sizeMm * 0.3 : 0);
+    items.push({ name, type: "blank", tpl: label, x: fx(x), y: fy(yLine - sizeMm * 0.45), size: pt(sizeMm), color, align: "left", bold: false,
+      lineLen: +Math.max(4, w - lw).toFixed(1), lineW: +Math.max(0.25, sizeMm * 0.07).toFixed(2) });
+    return [x + lw, x + w];
+  };
+  const numSlot = (key, a, z, yLine, sizeMm, color) => { slots[key] = { x: fx((a + z) / 2), y: fy(yLine - sizeMm * 0.48), pt: pt(sizeMm), color }; };
   const hasInfo = o.name || o.phone;
+
+  if (layout === "list") {
+    // 名單券：標題置中、其他欄位小字、名字放大置中、角落小小的號碼（抽獎登記用）
+    const { headers, records } = parseList(app.S.data.list || SAMPLE_LIST);
+    const big = nameColumn(headers), others = headers.filter((h) => h !== big);
+    const title = (o.title || "").trim();
+    let y = L.y;
+    if (title) {
+      const tMm = fitMm(title, true, L.w, Math.min(L.h * 0.16, 7));
+      text("標題", title, main.x + main.w / 2, y + tMm * 0.6, tMm, T.ink, { align: "center", bold: true });
+      y += tMm * 1.35;
+    }
+    if (o.sub) { const sMm = fitMm(o.sub, false, L.w, Math.min(L.h * 0.09, 4)); text("日期地點", o.sub, main.x + main.w / 2, y + sMm * 0.6, sMm, T.sub, { align: "center" }); y += sMm * 1.4; }
+    const smallMm = clamp(main.h * 0.075, 2.6, 5);
+    others.slice(0, 3).forEach((h) => { text(h, `{${h}}`, L.x, y + smallMm * 0.7, smallMm, T.sub); y += smallMm * 1.45; });
+    const longest = records.reduce((m, r) => (String(r[big] || "").length > m.length ? String(r[big]) : m), "") || "王小明";
+    const noteMm = o.note ? clamp(main.h * 0.048, 2.3, 4) : 0;
+    const bottom = L.y + L.h - (noteMm ? noteMm * 1.6 : 0);
+    const bigMm = fitMm(longest, true, L.w, Math.max(4, (bottom - y) * 0.85));
+    text("名字", `{${big}}`, main.x + main.w / 2, (y + bottom) / 2, bigMm, T.ink, { align: "center", bold: true });
+    if (o.note) text("備註", o.note, L.x, L.y + L.h - noteMm * 0.4, noteMm, T.sub);
+    const nMm = clamp(th * 0.05, 2.2, 3.6);
+    text("編號", "{n}", main.x + main.w - P * 0.5, main.y + main.h - P * 0.45, nMm, T.sub, { align: "right" });
+    return { canvas: c, items, slots, layout };
+  }
+
+  // 主券：標題、日期地點、姓名／電話、No.、備註
   const titleH = L.h * (o.sub ? 0.24 : 0.3);
-  ctx.textAlign = "left"; ctx.textBaseline = "middle";
-  const title = (o.title || "").trim() || " ";
-  let fs = fitFont(ctx, title, 800, M(L.w), M(titleH));
-  ctx.font = `800 ${fs}px ${GEN_FONT}`; ctx.fillStyle = T.ink; ctx.fillText(title, X(L.x), Y(L.y + L.h * 0.03) + M(titleH) / 2);
+  const title = (o.title || "").trim();
+  if (title) { const tMm = fitMm(title, true, L.w, titleH); text("標題", title, L.x, L.y + L.h * 0.03 + titleH / 2, tMm, T.ink, { bold: true }); }
   let yCur = L.y + L.h * 0.03 + titleH;
   if (o.sub) {
-    const subH = L.h * 0.1;
-    fs = fitFont(ctx, o.sub, 500, M(L.w), M(subH));
-    ctx.font = `500 ${fs}px ${GEN_FONT}`; ctx.fillStyle = T.sub; ctx.fillText(o.sub, X(L.x), Y(yCur + L.h * 0.05) + M(subH) / 2);
+    const subH = L.h * 0.1, sMm = fitMm(o.sub, false, L.w, subH);
+    text("日期地點", o.sub, L.x, yCur + L.h * 0.05 + subH / 2, sMm, T.sub);
     yCur += L.h * 0.17;
   }
   const labelMm = clamp(main.h * 0.065, 2.6, 6);
@@ -135,47 +181,46 @@ function genBackground(o, tw, th, b, ppm) {
   const lineNo = L.y + L.h - (o.note ? noteMm * 2.2 : 0);
   if (hasInfo) {
     const lineInfo = lineNo - Math.max(labelMm * 2.6, (lineNo - yCur) * 0.5);
-    if (o.name && o.phone) { const half = (L.w - P * 0.6) / 2; labelLine("姓名", L.x, lineInfo, half, labelMm, T.sub, T.line); labelLine("電話", L.x + half + P * 0.6, lineInfo, half, labelMm, T.sub, T.line); }
-    else labelLine(o.name ? "姓名" : "電話", L.x, lineInfo, L.w * 0.75, labelMm, T.sub, T.line);
+    if (o.name && o.phone) { const half = (L.w - P * 0.6) / 2; blank("姓名欄", "姓名", L.x, lineInfo, half, labelMm, T.sub); blank("電話欄", "電話", L.x + half + P * 0.6, lineInfo, half, labelMm, T.sub); }
+    else blank(o.name ? "姓名欄" : "電話欄", o.name ? "姓名" : "電話", L.x, lineInfo, L.w * 0.75, labelMm, T.sub);
   }
-  const [n0, n1] = labelLine("No.", L.x, lineNo, Math.min(L.w * 0.6, L.w), labelMm, T.sub, T.line);
-  const slots = { main: { x: (n0 + n1) / 2 / tw, y: (lineNo - numMm * 0.48) / th, pt: numMm / PT_MM, color: T.ink } };
+  const [n0, n1] = blank("No. 線", "No.", L.x, lineNo, L.w * 0.6, labelMm, T.sub);
+  numSlot("main", n0, n1, lineNo, numMm, T.ink);
   if (o.note) {
-    ctx.font = `400 ${M(noteMm)}px ${GEN_FONT}`; ctx.fillStyle = T.sub; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    let note = o.note; while (note.length > 1 && ctx.measureText(note).width > M(L.w)) note = note.slice(0, -1);
-    ctx.fillText(note, X(L.x), Y(L.y + L.h - noteMm * 0.4));
+    let note = o.note; while (note.length > 1 && textMm(note, noteMm, false) > L.w) note = note.slice(0, -1);
+    text("備註", note, L.x, L.y + L.h - noteMm * 0.4, noteMm, T.sub);
   }
-  // 存根內容
+  // 存根
   if (stub) {
+    const stubTitle = (o.stubTitle || "").trim() || "存根";
     const sp = Math.min(stub.w, stub.h) * 0.13;
     const S0 = { x: stub.x + sp, y: stub.y + sp, w: stub.w - 2 * sp, h: stub.h - 2 * sp };
-    ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillStyle = T.stubInk;
     if (!portrait) {
       const sLabel = clamp(stub.h * 0.065, 2.4, 5), sNum = clamp(Math.min(stub.h * 0.1, stub.w * 0.11), 3, 10);
-      fs = fitFont(ctx, "存根", 700, M(S0.w), M(Math.min(S0.h * 0.2, 7)));
-      ctx.font = `700 ${fs}px ${GEN_FONT}`; ctx.fillText("存根", X(S0.x), Y(S0.y) + fs / 2);
+      const tMm = fitMm(stubTitle, true, S0.w, Math.min(S0.h * 0.2, 7));
+      text("存根標題", stubTitle, S0.x, S0.y + tMm / 2, tMm, T.stubInk, { bold: true });
       const sNo = S0.y + S0.h * 0.94;
-      if (hasInfo) labelLine(o.name ? "姓名" : "電話", S0.x, sNo - Math.max(sLabel * 2.8, S0.h * 0.33), S0.w, sLabel, T.stubInk, T.stubLine);
-      const [s0, s1] = labelLine("No.", S0.x, sNo, S0.w, sLabel, T.stubInk, T.stubLine);
-      slots.stub = { x: (s0 + s1) / 2 / tw, y: (sNo - sNum * 0.48) / th, pt: sNum / PT_MM, color: T.stubInk };
+      if (hasInfo) blank("存根" + (o.name ? "姓名欄" : "電話欄"), o.name ? "姓名" : "電話", S0.x, sNo - Math.max(sLabel * 2.8, S0.h * 0.33), S0.w, sLabel, T.stubInk);
+      const [s0, s1] = blank("存根 No. 線", "No.", S0.x, sNo, S0.w, sLabel, T.stubInk);
+      numSlot("stub", s0, s1, sNo, sNum, T.stubInk);
     } else {
-      // 直式：上面一行「存根」，下面一行「姓名＿＿  No.＿＿」並排
       const sLabel = clamp(S0.h * 0.2, 2.6, 5.5), sNum = clamp(S0.h * 0.26, 3.2, 10);
-      fs = fitFont(ctx, "存根", 700, M(S0.w), M(Math.min(S0.h * 0.32, 7)));
-      ctx.font = `700 ${fs}px ${GEN_FONT}`; ctx.fillText("存根", X(S0.x), Y(S0.y) + fs / 2);
+      const tMm = fitMm(stubTitle, true, S0.w, Math.min(S0.h * 0.32, 7));
+      text("存根標題", stubTitle, S0.x, S0.y + tMm / 2, tMm, T.stubInk, { bold: true });
       const sNo = S0.y + S0.h * 0.95, gap = S0.w * 0.06;
       let nx = S0.x, nw = S0.w;
-      if (hasInfo) { const half = (S0.w - gap) / 2; labelLine(o.name ? "姓名" : "電話", S0.x, sNo, half, sLabel, T.stubInk, T.stubLine); nx = S0.x + half + gap; nw = half; }
-      const [s0, s1] = labelLine("No.", nx, sNo, nw, sLabel, T.stubInk, T.stubLine);
-      slots.stub = { x: (s0 + s1) / 2 / tw, y: (sNo - sNum * 0.48) / th, pt: sNum / PT_MM, color: T.stubInk };
+      if (hasInfo) { const half = (S0.w - gap) / 2; blank("存根" + (o.name ? "姓名欄" : "電話欄"), o.name ? "姓名" : "電話", S0.x, sNo, half, sLabel, T.stubInk); nx = S0.x + half + gap; nw = half; }
+      const [s0, s1] = blank("存根 No. 線", "No.", nx, sNo, nw, sLabel, T.stubInk);
+      numSlot("stub", s0, s1, sNo, sNum, T.stubInk);
     }
   }
-  return { canvas: c, slots };
+  return { canvas: c, items, slots, layout };
 }
 
 // ---------- 對話框 ----------
 const genIds = {
-  genTitle: "title", genSub: "sub", genNote: "note", genTheme: "theme", genStub: "stub", genName: "name", genPhone: "phone",
+  genTitle: "title", genSub: "sub", genNote: "note", genTheme: "theme", genName: "name", genPhone: "phone",
+  genLayout: "layout", genStubTitle: "stubTitle",
   genAiPrompt: "aiPrompt", genAiProvider: "aiProvider", genAiModel: "aiModel", genPanel: "panel",
 };
 const genSrc = () => document.querySelector('input[name="genSrc"]:checked')?.value || "theme";
@@ -184,26 +229,49 @@ function readGenForm() {
   const o = {};
   Object.entries(genIds).forEach(([id, k]) => { const node = $(id); o[k] = node.type === "checkbox" ? node.checked : node.value.trim(); });
   o.src = genSrc();
+  o.stub = o.layout === "stub";
   return o;
 }
 
+// 把欄位規格變成真正的欄位（加上 gen 標記，重新產生時會被換掉）
+const toFields = (items) => items.map((it) => Object.assign(defaultField({ font: GEN_FONT }), it, { gen: true }));
+
+function syncGenSizeUI() {
+  const { tw, th } = ticketSize();
+  $("genW").value = +tw.toFixed(1); $("genH").value = +th.toFixed(1);
+  const i = SIZES.findIndex(([, w, h]) => Math.abs(w - tw) < 0.05 && Math.abs(h - th) < 0.05);
+  $("genSize").value = i >= 0 ? String(i) : "";
+  const best = bestLayout("save");
+  $("genFitHint").textContent = best ? `這個大小在 ${app.S.layout.paper} 紙上一頁可以放 ${best.n} 張。` : `這個大小比 ${app.S.layout.paper} 紙還大，會縮小列印。`;
+}
+function setGenSize(w, h) {
+  const S = app.S;
+  S.ticket.w = clamp(num(w, S.ticket.w), 20, 600); S.ticket.h = clamp(num(h, S.ticket.h), 20, 600);
+  autoLayout(); syncBindings(); refreshAll(); syncGenSizeUI(); drawGenPreview();
+}
+
 export function drawGenPreview() {
-  const o = readGenForm(), { tw, th } = ticketSize();
+  const o = readGenForm(), { tw, th } = ticketSize(), layout = genLayout(o);
+  $("genStubTitleRow").hidden = layout !== "stub";
+  $("genInfoRow").hidden = layout === "list";
   const box = $("genCanvas").parentElement;
   const maxW = Math.max(200, box.clientWidth - 28), maxH = 360;
   const dpr = window.devicePixelRatio || 1;
   const ppmCss = Math.min(maxW / tw, maxH / th);
-  const { canvas, slots } = genBackground(o, tw, th, 0, ppmCss * dpr);
+  const { canvas, items, slots } = genBackground(o, tw, th, 0, ppmCss * dpr);
   const cv = $("genCanvas"); cv.width = canvas.width; cv.height = canvas.height;
   cv.style.width = canvas.width / dpr + "px"; cv.style.height = canvas.height / dpr + "px";
   const ctx = cv.getContext("2d"); ctx.drawImage(canvas, 0, 0);
   const sample = sampleNumber();
-  Object.values(slots).forEach((sl) => {
-    const r = renderField(defaultField({ x: sl.x, y: sl.y, size: sl.pt, color: sl.color, align: "center" }), sample, ppmCss * dpr);
-    ctx.drawImage(r.canvas, sl.x * canvas.width + r.ox, sl.y * canvas.height + r.oy);
-  });
-  $("genStubText").textContent = th > tw * 1.1 ? "下面加存根（撕下來給主辦單位）" : "右邊加存根（撕下來給主辦單位）";
-  $("genHint").textContent = `券的大小：${tw}×${th} mm（要改大小請先在左邊「券的大小」調整）。號碼會自動放在「No.」的線上。`;
+  // 名單券預覽：還沒有名單時用範例名單的第一個人
+  const rec = layout === "list" ? (parseList(app.S.data.list || SAMPLE_LIST).records[0] || {}) : {};
+  const fill = (tpl) => String(tpl).replace(/\{n\}/g, sample).replace(/\{([^{}]+)\}/g, (m, k) => (k in rec ? rec[k] : m));
+  const draw = (f, t) => { const r = renderField(f, t, ppmCss * dpr); ctx.drawImage(r.canvas, f.x * canvas.width + r.ox, f.y * canvas.height + r.oy); };
+  toFields(items).forEach((f) => draw(f, fill(f.tpl)));
+  Object.values(slots).forEach((sl) => draw(defaultField({ x: sl.x, y: sl.y, size: sl.pt, color: sl.color, align: "center" }), sample));
+  $("genHint").textContent = layout === "list"
+    ? (isList() ? `每個人一張（共 ${parseList(app.S.data.list).records.length} 人），名字會放大。右下角的小號碼是抽獎登記用的。` : "名單券要用名單：按「使用這張圖」後會先放入範例名單，再到左邊第 2 步貼上你的名單。")
+    : "號碼會自動放在「No.」的線上。";
 }
 
 export function openGenerator() {
@@ -215,43 +283,59 @@ export function openGenerator() {
     else if (G[k]) node.value = G[k];
     else if (node.tagName !== "SELECT") node.value = "";
   });
+  $("genLayout").value = genLayout(G);
+  if (!$("genStubTitle").value) $("genStubTitle").value = "存根";
   document.querySelectorAll('input[name="genSrc"]').forEach((r) => (r.checked = r.value === (G.src || "theme")));
-  finishAiForm(); updateGenSrcUI();
+  finishAiForm(); updateGenSrcUI(); syncGenSizeUI();
   $("genDlg").showModal(); drawGenPreview();
 }
 
 export async function useGenerated() {
   const S = app.S;
   app.autoNote = null;
-  const { tw, th } = ticketSize(), b = bleedMm();
-  const { canvas, slots } = genBackground(S.gen, tw, th, b, 300 / 25.4);
-  S.ticket.bgMode = b > 0 ? "included" : "extend";
+  const layout = genLayout(S.gen);
   const notes = [];
-  if (!isList()) {
-    const isNum = (f) => f.type !== "qr" && String(f.tpl || "").includes("{n}");
-    const targets = [slots.main, slots.stub].filter(Boolean);
-    const numFields = S.fields.filter(isNum);
+  if (layout === "list" && !isList()) {
+    S.data.mode = "list";
+    if (!String(S.data.list || "").trim()) { S.data.list = SAMPLE_LIST; notes.push("先放入範例名單，請到第 2 步換成你的名單"); }
+  }
+  const { tw, th } = ticketSize(), b = bleedMm();
+  const { canvas, items, slots } = genBackground(S.gen, tw, th, b, 300 / 25.4);
+  S.ticket.bgMode = b > 0 ? "included" : "extend";
+  // 換掉上一次產生的欄位、以及和圖上重複的範本文字；使用者自己加的欄位保留
+  const isNum = (f) => f.type !== "qr" && String(f.tpl || "").includes("{n}") && !f.gen;
+  const removed = S.fields.filter((f) => f.gen || (f.fromPreset && f.type !== "qr" && !/\{[^{}]+\}/.test(f.tpl || "")));
+  let fields = S.fields.filter((f) => !removed.includes(f));
+  const targets = [slots.main, slots.stub].filter(Boolean);
+  if (layout === "list") {
+    // 名單券用自己的欄位（名字、小組、角落號碼），原本的號碼欄位拿掉
+    const dropNum = fields.filter((f) => isNum(f) || (f.fromPreset && f.type !== "qr"));
+    fields = fields.filter((f) => !dropNum.includes(f));
+  } else {
+    const numFields = fields.filter(isNum);
     targets.forEach((sl, i) => {
       let f = numFields[i];
-      if (!f) { f = defaultField({ name: i ? "存根編號" : "編號" }); S.fields.push(f); }
+      if (!f) { f = defaultField({ name: i ? "存根編號" : "編號" }); fields.push(f); }
       if (/^\s*(no\.?|#)?\s*\{n\}\s*$/i.test(f.tpl)) f.tpl = "{n}"; // 圖上已經有「No.」
-      Object.assign(f, { x: sl.x, y: sl.y, size: +sl.pt.toFixed(1), color: sl.color, align: "center", rotate: 0, font: FONTS[0].v, bold: true, stroke: 0 });
+      Object.assign(f, { x: sl.x, y: sl.y, size: sl.pt, color: sl.color, align: "center", rotate: 0, font: GEN_FONT, bold: true, stroke: 0 });
     });
-    // 多出來的編號欄位、和圖上重複的固定文字，移除（可按復原找回）
-    const extra = numFields.slice(targets.length);
-    const staticText = S.fields.filter((f) => f.type !== "qr" && !/\{[^{}]+\}/.test(f.tpl || ""));
-    const drop = new Set([...extra, ...staticText]);
-    if (drop.size) { S.fields = S.fields.filter((f) => !drop.has(f)); notes.push(`移除了 ${drop.size} 個和圖片重複的文字欄位（可按「復原」找回）`); }
-    app.selId = S.fields[0]?.id ?? null;
+    numFields.slice(targets.length).forEach((f) => { fields = fields.filter((x) => x !== f); });
   }
+  const genFields = toFields(items);
+  S.fields = [...genFields, ...fields];
+  app.selId = null;
   await setBackground(canvas.toDataURL("image/jpeg", 0.93));
   setBgName("✨ 用「幫我做一張」產生的圖片");
   syncBindings(); refreshAll();
-  setStatus(`已產生券的圖片，號碼也放好了。${notes.join("。")}`);
+  setStatus(`已產生券的圖片，文字和號碼都放好了。在預覽上點文字可以改字、拖動位置。${notes.length ? notes.join("。") + "。" : ""}`);
 }
 
 export function initGenerator() {
   Object.entries(THEMES).forEach(([k, t]) => $("genTheme").append(el("option", { value: k }, t.label)));
+  $("genSize").append(el("option", { value: "" }, "自訂大小（在下面輸入）"), ...SIZES.map(([n, w, h], i) => el("option", { value: String(i) }, `${n}　${w}×${h} mm`)));
+  $("genSize").onchange = () => { const v = $("genSize").value; if (v !== "") { const [, w, h] = SIZES[+v]; setGenSize(w, h); } };
+  $("genW").addEventListener("change", () => setGenSize($("genW").value, $("genH").value));
+  $("genH").addEventListener("change", () => setGenSize($("genW").value, $("genH").value));
   Object.keys(genIds).forEach((id) => $(id).addEventListener("input", drawGenPreview));
   document.querySelectorAll('input[name="genSrc"]').forEach((r) => r.addEventListener("change", () => { updateGenSrcUI(); drawGenPreview(); }));
   $("btnGen").onclick = () => openGenerator();

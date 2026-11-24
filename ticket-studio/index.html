@@ -163,8 +163,15 @@
             <label class="box-field"><span>到幾號</span><input type="number" min="0" data-bind="num.end" /></label>
           </div>
           <p class="s-line" id="sListLine" hidden></p>
+          <label class="box-field" id="sListBox" hidden><span>名單（從 Excel 複製貼上，第一列是欄位名稱）</span>
+            <textarea id="sListText" rows="5" spellcheck="false"></textarea>
+          </label>
           <p class="hint">在右邊的預覽上：<b>拖曳</b>號碼可以移動位置，<b>點一下</b>可以放大縮小、換顏色。</p>
-          <button type="button" class="btn btn-quiet btn-small" id="sAddNum"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>再加一個號碼（例如存根）</span></button>
+          <div class="s-adds">
+            <button type="button" class="btn btn-quiet btn-small" id="sAddNum"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>再加一個號碼（例如存根）</span></button>
+            <button type="button" class="btn btn-quiet btn-small" id="sAddBlank"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>加填寫欄（例如：通關密語＿＿）</span></button>
+            <button type="button" class="btn btn-quiet btn-small" id="sAddText"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>加文字</span></button>
+          </div>
         </div>
       </section>
 
@@ -290,9 +297,13 @@
         <div class="field-form" id="fieldForm">
           <div class="grid grid-2 adv">
             <label class="box-field"><span>欄位名稱</span><input type="text" data-f="name" /></label>
-            <label class="box-field"><span>類型</span><select data-f="type"><option value="text">文字</option><option value="qr">QR Code</option></select></label>
+            <label class="box-field"><span>類型</span><select data-f="type"><option value="text">文字</option><option value="blank">填寫欄（文字＋底線）</option><option value="qr">QR Code</option></select></label>
           </div>
           <label class="box-field"><span>內容（<code>{n}</code> 會換成編號<span class="adv">，<code>{code}</code> = 驗證碼</span>）</span><input type="text" data-f="tpl" /></label>
+          <div class="grid grid-2 only-blank">
+            <label class="box-field"><span>底線長度 mm</span><input type="number" step="1" min="2" data-f="lineLen" /></label>
+            <label class="box-field"><span>底線粗細 mm</span><input type="number" step="0.1" min="0.1" data-f="lineW" /></label>
+          </div>
           <div class="grid grid-3">
             <label class="box-field adv"><span>X mm</span><input type="number" step="0.1" data-f="xmm" /></label>
             <label class="box-field adv"><span>Y mm</span><input type="number" step="0.1" data-f="ymm" /></label>
@@ -315,6 +326,7 @@
           </div>
           <div class="btn-row field-ops">
             <button type="button" class="btn btn-quiet btn-small" id="btnAddField"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>文字欄位</span></button>
+            <button type="button" class="btn btn-quiet btn-small" id="btnAddBlank"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>填寫欄</span></button>
             <button type="button" class="btn btn-quiet btn-small adv" id="btnAddQr"><svg class="ic" aria-hidden="true"><use href="#i-qr"/></svg><span>QR Code</span></button>
             <button type="button" class="btn btn-quiet btn-small adv" id="btnDupField"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>複製此欄位</span></button>
             <button type="button" class="btn btn-quiet btn-small danger push-end" id="btnDelField"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg><span>刪除此欄位</span></button>
@@ -371,9 +383,13 @@
           <canvas class="ruler ruler-y" id="rulerY" aria-hidden="true"></canvas>
           <div class="stage-wrap" id="stageWrap">
             <div class="mini-bar" id="miniBar" role="toolbar" aria-label="選取的文字" hidden>
+              <input type="text" id="mbText" class="mb-text" aria-label="文字內容" title="直接改這裡的字" />
               <button type="button" id="mbSmaller" title="字縮小">A－</button>
               <button type="button" id="mbBigger" title="字放大">A＋</button>
+              <button type="button" id="mbShorter" title="底線變短" hidden>線－</button>
+              <button type="button" id="mbLonger" title="底線變長" hidden>線＋</button>
               <label title="顏色"><input type="color" id="mbColor" aria-label="顏色" /></label>
+              <button type="button" id="mbDel" title="刪除這個欄位">刪除</button>
               <button type="button" id="mbMore" title="到左邊看這個文字的所有設定">更多</button>
             </div>
             <div class="stage" id="stage">
@@ -518,6 +534,19 @@
     <h2 id="genDlgTitle"><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg>幫我做一張券的圖片</h2>
     <div class="gen-grid">
       <div class="gen-form">
+        <label class="box-field"><span>版型</span>
+          <select id="genLayout">
+            <option value="stub">摸彩券：主券＋存根（撕下來給主辦單位）</option>
+            <option value="single">單張券：不含存根</option>
+            <option value="list">名單券：每人一張，名字放大（要匯入名單）</option>
+          </select>
+        </label>
+        <label class="box-field"><span>券的大小</span><select id="genSize"></select></label>
+        <div class="grid grid-2">
+          <label class="box-field"><span>寬 mm</span><input type="number" id="genW" step="0.1" min="20" /></label>
+          <label class="box-field"><span>高 mm</span><input type="number" id="genH" step="0.1" min="20" /></label>
+        </div>
+        <p class="hint" id="genFitHint"></p>
         <label class="box-field"><span>活動名稱</span><input type="text" id="genTitle" maxlength="30" placeholder="例：年終尾牙摸彩" /></label>
         <label class="box-field"><span>日期、地點（可不填）</span><input type="text" id="genSub" maxlength="50" placeholder="例：2027.1.15（五）晚上 6:30｜○○飯店" /></label>
         <label class="box-field"><span>備註（可不填）</span><input type="text" id="genNote" maxlength="60" placeholder="例：中獎請本人持券領取" /></label>
@@ -546,11 +575,12 @@
           <div class="ai-thumbs" id="genAiThumbs"></div>
           <p class="hint">你的描述和金鑰只會送到你選的 AI 服務，用來產生圖片；費用依該服務的計價。金鑰不會存進「存成檔案」的檔案裡。</p>
         </div>
-        <div class="checks">
-          <label class="check"><input type="checkbox" id="genStub" /> <span id="genStubText">右邊加存根（撕下來給主辦單位）</span></label>
+        <label class="box-field" id="genStubTitleRow"><span>存根上的字</span><input type="text" id="genStubTitle" maxlength="10" placeholder="存根" /></label>
+        <div class="checks" id="genInfoRow">
           <label class="check"><input type="checkbox" id="genName" /> 姓名欄</label>
           <label class="check"><input type="checkbox" id="genPhone" /> 電話欄</label>
         </div>
+        <p class="hint">產生後，標題、姓名欄、No. 線、存根上的字都可以在預覽上<b>拖動、點一下改字</b>。</p>
       </div>
       <div class="gen-preview">
         <canvas id="genCanvas"></canvas>

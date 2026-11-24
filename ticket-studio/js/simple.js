@@ -11,6 +11,7 @@ import { schedulePreview } from "./preview.js";
 import { openGenerator } from "./generator.js";
 import { exportPdf } from "./output.js";
 import { toggleUIMode } from "./shell.js";
+import { addField, newBlankField } from "./fields.js";
 
 const currentPreset = () => (app.S.meta.preset && PRESETS[app.S.meta.preset] ? app.S.meta.preset : "lottery");
 
@@ -20,7 +21,12 @@ export function updateSimpleUI() {
   $("sPreset").value = currentPreset();
   const list = isList();
   $("sRange").hidden = list; $("sListLine").hidden = !list;
-  if (list) $("sListLine").textContent = `使用匯入的名單（${parseList(S.data.list).records.length} 人）。要改名單請到「更多設定」。`;
+  $("sListBox").hidden = !list;
+  if (list) {
+    const { headers, records } = parseList(S.data.list);
+    $("sListLine").textContent = `名單共 ${records.length} 人，每人印一張。欄位：${headers.map((h) => `{${h}}`).join("、") || "（還沒有）"}`;
+    if (document.activeElement !== $("sListText")) $("sListText").value = S.data.list;
+  }
 
   // 排版摘要（和完整面板同一套說法）
   const { nums, err } = buildNumbers(), L = computeLayout(), box = $("sInfo");
@@ -86,6 +92,16 @@ export function initSimple() {
     const box = $("sSizeBox"); box.hidden = !box.hidden;
     $("sSizeToggle").textContent = box.hidden ? "改大小" : "收起";
     $("sSizeToggle").setAttribute("aria-expanded", String(!box.hidden));
+  };
+  $("sListText").addEventListener("input", () => { app.S.data.list = $("sListText").value; refreshAll(); });
+  $("sAddBlank").onclick = () => {
+    addField(newBlankField({ y: 0.6 }));
+    $("sStatus").textContent = "已加一個填寫欄。在右邊預覽上點它，可以改文字、把線拉長縮短，再拖到想要的位置。";
+  };
+  $("sAddText").onclick = () => {
+    addField(defaultField({ name: "文字", tpl: "請輸入文字", align: "left", bold: false, size: 11, x: 0.08, y: 0.3 }));
+    autoContrast();
+    $("sStatus").textContent = "已加一段文字。在右邊預覽上點它就能直接改字。";
   };
   $("sAddNum").onclick = () => {
     const f = defaultField({ name: "編號 " + (app.S.fields.length + 1), x: 0.85, y: 0.5 });

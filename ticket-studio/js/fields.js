@@ -32,12 +32,18 @@ export function fillFieldForm(posOnly) {
     if (inp.type === "checkbox") inp.checked = !!v; else inp.value = v ?? "";
   });
   $("btnDelField").disabled = $("btnDupField").disabled = !f;
-  const qr = f?.type === "qr";
+  const qr = f?.type === "qr", blank = f?.type === "blank";
   form.querySelectorAll(".only-text").forEach((node) => (node.hidden = qr));
   form.querySelectorAll(".only-qr").forEach((node) => (node.hidden = !qr));
+  form.querySelectorAll(".only-blank").forEach((node) => (node.hidden = !blank));
 }
 
-function addField(f) { app.S.fields.push(f); app.selId = f.id; refreshAll(); }
+export function addField(f) { app.S.fields.push(f); app.selId = f.id; refreshAll(); }
+// 填寫欄的預設：左對齊、和券寬成比例的線長
+export const newBlankField = (o) => defaultField(Object.assign({
+  name: "填寫欄", type: "blank", tpl: "通關密語", align: "left", bold: false, size: 11,
+  x: 0.08, y: 0.5, lineLen: Math.round(Math.max(15, num(app.S.ticket.w, 100) * 0.28)),
+}, o));
 
 export function initFields() {
   FONTS.forEach((f) => $("fontSelect").append(el("option", { value: f.v }, f.t)));
@@ -58,6 +64,7 @@ export function initFields() {
   });
 
   $("btnAddField").onclick = () => addField(defaultField({ name: "欄位 " + (app.S.fields.length + 1) }));
+  $("btnAddBlank").onclick = () => addField(newBlankField());
   $("btnAddQr").onclick = () => addField(defaultField({ name: "QR Code", type: "qr", tpl: "{n}", x: 0.85, y: 0.35, color: "#000000" }));
   $("btnDupField").onclick = () => {
     const src = selectedField(); if (!src) return;

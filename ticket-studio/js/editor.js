@@ -7,6 +7,7 @@ import { fieldText, sampleNumber } from "./numbers.js";
 import { renderField, makeBgFull } from "./render.js";
 import { selectField, fillFieldForm } from "./fields.js";
 import { schedulePreview } from "./preview.js";
+import { refreshAll } from "./refresh.js";
 
 const fieldEls = new Map();
 let drag = null;
@@ -85,7 +86,10 @@ function drawRulers() {
   const dpr = window.devicePixelRatio || 1;
   const { tw, th } = ticketSize(), b = bleedMm();
   const t = trimRect(), k = t.k;
-  const W = stage.clientWidth, H = stage.clientHeight, R = rx.clientHeight || 22;
+  // 量尺和預覽之間有外距，用實際位置算出位移，0 才會對準成品左上角
+  const sr = stage.getBoundingClientRect(), xr = rx.getBoundingClientRect(), yr = ry.getBoundingClientRect();
+  const offX = sr.left - xr.left, offY = sr.top - yr.top;
+  const W = rx.clientWidth || stage.clientWidth, H = ry.clientHeight || stage.clientHeight, R = rx.clientHeight || 22;
   const css = getComputedStyle(document.documentElement);
   const ink = css.getPropertyValue("--ruler-ink").trim() || "#1b1f21";
   const mark = css.getPropertyValue("--magenta").trim() || "#d6006f";
@@ -95,8 +99,7 @@ function drawRulers() {
   const labelEvery = k * 10 >= 26 ? 10 : k * 20 >= 26 ? 20 : 50;
 
   const setup = (cv, w, h) => {
-    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
-    cv.style.width = w + "px"; cv.style.height = h + "px";
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); // 顯示大小交給 CSS，避免反過來撐大版面
     const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     ctx.strokeStyle = ink; ctx.fillStyle = ink; ctx.lineWidth = 1;
@@ -134,12 +137,12 @@ function drawRulers() {
   };
 
   const cx = setup(rx, W, R);
-  ticks(cx, tw, t.x, true);
+  ticks(cx, tw, offX + t.x, true);
   const cy = setup(ry, R, H);
-  ticks(cy, th, t.y, false);
+  ticks(cy, th, offY + t.y, false);
   if (f) {
-    marker(cx, t.x + f.x * t.w, (f.x * tw).toFixed(1), true);
-    marker(cy, t.y + f.y * t.h, (f.y * th).toFixed(1), false);
+    marker(cx, offX + t.x + f.x * t.w, (f.x * tw).toFixed(1), true);
+    marker(cy, offY + t.y + f.y * t.h, (f.y * th).toFixed(1), false);
   }
 }
 
@@ -151,6 +154,11 @@ export function placeMiniBar() {
   $("mbColor").value = f.color;
   $("mbSmaller").title = f.type === "qr" ? "QR 縮小" : "字縮小";
   $("mbBigger").title = f.type === "qr" ? "QR 放大" : "字放大";
+  // 固定文字可以直接在這裡改；含 {n} 等代碼的欄位要到「更多」裡改，避免不小心刪掉代碼
+  const editable = f.type !== "qr" && !/\{[^{}]+\}/.test(f.tpl || "");
+  $("mbText").hidden = !editable;
+  if (editable && document.activeElement !== $("mbText")) $("mbText").value = f.tpl || "";
+  $("mbShorter").hidden = $("mbLonger").hidden = f.type !== "blank";
   const top = node.offsetTop - 6, left = node.offsetLeft + node.offsetWidth / 2;
   const bw = bar.offsetWidth, W = $("stageWrap").clientWidth;
   bar.style.left = clamp(left, bw / 2, W - bw / 2) + "px";
@@ -205,6 +213,24 @@ export function initEditor() {
     drawRulers(); fillFieldForm(true); schedulePreview(); save();
   });
 
+  $("mbText").addEventListener("input", () => {
+    const f = selectedField(); if (!f) return;
+    f.tpl = $("mbText").value;
+    const node = fieldEls.get(f.id); if (node) paintFieldEl(f, node);
+    fillFieldForm(); schedulePreview(); save();
+  });
+  $("mbText").addEventListener("blur", () => placeMiniBar());
+  const lineBump = (dir) => {
+    const f = selectedField(); if (!f || f.type !== "blank") return;
+    f.lineLen = clamp(Math.round(num(f.lineLen, 40) + dir * Math.max(2, num(f.lineLen, 40) * 0.12)), 2, 400);
+    fillFieldForm(); renderEditor(); schedulePreview(); save();
+  };
+  $("mbLonger").onclick = () => lineBump(1);
+  $("mbShorter").onclick = () => lineBump(-1);
+  $("mbDel").onclick = () => {
+    const S = app.S, i = S.fields.findIndex((x) => x.id === app.selId); if (i < 0) return;
+    S.fields.splice(i, 1); app.selId = null; miniArmed = false; $("miniBar").hidden = true; refreshAll();
+  };
   $("mbBigger").onclick = () => bump(1);
   $("mbSmaller").onclick = () => bump(-1);
   $("mbColor").oninput = () => { const f = selectedField(); if (!f) return; f.color = $("mbColor").value; fillFieldForm(); renderEditor(); schedulePreview(); save(); };

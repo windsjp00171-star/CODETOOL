@@ -42,9 +42,9 @@ export function applyPreset(key) {
   S.meta.preset = key;
   Object.assign(S.ticket, p.ticket, { bleed: 0, bgMode: "extend", printMode: "home" });
   Object.assign(S.num, { start: 1, exDigits: "", exList: "" }, p.num);
-  S.data.mode = p.data; if (p.list && !S.data.list.trim()) S.data.list = p.list;
+  S.data.mode = p.data; if (p.list && (!S.data.list.trim() || p.replaceList)) S.data.list = p.list;
   S.meta.name = p.name;
-  S.fields = p.fields.map((f) => Object.assign(defaultField(f), { id: fieldId() }));
+  S.fields = p.fields.map((f) => Object.assign(defaultField(f), { id: fieldId(), fromPreset: true }));
   Object.assign(S.layout, { margin: 5, stackCut: true, cutMarks: true, cutLines: true }, p.layout);
   if (p.auto !== false) autoLayout();
   clearBackground(); $("bgInput").value = ""; S.gen.active = false; app.autoNote = null; setBgName(null);

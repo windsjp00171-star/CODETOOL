@@ -37,6 +37,8 @@ export const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const SIZES = [
   ["摸彩券（長條）", 215.9, 69.5], ["名片", 90, 54], ["信用卡大小", 85.6, 54], ["餐券／小卡", 90, 50],
   ["入場券", 180, 65], ["明信片", 148, 100], ["4×6 吋相片", 152.4, 101.6], ["A6", 105, 148], ["A5", 148, 210], ["A4", 210, 297],
+  // A4 平分成格子（像用 Word 表格做的券），四周留給印表機的邊界
+  ["A4 十格（2×5）", 95, 52], ["A4 八格（2×4）", 99, 67], ["A4 十二格（2×6）", 95, 43], ["A4 六格（2×3）", 99, 90], ["A4 十五格（3×5）", 64, 54],
 ];
 
 // 用途範本
@@ -75,6 +77,17 @@ export const PRESETS = {
       { name: "標題", tpl: "餐券", x: 0.5, y: 0.32, size: 30 },
       { name: "編號", tpl: "No. {n}", x: 0.5, y: 0.72, size: 12, bold: false },
       { name: "驗證碼", tpl: "{code}", x: 0.94, y: 0.9, size: 7, bold: false, align: "right", color: "#6b7280" },
+    ],
+  },
+  listraffle: {
+    label: "名單摸彩券（每人一張，A4 十格）", name: "名單摸彩券", ticket: { w: 95, h: 52 }, num: { digits: 3 }, data: "list", replaceList: true,
+    list: "小組\t姓名\n腓立比小組\t進發\n腓立比小組\t建志\n毘努伊勒小組\t淑閔\n加利利小組\t阿蘭\n伯特利小組\t惠子\n多加小組\t淑如",
+    layout: { paper: "A4", gap: 0 },
+    fields: [
+      { name: "標題", tpl: "讀經靈修紀錄摸彩券　2026.10月", x: 0.5, y: 0.13, size: 12, color: "#111827" },
+      { name: "小組", tpl: "{小組}", x: 0.06, y: 0.3, size: 10, bold: false, align: "left", color: "#374151" },
+      { name: "名字", tpl: "{姓名}", x: 0.5, y: 0.65, size: 46, color: "#111827" },
+      { name: "編號", tpl: "{n}", x: 0.96, y: 0.92, size: 6.5, bold: false, align: "right", color: "#9ca3af" },
     ],
   },
   badge: {

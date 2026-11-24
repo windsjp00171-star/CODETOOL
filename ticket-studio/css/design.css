@@ -73,9 +73,10 @@ details.explain p { margin: 6px 0; line-height: 1.65; }
 /* 量尺在上方與左方，0 對齊成品左上角 */
 .stage-frame { display: grid; grid-template-columns: 22px minmax(0, 1fr); grid-template-rows: 22px auto; }
 .ruler-corner { display: grid; place-items: center; background: var(--ruler); color: var(--ruler-ink); font-size: 9px; font-weight: 700; border-right: 1px solid #c9cec8; border-bottom: 1px solid #c9cec8; }
-.ruler { display: block; background: var(--ruler); }
+/* contain: size 讓量尺不會用自己的畫布大小撐開格子，只填滿所在的格子 */
+.ruler { display: block; background: var(--ruler); contain: size; }
 .ruler-x { height: 22px; width: 100%; border-bottom: 1px solid #c9cec8; }
-.ruler-y { width: 22px; grid-row: 2; border-right: 1px solid #c9cec8; }
+.ruler-y { width: 22px; height: 100%; grid-row: 2; border-right: 1px solid #c9cec8; }
 .stage-wrap { position: relative; grid-column: 2; grid-row: 2; margin: 18px; }
 
 /* 裁切記號：四個角各兩條短線 */
@@ -118,6 +119,8 @@ details.explain p { margin: 6px 0; line-height: 1.65; }
 .mini-bar button { min-height: 30px; padding: 4px 10px; background: transparent; color: #fff; border: none; border-radius: 1px; font: 700 var(--fs-sm)/1 var(--font); cursor: pointer; }
 .mini-bar button:hover { background: #2d3336; }
 .mini-bar label { display: flex; padding: 0 3px; }
+.mini-bar .mb-text { width: 9em; min-height: 26px; padding: 2px 6px; font-size: var(--fs-sm); border: 1px solid #4a5357; background: #fff; color: var(--ink); border-radius: 1px; }
+.s-adds { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 6px; }
 .mini-bar input[type="color"] { width: 30px; height: 26px; padding: 0; border: 1px solid #4a5357; background: transparent; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--fs-xs); color: var(--mat-ink-2); margin: 4px 0 0 40px; }

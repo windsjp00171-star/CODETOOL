@@ -36,6 +36,21 @@ export function renderField(f, text, ppm) {
       for (let r = 0; r < m; r++) for (let c = 0; c < m; c++)
         if (qr.isDark(r, c)) ctx.fillRect(x0 + (c + q) * cell, y0 + (r + q) * cell, cell + ov, cell + ov);
     };
+  } else if (f.type === "blank") {
+    // 填寫欄：左邊是文字（可空白），後面接一條底線
+    const fontPx = Math.max(1, num(f.size, 12) * PT_MM * ppm);
+    const font = `${f.bold ? 700 : 400} ${fontPx}px ${f.font}`;
+    measureCtx.font = font;
+    const tw0 = text ? measureCtx.measureText(text).width : 0, gap = text ? fontPx * 0.3 : 0;
+    const linePx = Math.max(1, num(f.lineLen, 40) * ppm), lw = Math.max(1, num(f.lineW, 0.3) * ppm);
+    w = tw0 + gap + linePx; h = fontPx * 1.3; pad = 2 + lw;
+    draw = (ctx, x0) => {
+      ctx.font = font; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillStyle = f.color;
+      if (text) ctx.fillText(text, x0, 0);
+      const y = fontPx * 0.45;
+      ctx.strokeStyle = f.color; ctx.lineWidth = lw; ctx.lineCap = "butt";
+      ctx.beginPath(); ctx.moveTo(x0 + tw0 + gap, y); ctx.lineTo(x0 + w, y); ctx.stroke();
+    };
   } else {
     const fontPx = Math.max(1, num(f.size, 12) * PT_MM * ppm);
     const strokePx = Math.max(0, num(f.stroke, 0) * PT_MM * ppm);

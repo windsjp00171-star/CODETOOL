@@ -12,6 +12,7 @@ export const defaultField = (o) => Object.assign({
   x: 0.5, y: 0.5, size: 16, font: FONTS[0].v, bold: true, color: "#1f2937",
   stroke: 0, strokeColor: "#ffffff", align: "center", rotate: 0,
   type: "text", qrSize: 15, qrQuiet: true,
+  lineLen: 40, lineW: 0.3, // 填寫欄：底線長度、粗細（mm）
 }, o);
 
 export const newSeed = () => {
@@ -31,6 +32,7 @@ export const defaultState = () => ({
   meta: { name: "摸彩券", preset: "lottery" },
   data: { mode: "seq", list: "" },
   gen: { title: "年終尾牙摸彩", sub: "", note: "", theme: "red", stub: true, name: true, phone: false, active: false,
+         layout: "", stubTitle: "存根",
          src: "theme", aiPrompt: "", aiProvider: "gemini", aiModel: "", panel: true },
 });
 
