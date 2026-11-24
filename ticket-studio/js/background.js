@@ -2,7 +2,7 @@
 import { PT_MM } from "./constants.js";
 import { $, clamp, num, el, setStatus, setMarked, marked } from "./util.js";
 import { app } from "./state.js";
-import { bleedMm, ticketSize } from "./geometry.js";
+import { bleedMm, ticketSize, autoLayout } from "./geometry.js";
 import { makeBgFull } from "./render.js";
 import { syncBindings } from "./settings.js";
 import { refreshAll } from "./refresh.js";
@@ -80,9 +80,11 @@ function renderWarn(box) {
   box.replaceChildren(); box.hidden = true; box.className = "note note-warn";
   if (!app.bgImg) return;
   let warned = false;
-  const addMsg = (text, btnText, fn) => {
+  // extra：其他按鈕 [[文字, 動作], …]
+  const addMsg = (text, btnText, fn, extra = []) => {
     box.append(el("p", null, text));
-    if (btnText) box.append(el("button", { type: "button", className: "btn btn-quiet btn-small", onclick: fn }, btnText));
+    const btns = (btnText ? [[btnText, fn]] : []).concat(extra);
+    if (btns.length) box.append(el("div", { className: "note-btns" }, ...btns.map(([t, f2]) => el("button", { type: "button", className: "btn btn-quiet btn-small", onclick: f2 }, t))));
     box.hidden = false; warned = true;
   };
   const S = app.S, border = app.bgBorder;
@@ -116,9 +118,48 @@ function renderAspectMsg(addMsg) {
     return;
   }
   if (app.bgBorder) return; // 先處理白邊，裁完會自動調整比例
-  if (Math.abs(ia - ta) / ta < 0.015) return;
-  addMsg(`這張圖片的長寬比例，跟設定的券大小不太一樣，直接用的話圖片會被${ia > ta ? "壓扁" : "拉長"}一點。建議按下面的按鈕，讓券的高度配合圖片。`,
-    "讓券的高度配合圖片（建議）", () => { S.ticket.h = +((tw + inc) / ia - inc).toFixed(2); syncBindings(); refreshAll(); });
+  const diff = Math.abs(ia - ta) / ta;
+  if (diff < 0.015) return;
+  // 圖片一律等比例放，不會變形；這裡告訴使用者目前怎麼放、要不要讓券配合圖片
+  const fit = S.ticket.bgFit || "cover", wide = ia > ta;
+  const how = fit === "contain" ? `用「整張放進去」：${wide ? "上下" : "左右"}會留白`
+    : fit === "stretch" ? "把圖片拉伸塞滿：圖片會變形"
+    : `用「填滿」：圖片${wide ? "左右" : "上下"}兩邊會被裁掉約 ${Math.round((1 - Math.min(ia, ta) / Math.max(ia, ta)) * 100)}%`;
+  const turned = (ia > 1) !== (ta > 1) && Math.abs(Math.log(ia * ta)) < Math.abs(Math.log(ia / ta)) * 0.6;
+  const extra = [];
+  if (turned) extra.push(["圖片轉 90°", () => rotateBackground90()]);
+  if (fit !== "cover") extra.push(["改成填滿（裁掉多的）", () => setFit("cover")]);
+  if (fit !== "contain") extra.push(["改成整張放進去（留白）", () => setFit("contain")]);
+  addMsg(`圖片的長寬比例跟券不一樣。為了不讓圖片變形，目前${how}。`,
+    "讓券的大小配合圖片（建議）", () => { matchTicketToImage(); }, extra);
+}
+
+function setFit(mode) { app.S.ticket.bgFit = mode; refreshAll(); }
+
+// 讓券的比例配合圖片：差一點點只改高度；差很多（例如直橫不同）就保留券的長邊、依圖片比例算另一邊
+export function matchTicketToImage() {
+  const S = app.S, img = app.bgImg; if (!img) return;
+  const b = bleedMm(), inc = S.ticket.bgMode === "included" ? 2 * b : 0;
+  const tw = num(S.ticket.w, 1), th = num(S.ticket.h, 1), ia = img.naturalWidth / img.naturalHeight, ta = (tw + inc) / (th + inc);
+  if (Math.abs(ia - ta) / ta < 0.2) S.ticket.h = +((tw + inc) / ia - inc).toFixed(2);
+  else {
+    const L = Math.max(tw, th) + inc;
+    const w = ia >= 1 ? L : L * ia, h = ia >= 1 ? L / ia : L;
+    S.ticket.w = +(w - inc).toFixed(2); S.ticket.h = +(h - inc).toFixed(2);
+  }
+  app.autoNote = null;
+  autoLayout(); syncBindings(); refreshAll();
+}
+
+// 圖片轉 90°（dir = 1 順時針，-1 逆時針）
+export async function rotateBackground90(dir = 1) {
+  const img = app.bgImg; if (!img) return;
+  const c = document.createElement("canvas"); c.width = img.naturalHeight; c.height = img.naturalWidth;
+  const ctx = c.getContext("2d");
+  if (dir > 0) { ctx.translate(c.width, 0); ctx.rotate(Math.PI / 2); } else { ctx.translate(0, c.height); ctx.rotate(-Math.PI / 2); }
+  ctx.drawImage(img, 0, 0);
+  app.autoNote = null;
+  await setBackground(c.toDataURL("image/jpeg", 0.95));
 }
 
 // ---------- 依圖片深淺自動選黑字或白字 ----------
@@ -150,7 +191,7 @@ export function handleImageFile(file) {
   reader.onload = async (ev) => {
     const S = app.S;
     const before = { url: ev.target.result, h: S.ticket.h };
-    const wasGen = S.gen.active; S.gen.active = false; app.autoNote = null;
+    const wasGen = S.gen.active; S.gen.active = false; app.autoNote = null; S.ticket.turned = false;
     const ok = await setBackground(ev.target.result);
     if (!ok) { S.gen.active = wasGen; alert("無法讀取這張圖片。"); return; }
     setBgName(file.name);

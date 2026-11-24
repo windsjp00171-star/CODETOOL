@@ -5,7 +5,8 @@ import { app, setPath, getPath, defaultField, fieldId, historyIndex } from "./st
 import { bleedMm, computeLayout, autoLayout } from "./geometry.js";
 import { isList, parseList, recordMap } from "./numbers.js";
 import { refreshAll } from "./refresh.js";
-import { clearBackground, setBgName } from "./background.js";
+import { clearBackground, setBgName, rotateBackground90 } from "./background.js";
+import { useGenerated } from "./generator.js";
 
 // ---------- data-bind：input 與 S 的欄位雙向對應 ----------
 export function syncBindings() {
@@ -108,15 +109,10 @@ function initSize() {
   sel.onchange = () => {
     const v = sel.value; if (v === "") return;
     const [, w, h] = SIZES[+v];
-    Object.assign(app.S.ticket, { w, h }); autoLayout(); syncBindings(); refreshAll();
+    Object.assign(app.S.ticket, { w, h }); app.autoNote = null; autoLayout(); syncBindings(); refreshAll();
     setStatus("已換成新尺寸並重新排版。");
   };
-  $("btnSwapSize").onclick = () => {
-    const S = app.S;
-    [S.ticket.w, S.ticket.h] = [S.ticket.h, S.ticket.w];
-    S.fields.forEach((f) => { [f.x, f.y] = [f.y, f.x]; });
-    autoLayout(); syncBindings(); refreshAll();
-  };
+  $("btnSwapSize").onclick = () => swapOrientation();
 
   // 印製方式 → 出血
   $("printMode").onchange = () => {
@@ -160,4 +156,34 @@ export function initSettings() {
     if (!autoLayout()) { alert("這張紙放不下這個大小的券，請改用較大紙張或縮小邊界。"); return; }
     syncBindings(); refreshAll();
   };
+}
+
+// 直橫對調：有自己的圖時，整張券（圖片＋文字）一起轉 90°，圖片不會變形；
+// 用「幫我做一張」產生的圖就依新的方向重新產生；沒有圖時只對調寬高
+export async function swapOrientation() {
+  const S = app.S;
+  [S.ticket.w, S.ticket.h] = [S.ticket.h, S.ticket.w];
+  app.autoNote = null;
+  if (app.bgImg && S.gen.active) {
+    autoLayout(); syncBindings();
+    await useGenerated();
+    setStatus("已改成另一個方向，並依新的方向重新產生圖片。");
+    return;
+  }
+  if (app.bgImg) {
+    // 第一次順時針轉 90°，再按一次就逆時針轉回來（不會變成上下顛倒）
+    const dir = S.ticket.turned ? -1 : 1;
+    S.ticket.turned = !S.ticket.turned;
+    // 順時針：(x, y) → (1 − y, x)；逆時針：(x, y) → (y, 1 − x)。文字也跟著轉
+    S.fields.forEach((f) => {
+      [f.x, f.y] = dir > 0 ? [1 - f.y, f.x] : [f.y, 1 - f.x];
+      f.rotate = ((num(f.rotate, 0) + 90 * dir) % 360 + 360) % 360;
+    });
+    autoLayout(); syncBindings();
+    await rotateBackground90(dir);
+    setStatus("整張券（圖片和文字）已一起轉 90°，圖片不會變形。");
+    return;
+  }
+  S.fields.forEach((f) => { [f.x, f.y] = [f.y, f.x]; });
+  autoLayout(); syncBindings(); refreshAll();
 }

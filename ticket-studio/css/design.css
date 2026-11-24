@@ -156,3 +156,6 @@ body.simple #pageCard:not(.open) { display: none; }
 /* 號碼排列（疊切／每頁依序） */
 .s-order { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; border: none; }
 .s-order legend { font-size: var(--fs-sm); font-weight: 700; color: var(--ink); padding: 0; margin-bottom: 4px; }
+
+/* 提示框裡的多個選擇按鈕 */
+.note-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }

@@ -54,7 +54,7 @@ export const markSelected = (id) => fieldEls.forEach((node, fid) => node.classLi
 let stageBgKey = null;
 function paintStageBg() {
   const cv = $("stageBg"), dpr = window.devicePixelRatio || 1, S = app.S;
-  const key = [app.bgDataURL?.length, app.bgDataURL?.slice(-32), S.ticket.w, S.ticket.h, bleedMm(), S.ticket.bgMode, stage.clientWidth, dpr].join("|");
+  const key = [app.bgDataURL?.length, app.bgDataURL?.slice(-32), S.ticket.w, S.ticket.h, bleedMm(), S.ticket.bgMode, S.ticket.bgFit, stage.clientWidth, dpr].join("|");
   if (key === stageBgKey) return;
   stageBgKey = key;
   if (!app.bgImg) { cv.width = cv.height = 1; cv.getContext("2d").clearRect(0, 0, 1, 1); return; }

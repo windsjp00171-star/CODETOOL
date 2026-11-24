@@ -21,7 +21,7 @@ export const newSeed = () => {
 };
 
 export const defaultState = () => ({
-  ticket: { w: 215.9, h: 69.5, bleed: 0, bgMode: "extend", printMode: "home" },
+  ticket: { w: 215.9, h: 69.5, bleed: 0, bgMode: "extend", printMode: "home", bgFit: "cover" }, // bgFit：cover 填滿裁切／contain 整張放進去／stretch 拉伸
   num: { start: 1, end: 250, digits: 6, exDigits: "", exList: "", codeLen: 4, seed: newSeed() },
   fields: [
     defaultField({ id: "f1", name: "左編號", x: 0.28, y: 0.81, color: "#1f2937" }),

@@ -78,6 +78,19 @@ export function renderField(f, text, ppm) {
   return { canvas: c, ox: minX, oy: minY };
 }
 
+// 圖片放進 dw×dh 的方式：cover 填滿（裁掉多的）、contain 整張放進去（留白）、stretch 拉伸
+// 回傳來源矩形 s* 與目的矩形 d*
+export function fitRect(iw, ih, dw, dh, mode) {
+  if (mode === "stretch") return { sx: 0, sy: 0, sw: iw, sh: ih, dx: 0, dy: 0, dw, dh };
+  const ir = iw / ih, dr = dw / dh;
+  if (mode === "contain") {
+    if (ir > dr) { const h = dw / ir; return { sx: 0, sy: 0, sw: iw, sh: ih, dx: 0, dy: (dh - h) / 2, dw, dh: h }; }
+    const w = dh * ir; return { sx: 0, sy: 0, sw: iw, sh: ih, dx: (dw - w) / 2, dy: 0, dw: w, dh };
+  }
+  if (ir > dr) { const sw = ih * dr; return { sx: (iw - sw) / 2, sy: 0, sw, sh: ih, dx: 0, dy: 0, dw, dh }; }
+  const sh = iw / dr; return { sx: 0, sy: (ih - sh) / 2, sw: iw, sh, dx: 0, dy: 0, dw, dh };
+}
+
 // 產生「成品＋四邊出血」的完整底圖（ppm = 每券毫米的像素數）
 export function makeBgFull(ppm) {
   const { tw, th } = ticketSize(), b = bleedMm(), img = app.bgImg;
@@ -86,20 +99,27 @@ export function makeBgFull(ppm) {
   const ctx = c.getContext("2d");
   ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
   if (!img) return c;
-  const iw = img.naturalWidth, ih = img.naturalHeight;
-  if (b === 0 || app.S.ticket.bgMode === "included") { ctx.drawImage(img, 0, 0, c.width, c.height); return c; }
+  const iw = img.naturalWidth, ih = img.naturalHeight, mode = app.S.ticket.bgFit || "cover";
+  if (b === 0 || app.S.ticket.bgMode === "included") {
+    const f = fitRect(iw, ih, c.width, c.height, mode);
+    ctx.drawImage(img, f.sx, f.sy, f.sw, f.sh, f.dx, f.dy, f.dw, f.dh);
+    return c;
+  }
   // 不含出血：圖放在成品區，邊緣 1px 往外拉伸補滿出血
   const bp = b * ppm, w = tw * ppm, h = th * ppm;
-  ctx.drawImage(img, bp, bp, w, h);
+  const f = fitRect(iw, ih, w, h, mode);
+  ctx.drawImage(img, f.sx, f.sy, f.sw, f.sh, bp + f.dx, bp + f.dy, f.dw, f.dh);
+  if (mode === "contain") return c; // 整張放進去時四周本來就留白，不延伸
+  const { sx, sy, sw, sh } = f, ex = sx + sw - 1, ey = sy + sh - 1;
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(img, 0, 0, iw, 1, bp, 0, w, bp);            // 上
-  ctx.drawImage(img, 0, ih - 1, iw, 1, bp, bp + h, w, bp);  // 下
-  ctx.drawImage(img, 0, 0, 1, ih, 0, bp, bp, h);            // 左
-  ctx.drawImage(img, iw - 1, 0, 1, ih, bp + w, bp, bp, h);  // 右
-  ctx.drawImage(img, 0, 0, 1, 1, 0, 0, bp, bp);             // 四角
-  ctx.drawImage(img, iw - 1, 0, 1, 1, bp + w, 0, bp, bp);
-  ctx.drawImage(img, 0, ih - 1, 1, 1, 0, bp + h, bp, bp);
-  ctx.drawImage(img, iw - 1, ih - 1, 1, 1, bp + w, bp + h, bp, bp);
+  ctx.drawImage(img, sx, sy, sw, 1, bp, 0, w, bp);            // 上
+  ctx.drawImage(img, sx, ey, sw, 1, bp, bp + h, w, bp);       // 下
+  ctx.drawImage(img, sx, sy, 1, sh, 0, bp, bp, h);            // 左
+  ctx.drawImage(img, ex, sy, 1, sh, bp + w, bp, bp, h);       // 右
+  ctx.drawImage(img, sx, sy, 1, 1, 0, 0, bp, bp);             // 四角
+  ctx.drawImage(img, ex, sy, 1, 1, bp + w, 0, bp, bp);
+  ctx.drawImage(img, sx, ey, 1, 1, 0, bp + h, bp, bp);
+  ctx.drawImage(img, ex, ey, 1, 1, bp + w, bp + h, bp, bp);
   return c;
 }
 
