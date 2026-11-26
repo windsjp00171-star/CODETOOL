@@ -3,7 +3,7 @@ import { PRESETS } from "./constants.js";
 import { $, num, el, infoLine } from "./util.js";
 import { app, defaultField } from "./state.js";
 import { buildNumbers, isList, parseList, tableToTSV } from "./numbers.js";
-import { syncNameGrid, initNameGrid } from "./namegrid.js";
+import { syncNameGrid, initNameGrid, startList } from "./namegrid.js";
 import { computeLayout, fitChoices, ticketIndex } from "./geometry.js";
 import { applyPreset, chooseFit, syncBindings } from "./settings.js";
 import { refreshAll } from "./refresh.js";
@@ -36,10 +36,9 @@ export function updateSimpleUI() {
   });
   if (list) {
     const { headers, records } = parseList(S.data.list);
-    const groups = headers.includes("小組") ? new Set(records.map((r) => r["小組"]).filter(Boolean)).size : 0;
     $("sListLine").textContent = records.length
-      ? `共 ${records.length} 人，每人印一張${groups ? `（${groups} 個小組）` : ""}。`
-      : "還沒有名單。";
+      ? `共 ${records.length} 行，每行印一張。欄位：${headers.join("、")}。`
+      : "還沒有名單：在表格裡打字，或從 Excel 貼上。";
     syncNameGrid();
   }
 
@@ -112,11 +111,8 @@ export function initSimple() {
   document.querySelectorAll('input[name="sMode"]').forEach((r) => r.addEventListener("change", () => {
     const S = app.S;
     if (r.value === "list") {
-      S.data.mode = "list";
-      if (!String(S.data.list || "").trim()) { S.data.names = ""; S.data.list = tableToTSV(["姓名"], []); }
-      ensureNameFields(parseList(S.data.list).headers);
-      refreshAll();
-      setTimeout(() => { const f = document.querySelector("#ngBody .ng-name"); if (f) f.focus(); }, 50);
+      startList();
+      setTimeout(() => { const f = document.querySelector("#ngBody input"); if (f) f.focus(); }, 50);
     } else { S.data.mode = "seq"; refreshAll(); }
   }));
   $("sAddBlank").onclick = () => {
@@ -133,33 +129,4 @@ export function initSimple() {
     app.S.fields.push(f); app.selId = f.id; refreshAll(); autoContrast();
     $("sStatus").textContent = "已加一個號碼，請在右邊預覽上把它拖到想要的位置。";
   };
-}
-
-// 名字（和小組）自動放到券上：名字放大置中，小組小字放左上。
-// 自動放的欄位會跟著名單的欄名走；名單沒有小組時，自動放的小組欄位拿掉。
-export function ensureNameFields(headers) {
-  const S = app.S, th = num(S.ticket.h, 50);
-  const nameKey = headers.find((h) => h === "姓名") || headers[headers.length - 1] || "姓名";
-  const groupKey = headers.find((h) => h === "小組");
-  const uses = (k) => S.fields.some((f) => !f.autoName && String(f.tpl || "").includes(`{${k}}`));
-  const autoOf = (role) => S.fields.find((f) => f.autoName === role);
-  const added = [];
-  // 名字
-  const an = autoOf("name");
-  if (uses(nameKey)) { if (an) S.fields = S.fields.filter((f) => f !== an); }
-  else if (an) an.tpl = `{${nameKey}}`;
-  else {
-    const f = defaultField({ name: "名字", tpl: `{${nameKey}}`, x: 0.5, y: 0.58, size: +Math.min(60, (th * 0.3) / 0.3528).toFixed(1), align: "center", autoName: "name" });
-    S.fields.push(f); added.push(f);
-  }
-  // 小組
-  const ag = autoOf("group");
-  if (!groupKey || uses(groupKey)) { if (ag) S.fields = S.fields.filter((f) => f !== ag); }
-  else if (ag) ag.tpl = `{${groupKey}}`;
-  else {
-    const f = defaultField({ name: "小組", tpl: `{${groupKey}}`, x: 0.06, y: 0.18, size: +Math.max(8, Math.min(16, (th * 0.07) / 0.3528)).toFixed(1), align: "left", bold: false, color: "#374151", autoName: "group" });
-    S.fields.push(f); added.push(f);
-  }
-  if (added.length) { app.selId = added[0].id; autoContrast(); }
-  return added.length;
 }

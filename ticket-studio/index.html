@@ -168,10 +168,12 @@
             <label class="box-field"><span id="sToLabel">到幾號</span><input type="number" min="0" data-bind="num.end" /></label>
           </div>
           <div id="sListBox" hidden>
-            <p class="hint">像 Excel 一樣：點格子打字，<kbd>Enter</kbd> 換下一行，<b>小組會自動沿用上一行</b>。也可以從 Excel 選一塊複製後貼上。</p>
+            <p class="hint">像 Excel 一樣：點格子打字，<kbd>Enter</kbd> 換下一行。欄位可以自己加（＋欄）、點欄名改名字；勾「印」的欄位會放到券上。左邊空著的格子會自動沿用上一行。也可以從 Excel 選一塊複製後貼上。</p>
             <div class="ng" id="nameGrid">
-              <div class="ng-head" aria-hidden="true"><span>小組（可不填）</span><span>姓名</span><span></span></div>
-              <div class="ng-body" id="ngBody"></div>
+              <div class="ng-scroll">
+                <div class="ng-head" id="ngHead"></div>
+                <div class="ng-body" id="ngBody"></div>
+              </div>
             </div>
             <div class="ng-foot">
               <p class="s-line" id="sListLine"></p>

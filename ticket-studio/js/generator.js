@@ -3,7 +3,7 @@ import { FONTS, PT_MM, THEMES, SIZES } from "./constants.js";
 import { $, clamp, num, el, setStatus, measureCtx } from "./util.js";
 import { app, defaultField } from "./state.js";
 import { bleedMm, ticketSize, autoLayout, bestLayout } from "./geometry.js";
-import { isList, sampleNumber, parseList } from "./numbers.js";
+import { isList, sampleNumber, parseList, mainColumn } from "./numbers.js";
 import { renderField } from "./render.js";
 import { setBackground, setBgName } from "./background.js";
 import { syncBindings } from "./settings.js";
@@ -34,10 +34,6 @@ function textMm(text, sizeMm, bold) {
 function fitMm(text, bold, maxW, maxH) {
   const w = textMm(text, maxH, bold);
   return w > maxW ? Math.max(1.5, maxH * (maxW / w)) : maxH;
-}
-// 名單裡「名字」那一欄：欄名有姓名／名字就用它，否則用最後一欄
-function nameColumn(headers) {
-  return headers.find((h) => /姓名|名字|名稱|name/i.test(h)) || headers[headers.length - 1];
 }
 
 // o：gen 設定。圖片只畫背景、花紋、存根底色、撕線、外框；
@@ -143,7 +139,7 @@ function genBackground(o, tw, th, b, ppm) {
   if (layout === "list") {
     // 名單券：標題置中、其他欄位小字、名字放大置中、角落小小的號碼（抽獎登記用）
     const { headers, records } = parseList(app.S.data.list || SAMPLE_LIST);
-    const big = nameColumn(headers), others = headers.filter((h) => h !== big);
+    const big = mainColumn(headers), others = headers.filter((h) => h !== big);
     const title = (o.title || "").trim();
     let y = L.y;
     if (title) {
