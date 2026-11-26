@@ -460,6 +460,10 @@
           <div class="more-body">
             <label class="box-field"><span>不參加抽獎的編號</span><input type="text" id="voidList" placeholder="未發出／作廢，例：201-250, 77" /></label>
             <p class="hint">發出範圍沿用「印券設計」的編號設定，這裡再扣掉沒發出去或作廢的券。</p>
+            <label class="box-field"><span>得獎號碼在投影上停留</span>
+              <select id="showSecs"><option value="30">30 秒</option><option value="60">1 分鐘</option><option value="120">2 分鐘</option><option value="300">5 分鐘</option><option value="0">不自動清除（手動按「清除投影上的號碼」）</option></select>
+            </label>
+            <p class="hint">時間到、換獎項、或開始抽下一個時，上一個號碼都會自動從投影上消失。</p>
             <label class="check"><input type="checkbox" id="verifyCode" /> 登記時核對券上的驗證碼（防偽）</label>
             <p class="hint">需在印券時加上 <code>{code}</code> 欄位。驗證碼不符的券會被擋下。</p>
           </div>
@@ -520,6 +524,7 @@
           <button type="button" class="btn btn-mat btn-small" id="btnCam" hidden><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg><span>用相機掃描 QR</span></button>
           <button type="button" class="btn btn-mat btn-small" id="btnRandom"><svg class="ic" aria-hidden="true"><use href="#i-dice"/></svg><span>改用電腦隨機抽</span></button>
           <span class="tool-gap" aria-hidden="true"></span>
+          <button type="button" class="btn btn-mat btn-small" id="btnClearShow" title="把投影上的得獎號碼清掉，畫面回到「準備抽下一個」"><span>清除投影上的號碼</span></button>
           <button type="button" class="btn btn-mat btn-small" id="btnProjector" title="另開一個只有得獎畫面的視窗，拖到投影機上；這邊登記，那邊同步顯示"><svg class="ic" aria-hidden="true"><use href="#i-monitor"/></svg><span>開啟投影視窗</span></button>
           <button type="button" class="btn btn-mat btn-small" id="btnFull"><svg class="ic" aria-hidden="true"><use href="#i-expand"/></svg><span>本畫面全螢幕</span></button>
         </div>

@@ -14,6 +14,7 @@ const defaultDraw = () => ({
     { id: newPrizeId(), name: "頭獎", qty: 1 },
   ],
   voidList: "", verify: false, winners: [], cur: null, title: "",
+  showSecs: 60, // 得獎號碼在投影上停留幾秒，0 = 不自動清除
 });
 
 export let D = defaultDraw();
@@ -46,7 +47,25 @@ function msg(type, text) { const m = $("entryMsg"); m.className = "msg " + type;
 const fmtTime = (t) => new Date(t).toLocaleTimeString("zh-TW", { hour12: false });
 const showCodes = () => D.verify || usesCode();
 
+// 投影上正在顯示的得獎者。顯示期間，獎項名稱和進度都照這個人得的獎，
+// 不會因為那個獎抽滿、自動跳到下一個獎而變成「下一個獎＋上一個號碼」。
+let shown = null, clearTimer = null;
+function armAutoClear() {
+  clearTimeout(clearTimer);
+  const secs = num(D.showSecs, 60);
+  if (shown && secs > 0) clearTimer = setTimeout(clearShown, secs * 1000);
+}
+// 清掉投影上的號碼，畫面回到「準備抽目前獎項」
+function clearShown() {
+  shown = null; clearTimeout(clearTimer);
+  const big = $("showNum");
+  big.textContent = " "; big.classList.remove("rolling", "pop");
+  $("showCode").textContent = ""; $("showName").textContent = "";
+  renderDrawStatus();
+}
+
 function showWinner(w, animate) {
+  shown = w || null; armAutoClear();
   const big = $("showNum");
   big.textContent = w ? w.num : " ";
   big.classList.remove("rolling", "pop");
@@ -109,10 +128,18 @@ function renderDrawStatus() {
     `${p.name}（${okCount(p.id)}/${p.qty}）${okCount(p.id) >= p.qty ? " ✓" : ""}`)));
   if (cur) $("curPrize").value = cur.id;
 
-  // 投影區
-  $("showPrize").textContent = cur ? cur.name : D.prizes.length ? "所有獎項都抽完了" : "請先設定獎項";
-  const got = cur ? D.winners.filter((w) => w.prizeId === cur.id && w.status === "ok") : [];
-  $("showProg").textContent = cur ? `已抽 ${got.length} / ${cur.qty} 名` : "";
+  // 顯示中的得獎者被標記未到場或刪掉：號碼一起從投影上拿掉
+  if (shown && (shown.status !== "ok" || !D.winners.includes(shown))) {
+    shown = null; clearTimeout(clearTimer);
+    $("showNum").textContent = " "; $("showNum").classList.remove("rolling", "pop");
+    $("showCode").textContent = ""; $("showName").textContent = "";
+  }
+  // 投影區：正在顯示得獎號碼時，獎項跟著那個號碼；清掉之後才換成目前要抽的獎項
+  const shownPrize = shown && shown.status === "ok" ? D.prizes.find((p) => p.id === shown.prizeId) : null;
+  const disp = shownPrize || cur;
+  $("showPrize").textContent = disp ? disp.name : D.prizes.length ? "所有獎項都抽完了" : "請先設定獎項";
+  const got = disp ? D.winners.filter((w) => w.prizeId === disp.id && w.status === "ok") : [];
+  $("showProg").textContent = disp ? `已抽 ${got.length} / ${disp.qty} 名` : "";
   $("showList").replaceChildren(...got.map((w) => el("span", null, w.num)));
 
   // 統計
@@ -187,6 +214,7 @@ function register(rawNum, rawCode, src) {
   const left = prize.qty - okCount(prize.id);
   const who = recordLabel(n);
   msg("ok", `✓ ${prize.name}：${n}${who ? `（${who}）` : ""}${left > 0 ? `，還剩 ${left} 名` : `，「${prize.name}」已抽滿`}`);
+  shown = w; // 先記住，畫面上的獎項名稱才會是這個號碼得的獎
   renderDrawStatus();
   showWinner(w, true); // 最後才送「得獎」動畫給投影視窗
   return true;
@@ -201,6 +229,7 @@ async function randomDraw() {
   const avail = pool().avail;
   if (!avail.length) return msg("err", "已經沒有可抽的券了。");
   rolling = true; $("btnRandom").disabled = true;
+  if (shown) clearShown();
   const big = $("showNum"); big.classList.add("rolling"); $("showCode").textContent = "";
   const rnd = (k) => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % k; };
   const end = performance.now() + 2200;
@@ -271,7 +300,11 @@ export function initDraw() {
     if (register($("entryNum").value, $("entryCode").value, "manual")) { $("entryNum").value = ""; $("entryCode").value = ""; }
     $("entryNum").focus(); $("entryNum").select();
   });
-  $("curPrize").onchange = () => { D.cur = $("curPrize").value; saveDraw(); renderDrawStatus(); };
+  // 換獎項：上一個號碼一定要清掉，免得台下以為那個號碼得的是新獎項
+  $("curPrize").onchange = () => { D.cur = $("curPrize").value; saveDraw(); clearShown(); };
+  $("btnClearShow").onclick = () => { clearShown(); msg("ok", "已清除投影上的號碼。"); $("entryNum").focus(); };
+  $("showSecs").value = String(num(D.showSecs, 60));
+  $("showSecs").onchange = () => { D.showSecs = num($("showSecs").value, 60); saveDraw(); armAutoClear(); };
   $("voidList").oninput = () => { D.voidList = $("voidList").value; saveDraw(); renderDrawStatus(); };
   $("verifyCode").onchange = () => { D.verify = $("verifyCode").checked; saveDraw(); renderDraw(); };
   $("btnAddPrize").onclick = () => { D.prizes.push({ id: newPrizeId(), name: "新獎項", qty: 1 }); saveDraw(); renderDraw(); };
@@ -281,8 +314,8 @@ export function initDraw() {
     if (!w) return msg("err", "沒有可標記的得獎者。");
     if (!confirm(`${prizeName(w)}：${w.num} 未到場？\n這張券作廢，名額會空出來，請再抽一張。`)) return;
     w.status = "absent"; D.cur = w.prizeId; saveDraw();
-    showWinner(null); msg("ok", `${w.num} 已標記未到場，請再抽一張「${prizeName(w)}」。`);
-    renderDrawStatus(); $("entryNum").focus();
+    clearShown(); msg("ok", `${w.num} 已標記未到場，請再抽一張「${prizeName(w)}」。`);
+    $("entryNum").focus();
   };
   $("btnRandom").onclick = randomDraw;
   $("btnProjector").onclick = openProjector;
