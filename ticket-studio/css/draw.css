@@ -70,8 +70,14 @@
 @keyframes pop { 0% { transform: scale(0.6); opacity: 0; filter: blur(6px); } 60% { transform: scale(1.06); opacity: 1; filter: blur(0); } 100% { transform: none; } }
 .show .name { font-size: clamp(22px, 3.2vw, 40px); font-weight: 700; min-height: 1.2em; }
 .show .code { font-size: var(--fs-xl); color: #aab3b7; min-height: 1.4em; letter-spacing: 0.1em; font-variant-numeric: tabular-nums; }
-.show .list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 90%; }
-.show .list span { font-family: var(--font-num); padding: 3px 12px; border: 1px solid rgba(255, 255, 255, 0.35); font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
+.show .list { display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 94%; }
+.show .grp { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 12px; opacity: 0.72; }
+.show .grp.cur { opacity: 1; }
+.show .grp-name { color: var(--yellow); font-weight: 700; font-size: var(--fs-md); white-space: nowrap; }
+.show .grp-items { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.show .grp-items span { font-family: var(--font-num); padding: 3px 12px; border: 1px solid rgba(255, 255, 255, 0.35); font-size: var(--fs-lg); font-variant-numeric: tabular-nums; }
+.show .list.dense .grp-items span { font-size: var(--fs-md); padding: 2px 8px; }
+.show .list.xdense .grp-items span { font-size: var(--fs-sm); padding: 1px 6px; }
 .show:fullscreen { justify-content: center; }
 .show:fullscreen .title { font-size: 2.6vw; }
 .show:fullscreen .prize { font-size: 5vw; }
@@ -122,7 +128,7 @@ table.win tr.absent td:last-child, table.win tr.absent td:nth-last-child(2) { te
 
 /* ---------- 獨立投影視窗 ---------- */
 body.projector { background: var(--rich-black); overflow: hidden; }
-body.projector > :not(#show):not(.cf):not(#projHint) { display: none !important; }
+body.projector > :not(#show):not(.cf):not(#projHint):not(#stageBar):not(#stageMsg) { display: none !important; }
 body.projector #show { position: fixed; inset: 0; min-height: 100vh; gap: 1.6vh; box-shadow: none; }
 body.projector #show .title { font-size: 3vw; }
 body.projector #show .prize { font-size: 5.5vw; }
@@ -130,7 +136,10 @@ body.projector #show .prog { font-size: 2vw; }
 body.projector #show .big { font-size: 19vw; }
 body.projector #show .name { font-size: 5vw; }
 body.projector #show .code { font-size: 2.4vw; }
-body.projector #show .list span { font-size: 2.2vw; }
+body.projector #show .grp-items span { font-size: 2.2vw; }
+body.projector #show .grp-name { font-size: 2vw; }
+body.projector #show .list.dense .grp-items span { font-size: 1.6vw; }
+body.projector #show .list.xdense .grp-items span { font-size: 1.15vw; }
 body.projector #show .reg { width: 3vw; height: 3vw; min-width: 24px; min-height: 24px; }
 body.projector #show .show-bar { height: 1.2vh; }
 body.projector.idle, body.projector.idle * { cursor: none; }
@@ -171,5 +180,22 @@ body.projector.idle, body.projector.idle * { cursor: none; }
 .show .big.is-name { font-family: inherit; font-size: clamp(44px, 7.5vw, 112px); line-height: 1.15; max-width: 92%; overflow-wrap: anywhere; letter-spacing: 0.04em; }
 .show:fullscreen .big.is-name { font-size: 11vw; }
 body.projector #show .big.is-name { font-size: 12vw; }
-.show .list.is-name span { font-family: inherit; }
+.show .list.is-name .grp-items span { font-family: inherit; }
 #pgLine .bad-line { display: block; margin-top: 4px; color: var(--danger); font-weight: 600; }
+.pick-tip { font-size: var(--fs-xs); color: var(--mat-ink); opacity: 0.8; }
+
+/* 抽獎網址頁（stage.html）：右下角的操作列，平常淡淡的，滑鼠移過去才明顯 */
+#stageBar { position: fixed; right: 2vw; bottom: 3vh; z-index: 6; display: flex; align-items: center; gap: 8px; opacity: 0.7; transition: opacity 200ms; }
+#stageBar:hover, #stageBar:focus-within { opacity: 1; }
+#stageBar button, #stageBar summary { min-height: 40px; padding: 0 14px; border: 1px solid rgba(255, 255, 255, 0.4); background: rgba(255, 255, 255, 0.08); color: #fff; font: inherit; font-size: var(--fs-sm); cursor: pointer; border-radius: var(--radius); }
+#stageBar button:hover, #stageBar summary:hover { background: rgba(255, 255, 255, 0.2); }
+#stageBar button:disabled { opacity: 0.4; cursor: default; }
+#stageBar .sb-pick { min-height: 52px; padding: 0 30px; font-size: var(--fs-xl); font-weight: 800; background: var(--magenta); border-color: var(--magenta); }
+#stageBar .armed { background: var(--danger); border-color: var(--danger); }
+#sbMore { position: relative; }
+#sbMore summary { list-style: none; display: flex; align-items: center; font-size: var(--fs-lg); }
+#sbMore summary::-webkit-details-marker { display: none; }
+.sb-menu { position: absolute; right: 0; bottom: calc(100% + 6px); display: flex; flex-direction: column; gap: 4px; padding: 6px; background: #1b1f22; border: 1px solid rgba(255, 255, 255, 0.25); white-space: nowrap; }
+.sb-menu button { text-align: left; }
+#stageMsg { position: fixed; top: 3vh; left: 50%; transform: translateX(-50%); z-index: 7; padding: 8px 18px; background: rgba(255, 255, 255, 0.16); color: #fff; font-size: var(--fs-md); border-radius: var(--radius); }
+#stageMsg.bad { background: var(--danger); }

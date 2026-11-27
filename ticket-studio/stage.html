@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>抽獎</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@700;800&amp;text=0123456789/&amp;display=swap" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/draw.css" />
+  <script type="module" src="js/stage.js"></script>
+</head>
+<body class="projector stage">
+  <!-- 抽獎網址：名單、獎項都在網址 # 後面，打開就能抽，不用先進票券工作室設定 -->
+  <div class="show" id="show">
+    <i class="reg r-t" aria-hidden="true"></i><i class="reg r-b" aria-hidden="true"></i><i class="reg r-l" aria-hidden="true"></i><i class="reg r-r" aria-hidden="true"></i>
+    <div class="title" id="showTitle"></div>
+    <div class="prize" id="showPrize">載入中…</div>
+    <div class="prog" id="showProg"></div>
+    <div class="big is-name" id="showNum" aria-live="polite">&nbsp;</div>
+    <div class="name" id="showName"></div>
+    <div class="code" id="showCode"></div>
+    <div class="list is-name" id="showList"></div>
+    <div class="show-bar" aria-hidden="true"></div>
+  </div>
+  <div id="stageMsg" role="status" hidden></div>
+  <div id="stageBar">
+    <button type="button" class="sb-pick" id="sbPick">抽出</button>
+    <button type="button" id="sbAbsent" title="上一位不在現場：這位不會再被抽到，名額空出來再抽一位">上一位不在現場</button>
+    <details id="sbMore">
+      <summary title="更多">⋯</summary>
+      <div class="sb-menu">
+        <button type="button" id="sbFull">全螢幕</button>
+        <button type="button" id="sbCsv">下載得獎名單（CSV）</button>
+        <button type="button" id="sbReset" class="danger">清除結果重新抽</button>
+      </div>
+    </details>
+  </div>
+</body>
+</html>

@@ -7,7 +7,9 @@ import { $, num, el, ls, randomId, downloadCSV, infoLine, setMarked } from "./ut
 import { buildNumbers, parseRanges, codeFor, usesCode, recordLabel, isList, padNumber, parseList, mainColumn, tableToTSV } from "./numbers.js";
 import { app } from "./state.js";
 import { createGrid } from "./grid.js";
-import { pushShow, initShowChannel, openProjector } from "./show.js";
+import { renderGroups } from "./showlist.js";
+import { packStage } from "./stagelink.js";
+import { pushShow, initShowChannel, openProjector, NEXT_KEYS } from "./show.js";
 import { icon } from "./icons.js";
 
 export const newPrizeId = () => randomId("p", 7);
@@ -138,6 +140,7 @@ function renderMode() {
   $("entryForm").hidden = L; $("pickRow").hidden = !L;
   $("btnRandom").hidden = L; $("btnCam").hidden = L || !("BarcodeDetector" in window);
   $("voidBox").hidden = $("verifyBox").hidden = L;
+  $("stageBlock").hidden = !L; $("statsNo").textContent = L ? "5" : "4";
   $("prizeHint").textContent = L ? "從第一個獎開始抽，抽滿了自動換下一個；也可以在右邊手動切換。" : "登記時會自動填入第一個還沒抽滿的獎項，也可以在右邊手動切換。";
   $("absentLabel").textContent = L ? "上一位不在現場（作廢後再抽一位）" : "上一位未到場（作廢後再抽一張）";
   $("liveTitle").textContent = L ? "現場抽獎" : "現場登記";
@@ -146,6 +149,11 @@ function renderMode() {
   if (L) syncPeople();
 }
 const focusEntry = () => (byList() ? $("btnPick") : $("entryNum")).focus();
+
+// 抽獎網址是「按下去那一刻」的名單、獎項、標題；之後改了要提醒重新產生
+function markStale() {
+  if (!$("stageOut").hidden) $("stageNote").textContent = "⚠ 名單、獎項或標題改過了，請重新按「產生抽獎網址」，舊網址還是舊的內容。";
+}
 
 let prizeEditing = false; // 已開始登記後，獎項預設收成摘要
 const isCompact = () => D.winners.length > 0 && !prizeEditing;
@@ -160,16 +168,16 @@ export function renderDraw() {
       el("div", null, el("span", null, p.name), el("span", { className: "q" }, `${okCount(p.id)} / ${p.qty}`)))), edit);
   } else $("prizeList").replaceChildren(...D.prizes.map((p, i) => {
     const name = el("input", { type: "text", value: p.name, ariaLabel: "獎項名稱" });
-    name.oninput = () => { p.name = name.value; saveDraw(); renderDrawStatus(); };
+    name.oninput = () => { p.name = name.value; saveDraw(); renderDrawStatus(); markStale(); };
     const qty = el("input", { type: "number", min: 1, value: p.qty, title: "名額", ariaLabel: "名額" });
-    qty.oninput = () => { const v = Math.floor(num(qty.value, 0)); if (v >= 1) { p.qty = v; saveDraw(); renderDrawStatus(); } };
-    const move = (j) => { [D.prizes[j], D.prizes[i]] = [D.prizes[i], D.prizes[j]]; saveDraw(); renderDraw(); };
+    qty.oninput = () => { const v = Math.floor(num(qty.value, 0)); if (v >= 1) { p.qty = v; saveDraw(); renderDrawStatus(); markStale(); } };
+    const move = (j) => { [D.prizes[j], D.prizes[i]] = [D.prizes[i], D.prizes[j]]; saveDraw(); renderDraw(); markStale(); };
     const ops = el("div", { className: "ops" },
       iconBtn("up", "往前", () => { if (i > 0) move(i - 1); }),
       iconBtn("down", "往後", () => { if (i < D.prizes.length - 1) move(i + 1); }),
       iconBtn("x", "刪除", () => {
         if (D.winners.some((w) => w.prizeId === p.id) && !confirm(`「${p.name}」已有得獎紀錄，刪除獎項後紀錄仍會保留，確定刪除？`)) return;
-        D.prizes.splice(i, 1); saveDraw(); renderDraw();
+        D.prizes.splice(i, 1); saveDraw(); renderDraw(); markStale();
       }, "danger"));
     return el("div", { className: "prize-row" }, el("span", { className: "prize-no" }, String(i + 1)), name, qty, ops);
   }));
@@ -210,7 +218,9 @@ function renderDrawStatus() {
   $("showPrize").textContent = disp ? disp.name : D.prizes.length ? "所有獎項都抽完了" : "請先設定獎項";
   const got = disp ? D.winners.filter((w) => w.prizeId === disp.id && w.status === "ok") : [];
   $("showProg").textContent = disp ? `已抽 ${got.length} / ${disp.qty} 名` : "";
-  $("showList").replaceChildren(...got.map((w) => el("span", null, w.num)));
+  // 下方列出所有獎項的得獎者（依抽獎順序分類），正在抽的那一組最亮
+  renderGroups($("showList"), D.prizes.map((p) => ({ name: p.name, cur: !!disp && p.id === disp.id,
+    items: D.winners.filter((w) => w.prizeId === p.id && w.status === "ok").map((w) => w.num) })).filter((g) => g.items.length));
   $("showList").classList.toggle("is-name", byList());
 
   // 統計
@@ -343,7 +353,8 @@ async function pickPeople() {
   if (!P.all.length) { msg("err", "名單還是空的：先在左邊的表格輸入名字，或從 Excel 整塊貼上。"); pgrid.focusCell(0, 0); return; }
   if (!P.avail.length) return msg("err", "名單上的人都已經抽過了。");
   const left = prize.qty - okCount(prize.id);
-  const want = D.pickCount === "all" ? left : Math.min(left, Math.max(1, Math.floor(num(D.pickCount, 1))));
+  const per = D.pickCount;
+  const want = per === "all" ? left : Math.min(left, Math.max(1, Math.floor(num(per, 1))));
   const n = Math.min(want, P.avail.length);
   rolling = true; $("btnPick").disabled = $("curPrize").disabled = $("btnAbsentLast").disabled = true;
   if (shown) clearShown();
@@ -417,8 +428,15 @@ function printWinners() {
 
 export function initDraw() {
   loadDraw();
-  initShowChannel();
-  $("drawTitle").oninput = () => { D.title = $("drawTitle").value; saveDraw(); renderDrawStatus(); };
+  // 簡報筆：按「下一頁」＝抽出一位（只在名單直接抽、抽獎分頁開著時）
+  const clicker = () => { if (byList() && !$("viewDraw").hidden) pickPeople(); };
+  initShowChannel(clicker);
+  document.addEventListener("keydown", (e) => {
+    if (!NEXT_KEYS.has(e.key) || e.repeat || !byList() || $("viewDraw").hidden) return;
+    if (/INPUT|SELECT|TEXTAREA/.test(e.target.tagName || "")) return; // 在名單格子裡打字時不搶
+    e.preventDefault(); clicker();
+  });
+  $("drawTitle").oninput = () => { D.title = $("drawTitle").value; saveDraw(); renderDrawStatus(); markStale(); };
   $("entryForm").addEventListener("submit", (e) => {
     e.preventDefault();
     if (register($("entryNum").value, $("entryCode").value, "manual")) { $("entryNum").value = ""; $("entryCode").value = ""; }
@@ -431,7 +449,7 @@ export function initDraw() {
   $("showSecs").onchange = () => { D.showSecs = num($("showSecs").value, 60); saveDraw(); armAutoClear(); };
   $("voidList").oninput = () => { D.voidList = $("voidList").value; saveDraw(); renderDrawStatus(); };
   $("verifyCode").onchange = () => { D.verify = $("verifyCode").checked; saveDraw(); renderDraw(); };
-  $("btnAddPrize").onclick = () => { D.prizes.push({ id: newPrizeId(), name: "新獎項", qty: 1 }); saveDraw(); renderDraw(); };
+  $("btnAddPrize").onclick = () => { D.prizes.push({ id: newPrizeId(), name: "新獎項", qty: 1 }); saveDraw(); renderDraw(); markStale(); };
 
   $("btnAbsentLast").onclick = () => {
     const w = [...D.winners].reverse().find((x) => x.status === "ok");
@@ -443,7 +461,7 @@ export function initDraw() {
     focusEntry();
   };
   $("btnRandom").onclick = randomDraw;
-  $("btnPick").onclick = pickPeople;
+  $("btnPick").onclick = () => pickPeople();
   $("pickCount").onchange = () => { D.pickCount = $("pickCount").value; saveDraw(); };
   document.querySelectorAll('input[name="drawMode"]').forEach((r) => r.addEventListener("change", () => {
     const next = r.value === "list" ? "list" : "ticket";
@@ -454,8 +472,26 @@ export function initDraw() {
   }));
   pgrid = createGrid({
     head: $("pgHead"), body: $("pgBody"), firstCol: "姓名",
-    onCommit(headers, rows) { D.people = tableToTSV(headers, rows); pgLoaded = D.people; saveDraw(); renderPeopleLine(); renderDrawStatus(); },
+    onCommit(headers, rows) { D.people = tableToTSV(headers, rows); pgLoaded = D.people; saveDraw(); renderPeopleLine(); renderDrawStatus(); markStale(); },
   });
+  // 抽獎網址：網址是「按下去那一刻」的名單和獎項，之後改了要重新產生
+  $("btnStageUrl").onclick = async () => {
+    const { headers, records } = parseList(D.people);
+    if (!records.length) { msg("err", "名單還是空的，先在第 1 步輸入名單。"); pgrid.focusCell(0, 0); return; }
+    if (!D.prizes.length) return msg("err", "請先設定獎項。");
+    const code = await packStage({ t: D.title || "", p: D.prizes.map((p) => [p.name, p.qty]),
+      h: headers, m: Math.max(0, headers.indexOf(mainColumn(headers))), r: records.map((rec) => headers.map((h) => rec[h] || "")) });
+    const url = new URL("stage.html", location.href); url.search = ""; url.hash = code;
+    $("stageUrl").value = url.href; $("stageOut").hidden = false;
+    $("stageNote").textContent = `網址裡有 ${records.length} 人、${D.prizes.length} 個獎項（共 ${url.href.length} 個字）。名單之後改了要重新產生。網址裡看得到名單，只傳給需要的同工；抽獎結果存在打開網址的那台電腦，跟這裡的紀錄分開。`;
+  };
+  $("btnStageCopy").onclick = async () => {
+    const inp = $("stageUrl");
+    try { await navigator.clipboard.writeText(inp.value); } catch (e) { inp.select(); document.execCommand("copy"); }
+    $("btnStageCopy").textContent = "已複製 ✓"; setTimeout(() => ($("btnStageCopy").textContent = "複製網址"), 2000);
+  };
+  $("btnStageOpen").onclick = () => window.open($("stageUrl").value, "_blank");
+  $("stageUrl").onfocus = () => $("stageUrl").select();
   $("pgClear").onclick = () => {
     if (pgrid.hasData() && !confirm("清空抽獎名單？（已經抽出的紀錄不受影響）")) return;
     pgrid.clear();
@@ -463,7 +499,7 @@ export function initDraw() {
   $("pgImport").onclick = () => {
     const n = parseList(app.S.data.list).records.length;
     if (pgrid.hasData() && !confirm(`把目前的抽獎名單換成「印券設計」的名單（${n} 人）？`)) return;
-    D.people = app.S.data.list; saveDraw(); syncPeople(); renderDrawStatus();
+    D.people = app.S.data.list; saveDraw(); syncPeople(); renderDrawStatus(); markStale();
   };
   $("btnProjector").onclick = openProjector;
   $("btnFull").onclick = () => {

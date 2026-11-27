@@ -34,6 +34,7 @@ export const LS = {
   moveTipHidden: "ticketStudio.moveTipHidden",
   genAi: "ticketStudio.genAi",
   hello: "ticketStudio.hello",
+  remote: "ticketStudio.remote", // 投影視窗收到簡報筆的「下一頁」，轉給主畫面
   aiKey: (provider) => "ticketStudio.aiKey." + provider,
 };
 export const SHOW_CH = "ticketStudio.show";

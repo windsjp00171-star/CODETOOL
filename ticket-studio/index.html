@@ -493,8 +493,30 @@
         </details>
       </section>
 
+      <section class="block" id="stageBlock" hidden>
+        <h2><span class="block-no">4</span>做成抽獎網址</h2>
+        <p class="hint">名單、獎項、標題都包進一個網址。傳給同工，點開就能抽，不用進來設定；也可以放進 PowerPoint 投影片裡。</p>
+        <button type="button" class="btn btn-ink btn-small" id="btnStageUrl"><svg class="ic" aria-hidden="true"><use href="#i-monitor"/></svg><span>產生抽獎網址</span></button>
+        <div id="stageOut" hidden>
+          <input type="text" id="stageUrl" readonly aria-label="抽獎網址" />
+          <div class="btn-row">
+            <button type="button" class="btn btn-primary btn-small" id="btnStageCopy">複製網址</button>
+            <button type="button" class="btn btn-quiet btn-small" id="btnStageOpen">開啟看看</button>
+          </div>
+          <p class="hint" id="stageNote"></p>
+          <details class="explain">
+            <summary>怎麼放進 PowerPoint？</summary>
+            <div class="more-body">
+              <p><b>做法一：放在投影片裡面（不用切換畫面）</b><br />需要 Microsoft 365 版的 PowerPoint。「插入」→「取得增益集」→ 搜尋 <b>Web Viewer</b> → 新增，把網址貼進去，放大到整張投影片。放映到這一頁時，<b>用滑鼠點一下畫面右下角的「抽出」</b>。</p>
+              <p class="hint">放在投影片裡時，簡報筆的翻頁鍵通常會被 PowerPoint 拿去換頁，所以這種做法請用滑鼠點。第一次用請在活動前先試一次。</p>
+              <p><b>做法二：投影片上放一個連結（最穩）</b><br />在投影片放一個「開始抽獎」按鈕，插入超連結貼上網址。放映時點下去會開瀏覽器，按 F11 全螢幕，簡報筆按下一頁就能抽；抽完按 Alt＋Tab 回到簡報。</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
       <section class="block">
-        <h2><span class="block-no">4</span>統計與匯出</h2>
+        <h2><span class="block-no" id="statsNo">4</span>統計與匯出</h2>
         <dl class="tally">
           <div><dt id="statIssuedL">發出</dt><dd id="statIssued" class="num">0</dd></div>
           <div><dt>已得獎</dt><dd id="statWon" class="num">0</dd></div>
@@ -546,6 +568,7 @@
           <label class="pick-n">一次抽
             <select id="pickCount"><option value="1">1 位</option><option value="3">3 位</option><option value="5">5 位</option><option value="10">10 位</option><option value="all">這個獎剩下的全部</option></select>
           </label>
+          <span class="pick-tip">簡報筆按「下一頁」也可以抽</span>
         </div>
         <p class="msg" id="entryMsg" role="status" hidden></p>
         <div class="btn-row tool-row">

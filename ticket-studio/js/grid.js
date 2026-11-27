@@ -22,8 +22,9 @@ export function createGrid(o) {
   const P = o.print || null;
 
   const uniqueName = (base) => { let n = base, i = 2; while (headers.includes(n)) n = base + i++; return n; };
-  const minW = () => `calc(${headers.length} * 5.2em + 28px + ${headers.length * 4 + 12}px)`;
-  const gridCols = () => `repeat(${headers.length}, minmax(5.2em, 1fr)) 28px`;
+  // 每欄至少 7 個字寬；欄位多到放不下就左右捲動，不會把欄位擠扁
+  const minW = () => `calc(${headers.length} * 7em + 44px)`;
+  const gridCols = () => `repeat(${headers.length}, minmax(7em, 1fr)) 44px`;
 
   function renderHead() {
     const cells = headers.map((h, c) => {
@@ -144,8 +145,13 @@ export function createGrid(o) {
     const headerLine = !inHead && lines.length > 1 && c0 < orig
       && lines[0].every((v, k) => c0 + k >= orig || v === headers[c0 + k]);
     if (headerLine) lines[0].forEach((v, k) => { const c = c0 + k; if (c >= orig && v && !headers.includes(v)) headers[c] = v; });
+    // 名單還是空的、從第一格開始貼，第一行裡「任何位置」有原本的欄名或「姓名／名字」，
+    // 也當成欄名（例如原本只有「姓名」，從 Excel 貼上「小組｜姓名」）
+    const oldHeads = headers.slice(0, orig);
+    const freshHead = !inHead && !headerLine && lines.length > 1 && lines[0].length > 1 && r0 === 0 && c0 === 0
+      && !rows.some(filled) && lines[0].some((v) => oldHeads.includes(v) || /^(姓名|名字|名稱|name)$/i.test(v));
     let data = lines;
-    if (inHead) {
+    if (inHead || freshHead) {
       // 貼在欄名那一列：第一行當欄名。原本就有的欄名只是換位置；
       // 原本的欄名在新的欄名裡找不到，才當成改名
       const next = headers.slice();

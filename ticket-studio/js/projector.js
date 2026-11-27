@@ -1,6 +1,7 @@
 // 投影視窗（?view=projector）：只顯示得獎畫面，跟主視窗同步。
 import { SHOW_CH, LS } from "./constants.js";
 import { $, el, ls } from "./util.js";
+import { renderGroups } from "./showlist.js";
 
 export const CONFETTI = ["#00a0e0", "#e6007e", "#ffe500", "#ffffff", "#00a0e0", "#e6007e"];
 
@@ -32,7 +33,14 @@ export function runProjector() {
   let idleT = null;
   const wake = () => { document.body.classList.remove("idle"); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add("idle"), 2000); };
   document.addEventListener("mousemove", wake); wake();
+  // 簡報筆對著投影視窗按「下一頁」：轉給主畫面去抽
+  document.addEventListener("keydown", (e) => {
+    if (!["PageDown", "ArrowRight", "ArrowDown", " ", "Enter"].includes(e.key) || e.repeat) return;
+    e.preventDefault();
+    if (bc) bc.postMessage({ type: "next" }); else ls.set(LS.remote, String(Date.now()));
+  });
 
+  const bc = "BroadcastChannel" in window ? new BroadcastChannel(SHOW_CH) : null;
   let lastId = null;
   function render(m) {
     if (!m || m.type === "hello" || m.id === lastId) return;
@@ -47,11 +55,10 @@ export function runProjector() {
     big.classList.toggle("rolling", m.anim === "roll");
     big.classList.toggle("is-name", !!m.names); $("showList").classList.toggle("is-name", !!m.names);
     if (m.anim === "pop") { big.classList.remove("pop"); void big.offsetWidth; big.classList.add("pop"); confetti(document.body); }
-    $("showList").replaceChildren(...(m.list || []).map((t) => el("span", null, t)));
+    renderGroups($("showList"), m.groups || (m.list ? [{ name: "", cur: true, items: m.list }] : []));
   }
   try { render(JSON.parse(ls.get(SHOW_CH))); } catch (e) { /* 還沒有畫面 */ }
-  if ("BroadcastChannel" in window) {
-    const bc = new BroadcastChannel(SHOW_CH);
+  if (bc) {
     bc.onmessage = (e) => render(e.data);
     bc.postMessage({ type: "hello" });
   }

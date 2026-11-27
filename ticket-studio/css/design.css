@@ -168,10 +168,10 @@ body.simple #pageCard:not(.open) { display: none; }
 .ng { margin-top: 6px; }
 .ng kbd { background: var(--paper-2); border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; font-size: 12px; font-family: inherit; }
 .ng-scroll { overflow-x: auto; border: 1px solid var(--rule); background: #fff; }
-.ng-head, .ng-row { display: grid; gap: 4px; align-items: center; }
+.ng-head, .ng-row { display: grid; gap: 0; align-items: stretch; }
 .ng-row input, .ng-hcell .ng-hname { min-width: 0; }
-.ng-head { padding: 4px 6px; background: var(--paper-2); border-bottom: 1px solid var(--rule); position: sticky; top: 0; z-index: 1; }
-.ng-hcell { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.ng-head { padding: 0; background: var(--paper-2); border-bottom: 2px solid var(--rule); position: sticky; top: 0; z-index: 1; }
+.ng-hcell { display: flex; flex-direction: column; gap: 0; min-width: 0; padding: 3px 3px 2px; border-right: 1px solid var(--rule); }
 .ng-hctl { display: flex; align-items: center; justify-content: space-between; gap: 2px; padding: 0 4px; }
 .ng-hctl .ng-del { min-height: 22px; font-size: 15px; padding: 0 4px; }
 .ng-hcell .ng-hname { width: 100%; min-width: 0; min-height: 28px; padding: 2px 5px; border: 1px solid transparent; background: transparent; font: inherit; font-size: var(--fs-xs); font-weight: 700; color: var(--ink-2); }
@@ -180,14 +180,15 @@ body.simple #pageCard:not(.open) { display: none; }
 .ng-print { flex: none; display: inline-flex; align-items: center; gap: 2px; font-size: 11px; color: var(--ink-3); cursor: pointer; white-space: nowrap; }
 .ng-print input { margin: 0; }
 .ng-print:has(input:checked) { color: var(--magenta); font-weight: 700; }
-.ng-addcol { min-height: 28px; padding: 0 6px; border: 1px dashed var(--rule); background: #fff; font-size: var(--fs-xs); color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+.ng-addcol { align-self: center; justify-self: center; min-height: 28px; padding: 0 5px; border: 1px dashed var(--rule); background: #fff; font-size: var(--fs-xs); color: var(--ink-2); cursor: pointer; white-space: nowrap; }
 .ng-addcol:hover { border-color: var(--cyan); color: var(--cyan-ink); }
 .ng-body { max-height: 46vh; overflow-y: auto; }
-.ng-row { padding: 2px 6px; border-bottom: 1px solid var(--paper-3); }
+.ng-row { padding: 0; border-bottom: 1px solid var(--rule); }
 .ng-row > .ng-del { min-height: 28px; font-size: 16px; padding: 0; }
 .ng-row:last-child { border-bottom: 0; }
-.ng-row input { width: 100%; min-height: 32px; padding: 4px 6px; border: 1px solid transparent; background: transparent; font: inherit; font-size: var(--fs-sm); color: var(--ink); }
-.ng-row input:hover { border-color: var(--paper-3); }
+.ng-row:nth-child(even) { background: var(--paper-2); }
+.ng-row input { width: 100%; min-height: 34px; padding: 4px 8px; border: 0; border-right: 1px solid var(--rule); border-radius: 0; background: transparent; font: inherit; font-size: var(--fs-sm); color: var(--ink); }
+.ng-row input:hover { background: var(--cyan-tint); }
 .ng-row input:focus { outline: 2px solid var(--cyan); outline-offset: -1px; background: var(--cyan-tint); }
 .ng-row input::placeholder { color: var(--ink-3); opacity: .7; }
 .ng-del { min-height: 30px; border: 0; background: transparent; font-size: 18px; line-height: 1; color: var(--ink-3); cursor: pointer; }
