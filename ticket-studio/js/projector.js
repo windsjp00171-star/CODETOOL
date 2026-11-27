@@ -45,6 +45,7 @@ export function runProjector() {
     const big = $("showNum");
     big.textContent = m.num || " ";
     big.classList.toggle("rolling", m.anim === "roll");
+    big.classList.toggle("is-name", !!m.names); $("showList").classList.toggle("is-name", !!m.names);
     if (m.anim === "pop") { big.classList.remove("pop"); void big.offsetWidth; big.classList.add("pop"); confetti(document.body); }
     $("showList").replaceChildren(...(m.list || []).map((t) => el("span", null, t)));
   }

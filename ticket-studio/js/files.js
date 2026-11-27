@@ -10,7 +10,7 @@ import { D, saveDraw, renderDraw, newPrizeId } from "./draw.js";
 
 export function exportTemplate() {
   const data = { app: "ticket-studio", version: 2, savedAt: new Date().toISOString(), state: app.S, background: app.bgDataURL,
-                 draw: { prizes: D.prizes, voidList: D.voidList, verify: D.verify }, genAi: genAi.dataURL };
+                 draw: { prizes: D.prizes, voidList: D.voidList, verify: D.verify, mode: D.mode, people: D.people }, genAi: genAi.dataURL };
   downloadBlob(new Blob([JSON.stringify(data)], { type: "application/json" }), `${outName()}範本.json`);
 }
 
@@ -30,6 +30,7 @@ async function importTemplate(file) {
     if (data.draw && Array.isArray(data.draw.prizes)) {
       D.prizes = data.draw.prizes.map((p) => ({ id: p.id || newPrizeId(), name: String(p.name || "獎項"), qty: Math.max(1, Math.floor(num(p.qty, 1))) }));
       D.voidList = String(data.draw.voidList || ""); D.verify = !!data.draw.verify;
+      if (data.draw.mode) { D.mode = data.draw.mode === "list" ? "list" : "ticket"; D.people = String(data.draw.people || ""); }
       saveDraw(); renderDraw();
     }
     syncBindings(); refreshAll();

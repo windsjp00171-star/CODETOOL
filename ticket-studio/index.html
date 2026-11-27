@@ -42,7 +42,7 @@
           { "@type": "Question", "name": "列印 PDF 時要注意什麼？", "acceptedAnswer": { "@type": "Answer", "text": "列印時請選「實際大小」或「100%」，不要選「符合頁面」，否則券的尺寸會跑掉、裁切線也對不上。" } },
           { "@type": "Question", "name": "什麼是出血？自己印需要嗎？", "acceptedAnswer": { "@type": "Answer", "text": "出血是背景往外多畫的一圈（通常 3 mm），因為印刷廠裁紙時刀子可能偏 1～2 mm，多畫一圈才不會露白邊。送印刷廠時選「送印刷廠」會自動加上；自己用印表機印，或背景是白色時不需要。" } },
           { "@type": "Question", "name": "我的圖片和資料會上傳到網路嗎？", "acceptedAnswer": { "@type": "Answer", "text": "不會。圖片、號碼和設定都只存在你自己的瀏覽器裡。唯一例外是使用「AI 畫背景」時，你輸入的描述會用你自己的金鑰送到 Google Gemini 或 OpenAI 產生圖片。" } },
-          { "@type": "Question", "name": "可以用來辦現場抽獎嗎？", "acceptedAnswer": { "@type": "Answer", "text": "可以。在「抽獎紀錄」設定獎項與名額，從箱子抽出實體券後輸入號碼或掃 QR Code，系統會擋下不在範圍、已作廢、重複中獎的號碼，並可開投影視窗顯示得獎號碼。紀錄存在當天那台電腦的瀏覽器，結束後記得匯出 CSV。" } }
+          { "@type": "Question", "name": "可以用來辦現場抽獎嗎？", "acceptedAnswer": { "@type": "Answer", "text": "可以。在「抽獎」分頁設定獎項與名額，從箱子抽出實體券後輸入號碼或掃 QR Code，系統會擋下不在範圍、已作廢、重複中獎的號碼，並可開投影視窗顯示得獎號碼。沒有印券也可以：選「名單直接抽」，貼上名單由電腦隨機抽，同一個人不會中兩次。紀錄存在當天那台電腦的瀏覽器，結束後記得匯出 CSV。" } }
         ]
       }
     ]
@@ -106,7 +106,7 @@
       </h1>
       <nav class="tabs" role="tablist" aria-label="工作區">
         <button type="button" role="tab" data-view="design" class="on" aria-selected="true">印券設計</button>
-        <button type="button" role="tab" data-view="draw" aria-selected="false">抽獎紀錄</button>
+        <button type="button" role="tab" data-view="draw" aria-selected="false">抽獎</button>
       </nav>
     </div>
     <div class="mast-actions">
@@ -180,7 +180,7 @@
               <button type="button" class="link-btn" id="ngClear">清空名單</button>
             </div>
           </div>
-          <p class="hint" id="sNoNumHint" hidden>這次的券<b>沒有印號碼</b>，上面只是決定要印幾張（例如 1 → 300 就是印 300 張）。要號碼的話按下面「加一個號碼」。<br />沒有號碼的券，抽獎當天就不能用「抽獎紀錄」核對號碼。</p>
+          <p class="hint" id="sNoNumHint" hidden>這次的券<b>沒有印號碼</b>，上面只是決定要印幾張（例如 1 → 300 就是印 300 張）。要號碼的話按下面「加一個號碼」。<br />沒有號碼的券，抽獎當天就不能用「抽獎」分頁核對號碼。</p>
           <p class="hint">在右邊的預覽上：<b>拖曳</b>號碼可以移動位置，<b>點一下</b>可以放大縮小、換顏色。</p>
           <div class="s-adds">
             <button type="button" class="btn btn-quiet btn-small" id="sAddNum"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>再加一個號碼（例如存根）</span></button>
@@ -445,37 +445,60 @@
   <div class="workspace" id="viewDraw" hidden>
     <aside class="ticket-sheet" aria-label="抽獎設定">
       <section class="block">
-        <h2><span class="block-no">1</span>獎項（依抽獎順序排列）</h2>
-        <div class="prize-head" id="prizeHead" aria-hidden="true"><span>順序</span><span>獎項</span><span>名額</span><span></span></div>
-        <div id="prizeList"></div>
-        <button type="button" class="btn btn-quiet btn-small" id="btnAddPrize"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>新增獎項</span></button>
-        <p class="hint">登記時會自動填入第一個還沒抽滿的獎項，也可以在右邊手動切換。</p>
+        <h2><span class="block-no">1</span>這次怎麼抽？</h2>
+        <div class="seg seg-mode" role="radiogroup" aria-label="抽獎方式">
+          <label><input type="radio" name="drawMode" value="ticket" /> 抽印好的券</label>
+          <label><input type="radio" name="drawMode" value="list" /> 名單直接抽</label>
+        </div>
+        <p class="hint" id="drawModeHint"></p>
+        <div id="peopleBox" hidden>
+          <div class="ng-scroll"><div class="ng-head" id="pgHead"></div><div class="ng-body" id="pgBody"></div></div>
+          <div class="ng-foot">
+            <p class="s-line" id="pgLine"></p>
+            <span class="btn-row">
+              <button type="button" class="link-btn" id="pgImport" hidden>用「印券設計」的名單</button>
+              <button type="button" class="link-btn" id="pgClear">清空名單</button>
+            </span>
+          </div>
+        </div>
       </section>
 
       <section class="block">
-        <h2><span class="block-no">2</span>投影畫面標題</h2>
+        <h2><span class="block-no">2</span>獎項（依抽獎順序排列）</h2>
+        <div class="prize-head" id="prizeHead" aria-hidden="true"><span>順序</span><span>獎項</span><span>名額</span><span></span></div>
+        <div id="prizeList"></div>
+        <button type="button" class="btn btn-quiet btn-small" id="btnAddPrize"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>新增獎項</span></button>
+        <p class="hint" id="prizeHint">登記時會自動填入第一個還沒抽滿的獎項，也可以在右邊手動切換。</p>
+      </section>
+
+      <section class="block">
+        <h2><span class="block-no">3</span>投影畫面標題</h2>
         <input type="text" id="drawTitle" placeholder="例：2026 尾牙摸彩" aria-label="投影畫面標題" />
         <details class="explain" id="drawMore">
           <summary>其他設定（通常不用改）</summary>
           <div class="more-body">
+            <div id="voidBox">
             <label class="box-field"><span>不參加抽獎的編號</span><input type="text" id="voidList" placeholder="未發出／作廢，例：201-250, 77" /></label>
             <p class="hint">發出範圍沿用「印券設計」的編號設定，這裡再扣掉沒發出去或作廢的券。</p>
-            <label class="box-field"><span>得獎號碼在投影上停留</span>
-              <select id="showSecs"><option value="30">30 秒</option><option value="60">1 分鐘</option><option value="120">2 分鐘</option><option value="300">5 分鐘</option><option value="0">不自動清除（手動按「清除投影上的號碼」）</option></select>
+            </div>
+            <label class="box-field"><span>得獎者在投影上停留</span>
+              <select id="showSecs"><option value="30">30 秒</option><option value="60">1 分鐘</option><option value="120">2 分鐘</option><option value="300">5 分鐘</option><option value="0">不自動清除（手動按「清除投影上的…」）</option></select>
             </label>
-            <p class="hint">時間到、換獎項、或開始抽下一個時，上一個號碼都會自動從投影上消失。</p>
+            <p class="hint">時間到、換獎項、或開始抽下一個時，上一位得獎者都會自動從投影上消失。</p>
+            <div id="verifyBox">
             <label class="check"><input type="checkbox" id="verifyCode" /> 登記時核對券上的驗證碼（防偽）</label>
             <p class="hint">需在印券時加上 <code>{code}</code> 欄位。驗證碼不符的券會被擋下。</p>
+            </div>
           </div>
         </details>
       </section>
 
       <section class="block">
-        <h2><span class="block-no">3</span>統計與匯出</h2>
+        <h2><span class="block-no">4</span>統計與匯出</h2>
         <dl class="tally">
-          <div><dt>發出</dt><dd id="statIssued" class="num">0</dd></div>
+          <div><dt id="statIssuedL">發出</dt><dd id="statIssued" class="num">0</dd></div>
           <div><dt>已得獎</dt><dd id="statWon" class="num">0</dd></div>
-          <div><dt>箱中剩餘</dt><dd id="statLeft" class="num">0</dd></div>
+          <div><dt id="statLeftL">箱中剩餘</dt><dd id="statLeft" class="num">0</dd></div>
         </dl>
         <div class="tally-note" id="poolInfo"></div>
         <div class="btn-row">
@@ -518,13 +541,19 @@
           <input type="text" id="entryCode" placeholder="驗證碼" aria-label="驗證碼" hidden />
           <button class="btn btn-primary" type="submit">登記</button>
         </form>
+        <div class="pick" id="pickRow" hidden>
+          <button type="button" class="btn btn-primary pick-btn" id="btnPick"><svg class="ic" aria-hidden="true"><use href="#i-dice"/></svg><span>抽出</span></button>
+          <label class="pick-n">一次抽
+            <select id="pickCount"><option value="1">1 位</option><option value="3">3 位</option><option value="5">5 位</option><option value="10">10 位</option><option value="all">這個獎剩下的全部</option></select>
+          </label>
+        </div>
         <p class="msg" id="entryMsg" role="status" hidden></p>
         <div class="btn-row tool-row">
-          <button type="button" class="btn btn-mat btn-small" id="btnAbsentLast"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg><span>上一位未到場（作廢後再抽一張）</span></button>
+          <button type="button" class="btn btn-mat btn-small" id="btnAbsentLast"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg><span id="absentLabel">上一位未到場（作廢後再抽一張）</span></button>
           <button type="button" class="btn btn-mat btn-small" id="btnCam" hidden><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg><span>用相機掃描 QR</span></button>
           <button type="button" class="btn btn-mat btn-small" id="btnRandom"><svg class="ic" aria-hidden="true"><use href="#i-dice"/></svg><span>改用電腦隨機抽</span></button>
           <span class="tool-gap" aria-hidden="true"></span>
-          <button type="button" class="btn btn-mat btn-small" id="btnClearShow" title="把投影上的得獎號碼清掉，畫面回到「準備抽下一個」"><span>清除投影上的號碼</span></button>
+          <button type="button" class="btn btn-mat btn-small" id="btnClearShow" title="把投影上的得獎者清掉，畫面回到「準備抽下一個」"><span id="clearShowLabel">清除投影上的號碼</span></button>
           <button type="button" class="btn btn-mat btn-small" id="btnProjector" title="另開一個只有得獎畫面的視窗，拖到投影機上；這邊登記，那邊同步顯示"><svg class="ic" aria-hidden="true"><use href="#i-monitor"/></svg><span>開啟投影視窗</span></button>
           <button type="button" class="btn btn-mat btn-small" id="btnFull"><svg class="ic" aria-hidden="true"><use href="#i-expand"/></svg><span>本畫面全螢幕</span></button>
         </div>
@@ -539,7 +568,7 @@
 
   <section class="about" aria-labelledby="aboutTitle">
     <h2 id="aboutTitle">關於票券工作室</h2>
-    <p class="about-lead">票券工作室是免費的線上工具，用來製作摸彩券、號碼牌、入場券、餐券和名牌。放上券的圖片、填好號碼範圍，就能排成 A4、A3、B4 或 Letter 的 PDF 直接列印；活動當天還能用「抽獎紀錄」登記抽出的號碼並投影。不用註冊，圖片和資料都只存在你自己的瀏覽器。</p>
+    <p class="about-lead">票券工作室是免費的線上工具，用來製作摸彩券、號碼牌、入場券、餐券和名牌。放上券的圖片、填好號碼範圍，就能排成 A4、A3、B4 或 Letter 的 PDF 直接列印；活動當天還能用「抽獎」分頁登記抽出的號碼並投影，或不印券、直接貼名單讓電腦抽。不用註冊，圖片和資料都只存在你自己的瀏覽器。</p>
     <p class="about-lead">這個工具是講師 EMMARK 用 AI 協作做出來的。想學怎麼把自己的點子做成能上線的工具，可以看 <a href="https://windsjp00171-star.github.io/vibe-coding-course/" style="color:#fff">Vibe Coding 實戰課 →</a></p>
     <h2>常見問題</h2>
     <details><summary>票券工作室要錢嗎？需要註冊或安裝嗎？</summary><p>完全免費，不用註冊也不用安裝。用瀏覽器打開網頁就能做摸彩券、號碼牌、入場券、餐券和名牌，第一次開啟需要網路。</p></details>
@@ -547,7 +576,7 @@
     <details><summary>列印 PDF 時要注意什麼？</summary><p>列印時請選「實際大小」或「100%」，不要選「符合頁面」，否則券的尺寸會跑掉、裁切線也對不上。</p></details>
     <details><summary>什麼是出血？自己印需要嗎？</summary><p>出血是背景往外多畫的一圈（通常 3 mm），因為印刷廠裁紙時刀子可能偏 1～2 mm，多畫一圈才不會露白邊。送印刷廠時選「送印刷廠」會自動加上；自己用印表機印，或背景是白色時不需要。</p></details>
     <details><summary>我的圖片和資料會上傳到網路嗎？</summary><p>不會。圖片、號碼和設定都只存在你自己的瀏覽器裡。唯一例外是使用「AI 畫背景」時，你輸入的描述會用你自己的金鑰送到 Google Gemini 或 OpenAI 產生圖片。</p></details>
-    <details><summary>可以用來辦現場抽獎嗎？</summary><p>可以。在「抽獎紀錄」設定獎項與名額，從箱子抽出實體券後輸入號碼或掃 QR Code，系統會擋下不在範圍、已作廢、重複中獎的號碼，並可開投影視窗顯示得獎號碼。紀錄存在當天那台電腦的瀏覽器，結束後記得匯出 CSV。</p></details>
+    <details><summary>可以用來辦現場抽獎嗎？</summary><p>可以。在「抽獎」分頁設定獎項與名額，從箱子抽出實體券後輸入號碼或掃 QR Code，系統會擋下不在範圍、已作廢、重複中獎的號碼，並可開投影視窗顯示得獎號碼。沒有印券也可以：選「名單直接抽」，貼上名單由電腦隨機抽，同一個人不會中兩次。紀錄存在當天那台電腦的瀏覽器，結束後記得匯出 CSV。</p></details>
   </section>
 
   <div class="drop-hint" id="dropHint" hidden><div><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>放開滑鼠，就會把這張圖片當成券的圖片</div></div>
@@ -627,7 +656,7 @@
       <li>選錯的話，印出來會變小，跟設定的尺寸不一樣。</li>
       <li>自己裁切時，沿著紙張四周的<b>黑色短線</b>對齊裁下。</li>
       <li id="printDlgStack" hidden></li>
-      <li id="printDlgDraw">活動當天，到上方「<b>抽獎紀錄</b>」分頁登記中獎號碼。</li>
+      <li id="printDlgDraw">活動當天，到上方「<b>抽獎</b>」分頁登記中獎號碼。</li>
     </ul>
     <form method="dialog" class="dlg-btns"><button class="btn btn-primary">知道了</button></form>
   </dialog>

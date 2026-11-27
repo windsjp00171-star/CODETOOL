@@ -160,3 +160,16 @@ body.projector.idle, body.projector.idle * { cursor: none; }
 .show-frame { margin-top: 4px; }
 .live .entry { margin-top: 30px; }
 @media (max-width: 640px) { .cropped::before { inset: -10px; } }
+
+/* 名單直接抽：大顆「抽出」按鈕 */
+.pick { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.pick-btn { min-height: 56px; padding: 0 36px; font-size: var(--fs-xl); }
+.pick-btn .ic { width: 1.2em; height: 1.2em; }
+.pick-n { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--mat-ink); }
+.pick-n select { width: auto; }
+/* 投影上顯示名字：名字比號碼長，字小一點、可以換行 */
+.show .big.is-name { font-family: inherit; font-size: clamp(44px, 7.5vw, 112px); line-height: 1.15; max-width: 92%; overflow-wrap: anywhere; letter-spacing: 0.04em; }
+.show:fullscreen .big.is-name { font-size: 11vw; }
+body.projector #show .big.is-name { font-size: 12vw; }
+.show .list.is-name span { font-family: inherit; }
+#pgLine .bad-line { display: block; margin-top: 4px; color: var(--danger); font-weight: 600; }

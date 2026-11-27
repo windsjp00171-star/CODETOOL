@@ -11,6 +11,7 @@ export function pushShow(anim) {
     title: $("showTitle").textContent, prize: $("showPrize").textContent, prog: $("showProg").textContent,
     num: $("showNum").textContent.trim(), name: $("showName").textContent, code: $("showCode").textContent,
     list: [...$("showList").children].map((x) => x.textContent),
+    names: $("showNum").classList.contains("is-name"), // 名單直接抽：大字是名字，字級要小一點
   };
   try { bc?.postMessage(m); } catch (e) { /* 視窗已關閉 */ }
   ls.set(SHOW_CH, JSON.stringify(m));
